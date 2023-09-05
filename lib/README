@@ -44,3 +44,41 @@ libraries scanning project source files.
 
 More information about PlatformIO Library Dependency Finder
 - https://docs.platformio.org/page/librarymanager/ldf.html
+
+|WiFi/BT/RF
+|-WiFi AP
+|-WiFi Client
+|-Blue Tooth
+|-RF Module
+
+|APRS IGATE
+|-APRS-IS
+|-Position
+|-Filter
+|-Beacon
+
+|APRS TRACKER
+|-Position
+|-Function
+|-Filter
+|-Smart Beacon
+
+|DIGI REPEATER
+|-Position
+|-Function
+|-Filter
+|-Smart Beacon
+
+|SYSTEM
+|-Save/Load
+|  |-Save Config
+|  |-Load Config
+|  |-Factore Reset
+|-OLED Display
+|-Monitor Popup
+|-ABOUT
+|  |-OTA Update
+|  |-WiFi Status
+|  |-Infomations
+|  |-Dash Board
+

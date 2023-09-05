@@ -112,21 +112,19 @@ typedef struct Config_Struct
 {
 	bool synctime;
 	bool aprs;
-	bool wifi_client;
-	bool wifi;
-	char wifi_mode; // WIFI_AP,WIFI_STA,WIFI_AP_STA,WIFI_OFF
-	char wifi_ch;
+	
+	
+	
+	
 	float gps_lat;
 	float gps_lon;
 	float gps_alt;
-	uint8_t aprs_ssid;
-	uint16_t aprs_port;
+	
 	uint8_t aprs_moniSSID;
 	uint32_t api_id;
 	uint16_t mqtt_port;
 	bool tnc;
-	bool rf2inet;
-	bool inet2rf;
+
 	bool tnc_digi = false;
 	bool tnc_tracker = false;
 	bool tnc_telemetry = false;
@@ -146,29 +144,29 @@ typedef struct Config_Struct
 	int aprs_beacon;
 	char aprs_table;
 	char aprs_symbol;
-	char aprs_mycall[10];
-	char aprs_host[20];
-	char aprs_passcode[10];
-	char aprs_moniCall[10];
-	char aprs_filter[30];
+	
 	char aprs_comment[50];
-	char aprs_path[72];
+	char aprs_path[72];	
+
+	//WiFi/BT/RF
+	char wifi_mode; // WIFI_AP,WIFI_STA,WIFI_AP_STA,WIFI_OFF
+	char wifi_power;
+	//--WiFi Client
+	bool wifi;
 	char wifi_ssid[32];
 	char wifi_pass[63];
+	//--WiFi AP
+	bool wifi_ap;
+	char wifi_ap_ch;
 	char wifi_ap_ssid[32];
 	char wifi_ap_pass[63];
-	char tnc_path[50];
-	char tnc_btext[50];
-	char tnc_comment[50];
-	char aprs_object[10];
-	char mqtt_host[20];
-	char mqtt_user[10];
-	char mqtt_pass[10];
-	char wifi_power;
-	uint16_t tx_timeslot;
-	uint16_t digi_delay;
-	bool input_hpf;
-#ifdef SA818
+	//--Blue Tooth
+	bool bt_slave;
+	bool bt_master;
+	uint8_t bt_address[6];
+	char bt_name[20];
+	char bt_pin[5];
+	//--RF Module
 	float freq_rx;
 	float freq_tx;
 	int offset_rx;
@@ -179,26 +177,64 @@ typedef struct Config_Struct
 	uint8_t sql_level;
 	bool rf_power;
 	uint8_t volume;
-#endif
-	bool vpn;
-	bool modem;
-	int8_t timeZone;
-	bool oled_enable;
-	int oled_timeout;
-	unsigned int dispDelay;
-	bool dispTNC;
-	bool dispINET;
-	bool filterMessage;
-	bool filterStatus;
-	bool filterTelemetry;
-	bool filterWeather;
-	bool filterTracker;
-	bool filterMove;
-	bool filterPosition;
-	unsigned int filterDistant;
-	bool mygps;
-	unsigned char dim;
-	unsigned char contrast;
+	uint8_t mic;
+	bool input_hpf;
+
+	//IGATE
+	bool igate_en;
+	bool rf2inet;
+	bool inet2rf;
+	bool igate_loc2rf;
+	bool igate_loc2inet;
+	//--APRS-IS
+	uint8_t aprs_ssid;
+	uint16_t aprs_port;
+	char aprs_mycall[10];
+	char aprs_host[20];
+	char aprs_passcode[6];
+	char aprs_moniCall[10];
+	char aprs_filter[30];
+	//--Position
+	float igate_gps;
+	float igate_lat;
+	float igate_lon;
+	float igate_alt;
+	uint16_t igate_interval;
+	char igate_symbol[3] = "N&";
+	char igate_item[10] = "";
+	char igate_object[10];
+	char igate_phg[5];
+	char igate_path[72];
+	//--Filter
+
+	//DIGI REPEATER
+	bool digi_en;
+	bool digi_loc2rf;
+	bool digi_loc2inet;
+	uint8_t digi_ssid;
+	char digi_mycall[10];
+	char digi_path[72];
+	//--Position
+	float digi_gps;
+	float digi_lat;
+	float digi_lon;
+	float digi_alt;
+	uint16_t digi_interval;
+	char digi_symbol[3] = "N&";
+	char digi_item[10] = "";
+	char digi_object[10];
+	char digi_phg[5];
+	char digi_comment[50];
+
+	//TRACKER
+	bool sta_en;
+	bool sta_loc2rf;
+	bool sta_loc2inet;
+	uint8_t sta_ssid;
+	char sta_mycall[10];
+	char sta_path[72];
+	uint16_t digi_delay;
+	//--Position
 	bool sta_smartbeacon = false;
 	bool sta_compress = false;
 	bool sta_altitude = false;
@@ -212,9 +248,39 @@ typedef struct Config_Struct
 	char sta_symmove[3] = "/>";
 	char sta_symstop[3] = "\\>";
 	char sta_btext[17] = "";
+	char sta_mycall[10];
+	char sta_comment[50];
+	char sta_object[10];
+	//--Filter
+	
+	uint16_t tx_timeslot;
+
+	//OLED DISPLAY
+	bool oled_enable;
+	int oled_timeout;
+	unsigned char dim;
+	unsigned char contrast;
+	unsigned char startup;
+
+	bool vpn;
+	bool modem;
+	int8_t timeZone;
+	//Display
+	unsigned int dispDelay;
+	bool dispTNC;
+	bool dispINET;
+	bool filterMessage;
+	bool filterStatus;
+	bool filterTelemetry;
+	bool filterWeather;
+	bool filterTracker;
+	bool filterMove;
+	bool filterPosition;
+	unsigned int filterDistant;
+	bool mygps;	
 	bool h_up = true;
 	bool tx_status = true;
-	unsigned char startup;
+	
 
 } Configuration;
 
