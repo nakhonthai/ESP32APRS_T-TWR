@@ -508,21 +508,21 @@ void handle_setting()
 				{
 					if (server.arg(i) != "")
 					{
-						config.gps_lat = server.arg(i).toFloat();
+						config.igate_lat = server.arg(i).toFloat();
 					}
 				}
 				if (server.argName(i) == "gpsLon")
 				{
 					if (server.arg(i) != "")
 					{
-						config.gps_lon = server.arg(i).toFloat();
+						config.igate_lon = server.arg(i).toFloat();
 					}
 				}
 				if (server.argName(i) == "gpsAlt")
 				{
 					if (server.arg(i) != "")
 					{
-						config.gps_alt = server.arg(i).toFloat();
+						config.igate_alt = server.arg(i).toFloat();
 					}
 				}
 				if (server.argName(i) == "moniCall")
@@ -537,14 +537,14 @@ void handle_setting()
 				{
 					if (server.arg(i) != "")
 					{
-						config.aprs_table = *server.arg(i).c_str();
+						config.igate_symbol[0] = *server.arg(i).c_str();
 					}
 				}
 				if (server.argName(i) == "iconSymbol")
 				{
 					if (server.arg(i) != "")
 					{
-						config.aprs_symbol = *server.arg(i).c_str();
+						config.igate_symbol[1] = *server.arg(i).c_str();
 					}
 				}
 
@@ -552,7 +552,7 @@ void handle_setting()
 				{
 					if (server.arg(i) != "")
 					{
-						strcpy(config.aprs_path, server.arg(i).c_str());
+						strcpy(config.igate_path, server.arg(i).c_str());
 					}
 				}
 
@@ -561,14 +561,14 @@ void handle_setting()
 					if (server.arg(i) != "")
 					{
 						if (isValidNumber(server.arg(i)))
-							config.aprs_beacon = server.arg(i).toInt();
+							config.igate_interval = server.arg(i).toInt();
 					}
 				}
 				if (server.argName(i) == "comment")
 				{
 					if (server.arg(i) != "")
 					{
-						strcpy(config.aprs_comment, server.arg(i).c_str());
+						strcpy(config.igate_comment, server.arg(i).c_str());
 					}
 				}
 			}
@@ -592,42 +592,42 @@ void handle_setting()
 
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Latitude(Deg.)</label>\n";
-	webString += "<div class=\"col-sm-3 col-xs-6\"><input class=\"form-control\" id=\"gpsLat\" name=\"gpsLat\" type=\"text\" value=\"" + String(config.gps_lat, 5) + "\" /></div>\n";
+	webString += "<div class=\"col-sm-3 col-xs-6\"><input class=\"form-control\" id=\"gpsLat\" name=\"gpsLat\" type=\"text\" value=\"" + String(config.igate_lat, 5) + "\" /></div>\n";
 	webString += "</div>\n";
 
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Longitude(Deg.)</label>\n";
-	webString += "<div class=\"col-sm-3 col-xs-6\"><input class=\"form-control\" id=\"gpsLon\" name=\"gpsLon\" type=\"text\" value=\"" + String(config.gps_lon, 5) + "\" /></div>\n";
+	webString += "<div class=\"col-sm-3 col-xs-6\"><input class=\"form-control\" id=\"gpsLon\" name=\"gpsLon\" type=\"text\" value=\"" + String(config.igate_lon, 5) + "\" /></div>\n";
 	webString += "</div>\n";
 
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Altitude(M.)</label>\n";
-	webString += "<div class=\"col-sm-3 col-xs-6\"><input class=\"form-control\" id=\"gpsAlt\" name=\"gpsAlt\" type=\"text\" value=\"" + String(config.gps_alt) + "\" /></div>\n";
+	webString += "<div class=\"col-sm-3 col-xs-6\"><input class=\"form-control\" id=\"gpsAlt\" name=\"gpsAlt\" type=\"text\" value=\"" + String(config.igate_alt) + "\" /></div>\n";
 	webString += "</div>\n";
 
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Table</label>\n";
-	webString += "<div class=\"col-sm-2 col-xs-2\"><input class=\"form-control\" id=\"iconTable\" name=\"iconTable\" type=\"text\" value=\"" + String(config.aprs_table) + "\" /></div>\n";
+	webString += "<div class=\"col-sm-2 col-xs-2\"><input class=\"form-control\" id=\"iconTable\" name=\"iconTable\" type=\"text\" value=\"" + String(config.igate_symbol[0]) + "\" /></div>\n";
 	webString += "</div>\n";
 
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Symbol</label>\n";
-	webString += "<div class=\"col-sm-2 col-xs-2\"><input class=\"form-control\" id=\"iconSymbol\" name=\"iconSymbol\" type=\"text\" value=\"" + String(config.aprs_symbol) + "\" /></div>\n";
+	webString += "<div class=\"col-sm-2 col-xs-2\"><input class=\"form-control\" id=\"iconSymbol\" name=\"iconSymbol\" type=\"text\" value=\"" + String(config.igate_symbol[1]) + "\" /></div>\n";
 	webString += "</div>\n";
 
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">APRS Path</label>\n";
-	webString += "<div class=\"col-sm-6 col-xs-8\"><input class=\"form-control\" id=\"aprsPath\" name=\"aprsPath\" type=\"text\" value=\"" + String(config.aprs_path) + "\" /></div>\n";
+	webString += "<div class=\"col-sm-6 col-xs-8\"><input class=\"form-control\" id=\"aprsPath\" name=\"aprsPath\" type=\"text\" value=\"" + String(config.igate_path) + "\" /></div>\n";
 	webString += "</div>\n";
 
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Beacon interval(Sec)</label>\n";
-	webString += "<div class=\"col-sm-2 col-xs-3\"><input class=\"form-control\" id=\"beaconIntv\" name=\"beaconIntv\" type=\"text\" value=\"" + String(config.aprs_beacon) + "\" /></div>\n";
+	webString += "<div class=\"col-sm-2 col-xs-3\"><input class=\"form-control\" id=\"beaconIntv\" name=\"beaconIntv\" type=\"text\" value=\"" + String(config.igate_interval) + "\" /></div>\n";
 	webString += "</div>\n";
 
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Comment</label>\n";
-	webString += "<div class=\"col-sm-6 col-xs-10\"><input class=\"form-control\" id=\"comment\" name=\"comment\" type=\"text\" value=\"" + String(config.aprs_comment) + "\" /></div>\n";
+	webString += "<div class=\"col-sm-6 col-xs-10\"><input class=\"form-control\" id=\"comment\" name=\"comment\" type=\"text\" value=\"" + String(config.igate_comment) + "\" /></div>\n";
 	webString += "</div>\n";
 
 	String syncFlage = "";
@@ -696,13 +696,13 @@ void handle_service()
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.aprs_object, server.arg(i).c_str());
+					strcpy(config.igate_object, server.arg(i).c_str());
 					// for (int i = strlen(config.aprs_object); i < 9; i++) { config.aprs_object[i] = 0x20; }
 					// config.aprs_object[9] = 0;
 				}
 				else
 				{
-					config.aprs_object[0] = 0;
+					config.igate_object[0] = 0;
 				}
 			}
 			if (server.argName(i) == "mySSID")
@@ -841,10 +841,10 @@ void handle_service()
 			// 	}
 			// }
 		}
-		config.aprs = aprsEn;
-		config.tnc = tncEn;
-		config.tnc_digi = digiEn;
-		config.tnc_telemetry = tlmEn;
+		config.igate_en = aprsEn;
+		config.rf_en = tncEn;
+		config.digi_en = digiEn;
+		config.igate_tlm = tlmEn;
 		config.rf2inet = rf2inetEn;
 		config.inet2rf = inet2rfEn;
 		config.input_hpf = hpfEn;
@@ -866,7 +866,7 @@ void handle_service()
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">APRS-IS Enable</label>\n";
 	String aprsFlage = "";
-	if (config.aprs)
+	if (config.igate_en)
 		aprsFlage = "checked";
 	webString += "<div class=\"col-sm-3 col-xs-4\"><input class=\"field_checkbox\" id=\"aprs_enable\" name=\"aprsEnable\" type=\"checkbox\" value=\"OK\" " + aprsFlage + "/></div>\n";
 	webString += "</div>\n";
@@ -920,15 +920,15 @@ void handle_service()
 	webString += "</div>\n";
 
 	String tncFlage = "";
-	if (config.tnc)
+	if (config.rf_en)
 		tncFlage = "checked";
 	webString += "<div class=\"form-group\">\n";
-	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">TNC Enable</label>\n";
+	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">RF Enable</label>\n";
 	webString += "<div class=\"col-sm-4 col-xs-8\"><input class=\"field_checkbox\" id=\"tncEnable\" name=\"tncEnable\" type=\"checkbox\" value=\"OK\" " + tncFlage + "/></div>\n";
 	webString += "</div>\n";
 
 	String tlmFlage = "";
-	if (config.tnc_telemetry)
+	if (config.igate_tlm)
 		tlmFlage = "checked";
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Telemetry Enable</label>\n";
@@ -956,7 +956,7 @@ void handle_service()
 	webString += "<div class=\"col-sm-4 col-xs-8\"><input class=\"field_checkbox\" id=\"hpfEnable\" name=\"hpfEnable\" type=\"checkbox\" value=\"OK\" " + hpfFlage + "/></div>\n";
 	webString += "</div>\n";
 	String digiFlage = "";
-	if (config.tnc_digi)
+	if (config.digi_en)
 		digiFlage = "checked";
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">Digi Repeager</label>\n";
@@ -1159,7 +1159,7 @@ void handle_display()
 
 		config.oled_enable = oledEN;
 		config.dispINET = dispINET;
-		config.dispTNC = dispTNC;
+		config.dispRF = dispTNC;
 		config.filterMessage = filterMessage;
 		config.filterStatus = filterStatus;
 		config.filterTelemetry = filterTelemetry;
@@ -1188,7 +1188,7 @@ void handle_display()
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">From RF</label>\n";
 	String rfFlageEn = "";
-	if (config.dispTNC == true)
+	if (config.dispRF == true)
 		rfFlageEn = "checked";
 	webString += "<div class=\"col-sm-4 col-xs-6\"><input class=\"field_checkbox\" id=\"dispTNC\" name=\"dispTNC\" type=\"checkbox\" value=\"OK\" " + rfFlageEn + "/></div>\n";
 	webString += "</div>\n";
@@ -1859,21 +1859,21 @@ void handle_system()
 			{
 				if (server.arg(i) != "")
 				{
-					config.gps_lat = server.arg(i).toFloat();
+					config.igate_lat = server.arg(i).toFloat();
 				}
 			}
 			if (server.argName(i) == "gpsLon")
 			{
 				if (server.arg(i) != "")
 				{
-					config.gps_lon = server.arg(i).toFloat();
+					config.igate_lon = server.arg(i).toFloat();
 				}
 			}
 			if (server.argName(i) == "gpsAlt")
 			{
 				if (server.arg(i) != "")
 				{
-					config.gps_alt = server.arg(i).toFloat();
+					config.igate_alt = server.arg(i).toFloat();
 				}
 			}
 
@@ -2014,7 +2014,7 @@ void handle_system()
 	webString += "<div class=\"form-group\">\n";
 	webString += "<label class=\"col-sm-4 col-xs-12 control-label\">WiFi Client Enable</label>\n";
 	String wifiFlage = "";
-	if (config.wifi_client)
+	if (config.wifi_mode&WIFI_STA)
 		wifiFlage = "checked";
 	webString += "<div class=\"col-sm-4 col-xs-6\"><input class=\"field_checkbox\" id=\"field_checkbox_0\" name=\"wificlient\" type=\"checkbox\" value=\"OK\" " + wifiFlage + "/></div>\n";
 	webString += "</div>\n";
@@ -2203,8 +2203,8 @@ void handle_test()
 	if (server.hasArg("sendBeacon"))
 	{
 		String tnc2Raw = send_fix_location();
-		if (config.tnc)
-			pkgTxUpdate(tnc2Raw.c_str(), 0);
+		if (config.rf_en)
+			pkgTxPush(tnc2Raw.c_str(), 0);
 		// APRS_sendTNC2Pkt(tnc2Raw); // Send packet to RF
 	}
 	else if (server.hasArg("sendRaw"))
@@ -2216,9 +2216,9 @@ void handle_test()
 				if (server.arg(i) != "")
 				{
 					String tnc2Raw = server.arg(i);
-					if (config.tnc)
+					if (config.rf_en)
 					{
-						pkgTxUpdate(tnc2Raw.c_str(), 0);
+						pkgTxPush(tnc2Raw.c_str(), 0);
 						// APRS_sendTNC2Pkt(server.arg(i)); // Send packet to RF
 						// Serial.println("Send RAW: " + tnc2Raw);
 					}
@@ -2624,8 +2624,8 @@ void webService()
 #endif
 					vTaskSuspend(taskAPRSHandle);
 					// vTaskSuspend(taskNetworkHandle);
-					config.aprs = false;
-					config.tnc = false;
+					config.igate_en = false;
+					config.rf_en = false;
 #ifndef I2S_INTERNAL
 					AFSK_TimerEnable(false);
 #endif

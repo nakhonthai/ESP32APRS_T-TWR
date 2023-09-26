@@ -332,6 +332,11 @@ void MyComboBox::SelectValue(long val_min, long val_max, long step)
 
 void MyComboBox::AddItem(int index, char *str)
 {
+    strcpy(&item[index][0], (const char*)str);
+}
+
+void MyComboBox::AddItem(int index, const char *str)
+{
     strcpy(&item[index][0], str);
 }
 
@@ -742,83 +747,290 @@ public:
 
 MyRenderer my_renderer;
 
-void on_stationbeacon_selected(MenuItem *p_menu_item)
+// void on_stationbeacon_selected(MenuItem *p_menu_item)
+// {
+//     int i;
+//     MyCheckBox chkBox[3];
+//     int max_sel = 8;
+//     MySymbolBox symBox[2];
+//     MyComboBox cbBox[3];
+//     String str;
+//     int x;
+//     int keyPrev = -1;
+//     display.clearDisplay();
+//     display.fillRect(0, 0, 128, 16, WHITE);
+//     display.setTextColor(BLACK);
+//     str = String("STATION BEACON");
+//     x = str.length() * 6;
+//     display.setCursor(64 - (x / 2), 4);
+//     display.print(str);
+//     display.setTextColor(WHITE);
+
+//     chkBox[0].Checked = config.trk_compress;
+//     chkBox[0].x = 0;
+//     chkBox[0].y = 18;
+//     sprintf(chkBox[0].text, "COMP");
+
+//     chkBox[1].Checked = config.trk_altitude;
+//     chkBox[1].x = 40;
+//     chkBox[1].y = 18;
+//     sprintf(chkBox[1].text, "ALT");
+
+//     chkBox[2].Checked = config.trk_speed;
+//     chkBox[2].x = 75;
+//     chkBox[2].y = 18;
+//     sprintf(chkBox[2].text, "CSR/SPD");
+
+//     display.setCursor(0, 30);
+//     display.print("SPD:");
+//     cbBox[0].isValue = true;
+//     cbBox[0].x = 25;
+//     cbBox[0].y = 28;
+//     cbBox[0].length = 3;
+//     cbBox[0].char_max = 250;
+//     cbBox[0].SetIndex(config.trk_hspeed);
+
+//     display.setCursor(0, 42);
+//     display.print("INV:");
+//     cbBox[1].isValue = true;
+//     cbBox[1].x = 25;
+//     cbBox[1].y = 40;
+//     cbBox[1].length = 2;
+//     cbBox[1].char_max = 120;
+//     cbBox[1].SetIndex(config.trk_maxinterval);
+
+//     display.setCursor(0, 54);
+//     display.print("ANG:");
+//     cbBox[2].isValue = true;
+//     cbBox[2].x = 25;
+//     cbBox[2].y = 52;
+//     cbBox[2].length = 2;
+//     cbBox[2].char_max = 180;
+//     cbBox[2].SetIndex(config.trk_minangle);
+
+//     display.setCursor(67, 35);
+//     display.print("MOV");
+//     symBox[0].x = 65;
+//     symBox[0].y = 43;
+//     symBox[0].table = config.trk_symmove[0];
+//     symBox[0].symbol = config.trk_symmove[1];
+//     symBox[0].SetIndex(config.trk_symmove[1]);
+//     symBox[0].Show();
+
+//     display.setCursor(99, 35);
+//     display.print("STP");
+//     symBox[1].x = 98;
+//     symBox[1].y = 43;
+//     symBox[1].table = config.trk_symstop[0];
+//     symBox[1].symbol = config.trk_symstop[1];
+//     symBox[1].SetIndex(config.trk_symstop[1]);
+//     symBox[1].Show();
+
+//     display.display();
+//     encoder0Pos = 0;
+//     delay(100);
+//     do
+//     {
+//         if (encoder0Pos >= max_sel)
+//             encoder0Pos = 0;
+//         if (encoder0Pos < 0)
+//             encoder0Pos = max_sel - 1;
+//         if (keyPrev != encoder0Pos)
+//         {
+//             keyPrev = encoder0Pos;
+//             for (i = 0; i < 3; i++)
+//             {
+//                 chkBox[i].isSelect = false;
+//                 cbBox[i].isSelect = false;
+//             }
+//             symBox[0].isSelect = false;
+//             symBox[1].isSelect = false;
+
+//             if (encoder0Pos < 3)
+//                 chkBox[encoder0Pos].isSelect = true;
+//             if (encoder0Pos > 2 && encoder0Pos < 6)
+//                 cbBox[encoder0Pos - 3].isSelect = true;
+//             if (encoder0Pos > 5)
+//                 symBox[encoder0Pos - 6].isSelect = true;
+//             for (i = 0; i < 3; i++)
+//             {
+//                 chkBox[i].CheckBoxShow();
+//                 cbBox[i].Show();
+//             }
+//             symBox[0].Show();
+//             symBox[1].Show();
+//         }
+//         else
+//         {
+//             delay(50);
+//         }
+//         if (digitalRead(keyPush) == LOW)
+//         {
+//             currentTime = millis();
+//             while (digitalRead(keyPush) == LOW)
+//             {
+//                 if ((millis() - currentTime) > 2000)
+//                     break; // OK Timeout
+//             };
+//             if ((millis() - currentTime) < 1500)
+//             {
+//                 i = encoder0Pos;
+//                 if (i < 3)
+//                 {
+//                     chkBox[i].Toggle();
+//                     switch (i)
+//                     {
+//                     case 0:
+//                         config.trk_compress = chkBox[i].Checked;
+//                         break;
+//                     case 1:
+//                         config.trk_altitude = chkBox[i].Checked;
+//                         break;
+//                     case 2:
+//                         config.trk_speed = chkBox[i].Checked;
+//                         break;
+//                     }
+//                     encoder0Pos = keyPrev;
+//                     chkBox[i].CheckBoxShow();
+//                 }
+//                 else if (i > 2 && i < 6)
+//                 {
+//                     i -= 3;
+//                     switch (i)
+//                     {
+//                     case 0:
+//                         cbBox[i].SelectValue(10, 200, 1);
+//                         config.trk_hspeed = cbBox[i].GetValue();
+//                         break;
+//                     case 1:
+//                         cbBox[i].SelectValue(5, 60, 1);
+//                         config.trk_maxinterval = cbBox[i].GetValue();
+//                         break;
+//                     case 2:
+//                         cbBox[i].SelectValue(5, 90, 1);
+//                         config.trk_minangle = cbBox[i].GetValue();
+//                         break;
+//                     }
+//                     encoder0Pos = keyPrev;
+//                     cbBox[i].Show();
+//                 }
+//                 else if (encoder0Pos > 5)
+//                 {
+//                     i -= 6;
+//                     symBox[i].SelectItem();
+//                     switch (i)
+//                     {
+//                     case 0:
+//                         config.trk_symmove[0] = symBox[i].table;
+//                         config.trk_symmove[1] = symBox[i].symbol;
+//                         break;
+//                     case 1:
+//                         config.trk_symstop[0] = symBox[i].table;
+//                         config.trk_symstop[1] = symBox[i].symbol;
+//                         break;
+//                     }
+//                     encoder0Pos = keyPrev;
+//                     symBox[i].Show();
+//                 }
+//                 while (digitalRead(keyPush) == LOW)
+//                     ;
+//             }
+//             else
+//             {
+//                 break;
+//             }
+//         }
+//     } while (1);
+//     /*display.clearDisplay();
+//     display.setCursor(30, 4);
+//     display.print("SAVE & EXIT");
+//     display.display();*/
+//     msgBox("KEY EXIT");
+//     while (digitalRead(keyPush) == LOW)
+//         ;
+//     saveEEPROM();
+// }
+
+void on_smartbeacon_selected(MenuItem *p_menu_item)
 {
     int i;
-    MyCheckBox chkBox[3];
-    int max_sel = 8;
+    // MyCheckBox chkBox[3];
+    int max_sel = 7;
     MySymbolBox symBox[2];
-    MyComboBox cbBox[3];
+    MyComboBox cbBox[5];
     String str;
     int x;
     int keyPrev = -1;
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
-    str = String("STATION BEACON");
+    str = String("=SMART BEACON=");
     x = str.length() * 6;
     display.setCursor(64 - (x / 2), 4);
     display.print(str);
     display.setTextColor(WHITE);
 
-    chkBox[0].Checked = config.sta_compress;
-    chkBox[0].x = 0;
-    chkBox[0].y = 18;
-    sprintf(chkBox[0].text, "COMP");
-
-    chkBox[1].Checked = config.sta_altitude;
-    chkBox[1].x = 40;
-    chkBox[1].y = 18;
-    sprintf(chkBox[1].text, "ALT");
-
-    chkBox[2].Checked = config.sta_speed;
-    chkBox[2].x = 75;
-    chkBox[2].y = 18;
-    sprintf(chkBox[2].text, "CSR/SPD");
-
-    display.setCursor(0, 30);
-    display.print("SPD:");
+    display.setCursor(0, 20);
+    display.print("MINV");
     cbBox[0].isValue = true;
     cbBox[0].x = 25;
-    cbBox[0].y = 28;
+    cbBox[0].y = 18;
     cbBox[0].length = 3;
-    cbBox[0].char_max = 250;
-    cbBox[0].SetIndex(config.sta_hspeed);
+    cbBox[0].char_max = 999;
+    cbBox[0].SetIndex(config.trk_maxinterval);
 
-    display.setCursor(0, 42);
-    display.print("INV:");
+    display.setCursor(63, 20);
+    display.print("LINV");
     cbBox[1].isValue = true;
-    cbBox[1].x = 25;
-    cbBox[1].y = 40;
-    cbBox[1].length = 2;
-    cbBox[1].char_max = 120;
-    cbBox[1].SetIndex(config.sta_maxinterval);
+    cbBox[1].x = 87;
+    cbBox[1].y = 18;
+    cbBox[1].length = 4;
+    cbBox[1].char_max = 9999;
+    cbBox[1].SetIndex(config.trk_slowinterval);
 
-    display.setCursor(0, 54);
-    display.print("ANG:");
+    display.setCursor(0, 32);
+    display.print("HSPD");
     cbBox[2].isValue = true;
     cbBox[2].x = 25;
-    cbBox[2].y = 52;
-    cbBox[2].length = 2;
-    cbBox[2].char_max = 180;
-    cbBox[2].SetIndex(config.sta_minangle);
+    cbBox[2].y = 30;
+    cbBox[2].length = 3;
+    cbBox[2].char_max = 300;
+    cbBox[2].SetIndex(config.trk_hspeed);
+
+    display.setCursor(0, 44);
+    display.print("LSPD");
+    cbBox[3].isValue = true;
+    cbBox[3].x = 25;
+    cbBox[3].y = 42;
+    cbBox[3].length = 2;
+    cbBox[3].char_max = 99;
+    cbBox[3].SetIndex(config.trk_lspeed);
+
+    display.setCursor(0, 56);
+    display.print("ANG:");
+    cbBox[4].isValue = true;
+    cbBox[4].x = 25;
+    cbBox[4].y = 54;
+    cbBox[4].length = 2;
+    cbBox[4].char_max = 180;
+    cbBox[4].SetIndex(config.trk_minangle);
 
     display.setCursor(67, 35);
     display.print("MOV");
     symBox[0].x = 65;
     symBox[0].y = 43;
-    symBox[0].table = config.sta_symmove[0];
-    symBox[0].symbol = config.sta_symmove[1];
-    symBox[0].SetIndex(config.sta_symmove[1]);
+    symBox[0].table = config.trk_symmove[0];
+    symBox[0].symbol = config.trk_symmove[1];
+    symBox[0].SetIndex(config.trk_symmove[1]);
     symBox[0].Show();
 
     display.setCursor(99, 35);
     display.print("STP");
     symBox[1].x = 98;
     symBox[1].y = 43;
-    symBox[1].table = config.sta_symstop[0];
-    symBox[1].symbol = config.sta_symstop[1];
-    symBox[1].SetIndex(config.sta_symstop[1]);
+    symBox[1].table = config.trk_symstop[0];
+    symBox[1].symbol = config.trk_symstop[1];
+    symBox[1].SetIndex(config.trk_symstop[1]);
     symBox[1].Show();
 
     display.display();
@@ -833,23 +1045,19 @@ void on_stationbeacon_selected(MenuItem *p_menu_item)
         if (keyPrev != encoder0Pos)
         {
             keyPrev = encoder0Pos;
-            for (i = 0; i < 3; i++)
+            for (i = 0; i < 5; i++)
             {
-                chkBox[i].isSelect = false;
                 cbBox[i].isSelect = false;
             }
             symBox[0].isSelect = false;
             symBox[1].isSelect = false;
 
-            if (encoder0Pos < 3)
-                chkBox[encoder0Pos].isSelect = true;
-            if (encoder0Pos > 2 && encoder0Pos < 6)
-                cbBox[encoder0Pos - 3].isSelect = true;
-            if (encoder0Pos > 5)
-                symBox[encoder0Pos - 6].isSelect = true;
-            for (i = 0; i < 3; i++)
+            if (encoder0Pos < 5)
+                cbBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos > 4)
+                symBox[encoder0Pos - 5].isSelect = true;
+            for (i = 0; i < 5; i++)
             {
-                chkBox[i].CheckBoxShow();
                 cbBox[i].Show();
             }
             symBox[0].Show();
@@ -870,58 +1078,47 @@ void on_stationbeacon_selected(MenuItem *p_menu_item)
             if ((millis() - currentTime) < 1500)
             {
                 i = encoder0Pos;
-                if (i < 3)
+                if (i < 5)
                 {
-                    chkBox[i].Toggle();
                     switch (i)
                     {
                     case 0:
-                        config.sta_compress = chkBox[i].Checked;
+                        cbBox[i].SelectValue(5, 999, 1);
+                        config.trk_maxinterval = cbBox[i].GetValue();
                         break;
                     case 1:
-                        config.sta_altitude = chkBox[i].Checked;
+                        cbBox[i].SelectValue(60, 9999, 60);
+                        config.trk_slowinterval = cbBox[i].GetValue();
                         break;
                     case 2:
-                        config.sta_speed = chkBox[i].Checked;
+                        cbBox[i].SelectValue(5, 300, 1);
+                        config.trk_hspeed = cbBox[i].GetValue();
                         break;
-                    }
-                    encoder0Pos = keyPrev;
-                    chkBox[i].CheckBoxShow();
-                }
-                else if (i > 2 && i < 6)
-                {
-                    i -= 3;
-                    switch (i)
-                    {
-                    case 0:
-                        cbBox[i].SelectValue(10, 200, 1);
-                        config.sta_hspeed = cbBox[i].GetValue();
+                    case 3:
+                        cbBox[i].SelectValue(1, 99, 1);
+                        config.trk_lspeed = cbBox[i].GetValue();
                         break;
-                    case 1:
-                        cbBox[i].SelectValue(5, 60, 1);
-                        config.sta_maxinterval = cbBox[i].GetValue();
-                        break;
-                    case 2:
+                    case 4:
                         cbBox[i].SelectValue(5, 90, 1);
-                        config.sta_minangle = cbBox[i].GetValue();
+                        config.trk_minangle = cbBox[i].GetValue();
                         break;
                     }
                     encoder0Pos = keyPrev;
                     cbBox[i].Show();
                 }
-                else if (encoder0Pos > 5)
+                else if (encoder0Pos > 4)
                 {
-                    i -= 6;
+                    i -= 5;
                     symBox[i].SelectItem();
                     switch (i)
                     {
                     case 0:
-                        config.sta_symmove[0] = symBox[i].table;
-                        config.sta_symmove[1] = symBox[i].symbol;
+                        config.trk_symmove[0] = symBox[i].table;
+                        config.trk_symmove[1] = symBox[i].symbol;
                         break;
                     case 1:
-                        config.sta_symstop[0] = symBox[i].table;
-                        config.sta_symstop[1] = symBox[i].symbol;
+                        config.trk_symstop[0] = symBox[i].table;
+                        config.trk_symstop[1] = symBox[i].symbol;
                         break;
                     }
                     encoder0Pos = keyPrev;
@@ -936,17 +1133,13 @@ void on_stationbeacon_selected(MenuItem *p_menu_item)
             }
         }
     } while (1);
-    /*display.clearDisplay();
-    display.setCursor(30, 4);
-    display.print("SAVE & EXIT");
-    display.display();*/
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
 }
 
-void on_wifi_selected(MenuItem *p_menu_item)
+void on_wifi_AP_selected(MenuItem *p_menu_item)
 {
     MyTextBox txtBox[2];
     MyCheckBox chkBoxWiFi;
@@ -959,7 +1152,171 @@ void on_wifi_selected(MenuItem *p_menu_item)
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
-    str = String("WIFI CONFIGURATION");
+    str = String("WIFI AP CFG");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    display.setCursor(0, 18);
+    display.print("SSID:");
+    txtBox[0].x = 0;
+    txtBox[0].y = 27;
+    txtBox[0].length = 17;
+    txtBox[0].type = 0;
+    strcpy(txtBox[0].text, config.wifi_ap_ssid);
+
+    if (config.wifi_mode & WIFI_AP)
+    {
+        chkBoxWiFi.Checked = true;
+    }
+    else
+    {
+        chkBoxWiFi.Checked = false;
+    }
+
+    chkBoxWiFi.x = 82;
+    chkBoxWiFi.y = 18;
+    sprintf(chkBoxWiFi.text, "Enable");
+
+    display.setCursor(0, 44);
+    display.print("PASS:");
+    txtBox[1].x = 0;
+    txtBox[1].y = 53;
+    txtBox[1].length = 14;
+    txtBox[1].type = 0;
+    strcpy(txtBox[1].text, config.wifi_ap_pass);
+
+    display.setCursor(55, 42);
+    display.print("PWR:");
+    display.setCursor(110, 42);
+    display.print("dBm");
+    cbBox.isValue = true;
+    cbBox.x = 80;
+    cbBox.y = 40;
+    cbBox.length = 2;
+    cbBox.maxItem(20);
+    cbBox.char_max = 20;
+    cbBox.SetIndex(config.wifi_power);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < 2; i++)
+                txtBox[i].isSelect = false;
+            chkBoxWiFi.isSelect = false;
+            cbBox.isSelect = false;
+            if (encoder0Pos < 2)
+                txtBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos == 2)
+                chkBoxWiFi.isSelect = true;
+            if (encoder0Pos == 3)
+                cbBox.isSelect = true;
+            for (i = 0; i < 2; i++)
+                txtBox[i].TextBoxShow();
+            chkBoxWiFi.CheckBoxShow();
+            cbBox.Show();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                if ((millis() - currentTime) > 2000)
+                {
+                    // msgBox("KEY Back");
+                    break; // OK Timeout
+                }
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (encoder0Pos < 2)
+                {
+                    txtBox[i].TextBox();
+                    switch (i)
+                    {
+                    case 0:
+                        strcpy(config.wifi_ap_ssid, txtBox[0].text);
+                        break;
+                    case 1:
+                        strcpy(config.wifi_ap_pass, txtBox[1].text);
+                        break;
+                    }
+                    encoder0Pos = keyPrev + 1;
+                }
+                else if (encoder0Pos == 2)
+                {
+                    chkBoxWiFi.Toggle();
+                    if (chkBoxWiFi.Checked)
+                    {
+                        config.wifi_mode |= WIFI_STA;
+                    }
+                    else
+                    {
+                        config.wifi_mode &= ~WIFI_STA;
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBoxWiFi.CheckBoxShow();
+                }
+                else if (encoder0Pos == 3)
+                {
+                    cbBox.SelectValue(0, 20, 1);
+                    config.wifi_power = (unsigned char)cbBox.GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox.Show();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    // if (config.wifi_enable)
+    // {
+    //     WiFi.disconnect(false);
+    //     conStatNetwork = CON_WIFI;
+    // }
+    // else
+    // {
+    //     WiFi.disconnect(true);
+    //     conStatNetwork = CON_WIFI;
+    // }
+}
+
+void on_wifi_Client_selected(MenuItem *p_menu_item)
+{
+    MyTextBox txtBox[2];
+    MyCheckBox chkBoxWiFi;
+    MyComboBox cbBox;
+    String str;
+    // char ch[10];
+    int x, i;
+    int max_sel = 4;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("WIFI CLIENT CFG");
     x = str.length() * 6;
     display.setCursor(64 - (x / 2), 4);
     display.print(str);
@@ -973,10 +1330,18 @@ void on_wifi_selected(MenuItem *p_menu_item)
     txtBox[0].type = 0;
     strcpy(txtBox[0].text, config.wifi_ssid);
 
-    chkBoxWiFi.Checked = config.wifi;
-    chkBoxWiFi.x = 92;
+    if (config.wifi_mode & WIFI_STA)
+    {
+        chkBoxWiFi.Checked = true;
+    }
+    else
+    {
+        chkBoxWiFi.Checked = false;
+    }
+
+    chkBoxWiFi.x = 82;
     chkBoxWiFi.y = 18;
-    sprintf(chkBoxWiFi.text, "WiFi");
+    sprintf(chkBoxWiFi.text, "Enable");
 
     display.setCursor(0, 44);
     display.print("PASS:");
@@ -1060,7 +1425,14 @@ void on_wifi_selected(MenuItem *p_menu_item)
                 else if (encoder0Pos == 2)
                 {
                     chkBoxWiFi.Toggle();
-                    config.wifi = chkBoxWiFi.Checked;
+                    if (chkBoxWiFi.Checked)
+                    {
+                        config.wifi_mode |= WIFI_AP;
+                    }
+                    else
+                    {
+                        config.wifi_mode &= ~WIFI_AP;
+                    }
                     encoder0Pos = keyPrev;
                     chkBoxWiFi.CheckBoxShow();
                 }
@@ -1080,10 +1452,6 @@ void on_wifi_selected(MenuItem *p_menu_item)
             }
         }
     } while (1);
-    /*display.clearDisplay();
-    display.setCursor(30, 4);
-    display.print("SAVE & EXIT");
-    display.display();*/
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
@@ -1098,7 +1466,1100 @@ void on_wifi_selected(MenuItem *p_menu_item)
     //     conStatNetwork = CON_WIFI;
     // }
 }
-void on_stationconfig_selected(MenuItem *p_menu_item)
+
+void on_bluetooth_selected(MenuItem *p_menu_item)
+{
+    MyTextBox txtBox[2];
+    MyCheckBox chkBoxWiFi;
+    MyComboBox cbBox;
+    String str;
+    // char ch[10];
+    int x, i;
+    int max_sel = 4;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("=BLUETOOTH=");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    display.setCursor(0, 18);
+    display.print("NAME:");
+    txtBox[0].x = 0;
+    txtBox[0].y = 27;
+    txtBox[0].length = 17;
+    txtBox[0].type = 0;
+    strcpy(txtBox[0].text, config.bt_name);
+
+    chkBoxWiFi.Checked = config.bt_master;
+
+    chkBoxWiFi.x = 82;
+    chkBoxWiFi.y = 18;
+    sprintf(chkBoxWiFi.text, "Enable");
+
+    display.setCursor(0, 44);
+    display.print("PIN:");
+    txtBox[1].x = 0;
+    txtBox[1].y = 53;
+    txtBox[1].length = 4;
+    txtBox[1].type = 0;
+    strcpy(txtBox[1].text, config.bt_pin);
+
+    display.setCursor(55, 42);
+    display.print("PWR:");
+    display.setCursor(110, 42);
+    display.print("dBm");
+    cbBox.isValue = true;
+    cbBox.x = 80;
+    cbBox.y = 40;
+    cbBox.length = 2;
+    cbBox.maxItem(20);
+    cbBox.char_max = 20;
+    cbBox.SetIndex(config.bt_power);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < 2; i++)
+                txtBox[i].isSelect = false;
+            chkBoxWiFi.isSelect = false;
+            cbBox.isSelect = false;
+            if (encoder0Pos < 2)
+                txtBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos == 2)
+                chkBoxWiFi.isSelect = true;
+            if (encoder0Pos == 3)
+                cbBox.isSelect = true;
+            for (i = 0; i < 2; i++)
+                txtBox[i].TextBoxShow();
+            chkBoxWiFi.CheckBoxShow();
+            cbBox.Show();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                if ((millis() - currentTime) > 2000)
+                {
+                    // msgBox("KEY Back");
+                    break; // OK Timeout
+                }
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (encoder0Pos < 2)
+                {
+                    txtBox[i].TextBox();
+                    switch (i)
+                    {
+                    case 0:
+                        strcpy(config.bt_name, txtBox[0].text);
+                        break;
+                    case 1:
+                        strcpy(config.bt_pin, txtBox[1].text);
+                        break;
+                    }
+                    encoder0Pos = keyPrev + 1;
+                }
+                else if (encoder0Pos == 2)
+                {
+                    chkBoxWiFi.Toggle();
+                    config.bt_master = chkBoxWiFi.Checked;
+                    encoder0Pos = keyPrev;
+                    chkBoxWiFi.CheckBoxShow();
+                }
+                else if (encoder0Pos == 3)
+                {
+                    cbBox.SelectValue(0, 20, 1);
+                    config.bt_power = (unsigned char)cbBox.GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox.Show();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    // if (config.wifi_enable)
+    // {
+    //     WiFi.disconnect(false);
+    //     conStatNetwork = CON_WIFI;
+    // }
+    // else
+    // {
+    //     WiFi.disconnect(true);
+    //     conStatNetwork = CON_WIFI;
+    // }
+}
+
+// void on_stationconfig_selected(MenuItem *p_menu_item)
+// {
+//     int max_sel = 7;
+//     MyTextBox txtBox[3];
+//     MySymbolBox symBox;
+//     MyCheckBox chkGPS, chkSMBeacon;
+//     MyComboBox cbBox;
+//     String str;
+//     char ch[10];
+//     int x, i;
+//     int keyPrev = -1;
+//     display.clearDisplay();
+//     display.fillRect(0, 0, 128, 16, WHITE);
+//     display.setTextColor(BLACK);
+//     str = String("MY IGATE/STATION");
+//     x = str.length() * 6;
+//     display.setCursor(64 - (x / 2), 4);
+//     display.print(str);
+//     display.setTextColor(WHITE);
+
+//     // str = String(mycallsign);
+//     // str.toUpperCase();
+//     // str.toCharArray(&ch[0],10);
+//     display.setCursor(0, 18);
+//     display.print("MyCall:");
+//     txtBox[0].x = 41;
+//     txtBox[0].y = 16;
+//     txtBox[0].length = 7;
+//     txtBox[0].type = 0;
+//     str = String(config.aprs_mycall);
+//     str.toUpperCase();
+//     str.toCharArray(&ch[0], 10);
+//     strcpy(txtBox[0].text, ch);
+//     // TextBoxShow(&ch[0], 44, 16, 7);
+//     // strcpy(mycallsign, ch);
+
+//     // sprintf(ch, "%d", myssid);
+//     display.setCursor(95, 18);
+//     display.print("-");
+//     cbBox.isValue = true;
+//     cbBox.x = 101;
+//     cbBox.y = 16;
+//     cbBox.length = 2;
+//     cbBox.maxItem(15);
+//     cbBox.char_max = 15;
+//     cbBox.SetIndex(config.aprs_ssid);
+//     // txtBox[1].x = 106;
+//     // txtBox[1].y = 16;
+//     // txtBox[1].length = 2;
+//     // txtBox[1].type = 1;
+//     // sprintf(txtBox[1].text, "%d", config.myssid);
+//     // TextBoxShow(&ch[0], 106, 16, 2);
+//     // TextBoxArrayShow(&txtBox[0]);
+//     // myssid = atol(ch);
+
+//     display.setCursor(0, 30);
+//     display.print("LAT:");
+//     // TextBoxShow(&mylat[0], 26, 28, 8);
+//     txtBox[1].x = 26;
+//     txtBox[1].y = 28;
+//     txtBox[1].length = 8;
+//     txtBox[1].type = 1;
+//     sprintf(txtBox[1].text, "%.5f", config.gps_lat);
+
+//     display.setCursor(0, 42);
+//     display.print("LON:");
+//     // TextBoxShow(&mylon[0], 26, 40,9);
+//     txtBox[2].x = 26;
+//     txtBox[2].y = 40;
+//     txtBox[2].length = 9;
+//     txtBox[2].type = 1;
+//     sprintf(txtBox[2].text, "%.5f", config.gps_lon);
+
+//     chkGPS.Checked = config.mygps;
+//     chkGPS.isSelect = false;
+//     chkGPS.x = 0;
+//     chkGPS.y = 54;
+//     sprintf(chkGPS.text, "GPS");
+//     // chkGPS.CheckBoxShow();
+
+//     chkSMBeacon.Checked = config.trk_smartbeacon;
+//     chkSMBeacon.isSelect = false;
+//     chkSMBeacon.x = 35;
+//     chkSMBeacon.y = 54;
+//     sprintf(chkSMBeacon.text, "SmartBCN");
+
+//     display.fillRect(98, 31, 30, 11, WHITE);
+//     display.setTextColor(BLACK);
+//     display.setCursor(100, 33);
+//     display.print("ICON");
+//     display.setTextColor(WHITE);
+//     symBox.x = 98;
+//     symBox.y = 43;
+//     symBox.table = config.mysymbol[0];
+//     symBox.symbol = config.mysymbol[1];
+//     symBox.SetIndex(config.mysymbol[1]);
+
+//     // txtBox[4].x = 44;
+//     // txtBox[4].y = 52;
+//     // txtBox[4].length = 2;
+//     // strcpy(txtBox[4].text, config.mysymbol);
+
+//     display.display();
+//     encoder0Pos = 0;
+//     delay(100);
+//     do
+//     {
+//         if (encoder0Pos >= max_sel)
+//             encoder0Pos = 0;
+//         if (encoder0Pos < 0)
+//             encoder0Pos = max_sel - 1;
+//         if (keyPrev != encoder0Pos)
+//         {
+//             keyPrev = encoder0Pos;
+//             for (i = 0; i < max_sel; i++)
+//             {
+//                 if (i < 3)
+//                     txtBox[i].isSelect = false;
+//                 if (i == 3)
+//                     cbBox.isSelect = false;
+//                 if (i == 6)
+//                     symBox.isSelect = false;
+//                 if (i == 5)
+//                     chkSMBeacon.isSelect = false;
+//                 if (i == 4)
+//                     chkGPS.isSelect = false;
+//             }
+//             if (encoder0Pos < 3)
+//                 txtBox[encoder0Pos].isSelect = true;
+//             if (encoder0Pos == 6)
+//                 symBox.isSelect = true;
+//             if (encoder0Pos == 5)
+//                 chkSMBeacon.isSelect = true;
+//             if (encoder0Pos == 4)
+//                 chkGPS.isSelect = true;
+//             if (encoder0Pos == 3)
+//                 cbBox.isSelect = true;
+//             for (i = 0; i < 3; i++)
+//                 txtBox[i].TextBoxShow();
+//             symBox.Show();
+//             chkGPS.CheckBoxShow();
+//             chkSMBeacon.CheckBoxShow();
+//             cbBox.Show();
+//         }
+//         else
+//         {
+//             delay(50);
+//         }
+//         if (digitalRead(keyPush) == LOW)
+//         {
+//             currentTime = millis();
+//             while (digitalRead(keyPush) == LOW)
+//             {
+//                 if ((millis() - currentTime) > 2000)
+//                 {
+//                     break; // OK Timeout
+//                 }
+//             };
+//             if ((millis() - currentTime) < 1500)
+//             {
+//                 i = encoder0Pos;
+//                 if (i == 6)
+//                 {
+//                     symBox.SelectItem();
+//                     config.mysymbol[0] = symBox.table;
+//                     config.mysymbol[1] = symBox.symbol;
+//                     encoder0Pos = keyPrev;
+//                 }
+//                 else if (i == 4)
+//                 {
+//                     chkGPS.Toggle();
+//                     config.mygps = chkGPS.Checked;
+//                     if (config.mygps == false)
+//                     {
+//                         chkSMBeacon.Checked = false;
+//                         chkSMBeacon.CheckBoxShow();
+//                     }
+//                     encoder0Pos = keyPrev;
+//                     chkGPS.CheckBoxShow();
+//                 }
+//                 else if (i == 5)
+//                 {
+//                     chkSMBeacon.Toggle();
+//                     config.trk_smartbeacon = chkSMBeacon.Checked;
+//                     encoder0Pos = keyPrev;
+//                     chkSMBeacon.CheckBoxShow();
+//                 }
+//                 else if (i == 3)
+//                 {
+//                     cbBox.SelectValue(0, 15, 1);
+//                     config.aprs_ssid = cbBox.GetValue();
+//                     encoder0Pos = keyPrev;
+//                     cbBox.Show();
+//                 }
+//                 else
+//                 {
+//                     txtBox[i].TextBox();
+//                     switch (i)
+//                     {
+//                     case 0:
+//                         strncpy(config.aprs_mycall, txtBox[i].text, 7);
+//                         config.aprs_mycall[7] = 0;
+//                         break;
+//                     // case 1: config.myssid = atol(txtBox[i].text);
+//                     //	break;
+//                     case 1:
+//                         config.gps_lat = atof(txtBox[i].text); // strcpy(config.mylat, txtBox[i].text);
+//                         break;
+//                     case 2:
+//                         config.gps_lon = atof(txtBox[i].text); // strcpy(config.mylon, txtBox[i].text);
+//                         break;
+//                         // case 4: strcpy(config.mysymbol, txtBox[i].text);
+//                         //	break;
+//                     }
+//                     encoder0Pos = keyPrev + 1;
+//                 }
+//                 while (digitalRead(keyPush) == LOW)
+//                     ;
+//             }
+//             else
+//             {
+//                 break;
+//             }
+//         }
+//     } while (1);
+//     /*display.clearDisplay();
+//     display.setCursor(30, 4);
+//     display.print("SAVE & EXIT");
+//     display.display();*/
+//     msgBox("KEY EXIT");
+//     while (digitalRead(keyPush) == LOW)
+//         ;
+//     saveEEPROM();
+// }
+
+void on_aprsserver_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 5;
+    MyTextBox txtBox[3];
+    MyComboBox cbBox;
+    MyCheckBox chkBox;
+    String str;
+    // char ch[10];
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("=APRS SERVER=");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox.Checked = config.igate_en;
+    chkBox.isSelect = false;
+    chkBox.x = 0;
+    chkBox.y = 18;
+    sprintf(chkBox.text, "Enable");
+    // display.setCursor(0, 18);
+    // display.print("HOST:");
+    txtBox[0].x = 0;
+    txtBox[0].y = 28;
+    txtBox[0].length = 17;
+    txtBox[0].type = 0;
+    strcpy(txtBox[0].text, config.aprs_host);
+
+    display.setCursor(58, 18);
+    display.print("PORT");
+    txtBox[1].x = 85;
+    txtBox[1].y = 16;
+    txtBox[1].length = 5;
+    txtBox[1].type = 1;
+    sprintf(txtBox[1].text, "%d", config.aprs_port);
+    // strcpy(txtBox[1].text, config.wifi_password);
+
+    display.setCursor(0, 42);
+    display.print("Filter:");
+    txtBox[2].x = 0;
+    txtBox[2].y = 52;
+    txtBox[2].length = 17;
+    txtBox[2].type = 0;
+    strcpy(txtBox[2].text, config.aprs_filter);
+
+    cbBox.isValue = false;
+    cbBox.x = 53;
+    cbBox.y = 40;
+    cbBox.length = 8;
+    cbBox.AddItem(0, "CALLSIGN");   // g/HS*/E2*
+    cbBox.AddItem(1, "THAI MSG");   // g/HS*/E2*
+    cbBox.AddItem(2, "THAI ALL");   // b/HS*/E2*
+    cbBox.AddItem(3, "THAI IGATE"); // e/HS*/E2*
+    cbBox.AddItem(4, "THAI DIGI");  // d/HS*/E2*
+    cbBox.AddItem(5, "NO RECV");    // m/1
+    cbBox.maxItem(6);
+    // cbBox.char_max = 999;
+    cbBox.SetIndex(0);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < 3; i++)
+                txtBox[i].isSelect = false;
+            cbBox.isSelect = false;
+            chkBox.isSelect=false;
+            if (encoder0Pos < 3)
+                txtBox[encoder0Pos].isSelect = true;
+            else if (encoder0Pos == 3)
+                cbBox.isSelect = true;
+            else if (encoder0Pos == 4)
+                chkBox.isSelect = true;
+            for (i = 0; i < 3; i++)
+                txtBox[i].TextBoxShow();
+            cbBox.Show();
+            chkBox.CheckBoxShow();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                if ((millis() - currentTime) > 2000)
+                {
+                    break; // OK Timeout
+                }
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i < 3)
+                {
+                    txtBox[i].TextBox();
+                    switch (i)
+                    {
+                    case 0:
+                        strcpy(config.aprs_host, txtBox[0].text);
+                        break;
+                    case 1:
+                        config.aprs_port = atol(txtBox[1].text);
+                        break;
+                    case 2:
+                        strcpy(config.aprs_filter, txtBox[2].text);
+                        break;
+                    }
+                }
+                else if (encoder0Pos == 3)
+                {
+                    cbBox.SelectItem();
+                    switch (cbBox.GetIndex())
+                    {
+                    case 0:
+                        strcpy(txtBox[2].text, "b/HS5TQA-9");
+                        break;
+                    case 1:
+                        strcpy(txtBox[2].text, "g/HS*/E2*");
+                        break;
+                    case 2:
+                        strcpy(txtBox[2].text, "b/HS*/E2*");
+                        break;
+                    case 3:
+                        strcpy(txtBox[2].text, "e/HS*/E2*");
+                        break;
+                    case 4:
+                        strcpy(txtBox[2].text, "d/HS*/E2*");
+                        break;
+                    case 5:
+                        strcpy(txtBox[2].text, "m/1");
+                        break;
+                    }
+                    strcpy(config.aprs_filter, txtBox[2].text);
+                }else if (encoder0Pos == 4){
+                    chkBox.Toggle();
+                    config.igate_en = chkBox.Checked;
+                    encoder0Pos = keyPrev;
+                    chkBox.CheckBoxShow();
+                }
+                encoder0Pos = keyPrev + 1;
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    /*display.clearDisplay();
+    display.setCursor(30, 4);
+    display.print("SAVE & EXIT");
+    display.display();*/
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+    // client.flush();
+    // client.clearWriteError();
+    // delay(500);
+    // client.stop();
+    // conStatNetwork = CON_SERVER;
+}
+
+void on_igate_position_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 6;
+    MyTextBox txtBox[3];
+    MySymbolBox symBox;
+    MyCheckBox chkGPS;
+    MyComboBox cbBox;
+    String str;
+    char ch[10];
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("=IGATE POSITION=");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    display.setCursor(0, 18);
+    display.print("MyCall:");
+    txtBox[0].x = 41;
+    txtBox[0].y = 16;
+    txtBox[0].length = 7;
+    txtBox[0].type = 0;
+    str = String(config.aprs_mycall);
+    str.toUpperCase();
+    str.toCharArray(&ch[0], 10);
+    strcpy(txtBox[0].text, ch);
+
+    display.setCursor(95, 18);
+    display.print("-");
+    cbBox.isValue = true;
+    cbBox.x = 101;
+    cbBox.y = 16;
+    cbBox.length = 2;
+    cbBox.maxItem(15);
+    cbBox.char_max = 15;
+    cbBox.SetIndex(config.aprs_ssid);
+
+    display.setCursor(0, 30);
+    display.print("LAT:");
+    txtBox[1].x = 26;
+    txtBox[1].y = 28;
+    txtBox[1].length = 8;
+    txtBox[1].type = 1;
+    sprintf(txtBox[1].text, "%.5f", config.igate_lat);
+
+    display.setCursor(0, 42);
+    display.print("LON:");
+    txtBox[2].x = 26;
+    txtBox[2].y = 40;
+    txtBox[2].length = 9;
+    txtBox[2].type = 1;
+    sprintf(txtBox[2].text, "%.5f", config.igate_lon);
+
+    chkGPS.Checked = config.igate_gps;
+    chkGPS.isSelect = false;
+    chkGPS.x = 0;
+    chkGPS.y = 54;
+    sprintf(chkGPS.text, "GPS");
+    // chkGPS.CheckBoxShow();
+
+    display.fillRect(98, 31, 30, 11, WHITE);
+    display.setTextColor(BLACK);
+    display.setCursor(100, 33);
+    display.print("ICON");
+    display.setTextColor(WHITE);
+    symBox.x = 98;
+    symBox.y = 43;
+    symBox.table = config.igate_symbol[0];
+    symBox.symbol = config.igate_symbol[1];
+    symBox.SetIndex(config.igate_symbol[1]);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < max_sel; i++)
+            {
+                if (i < 3)
+                    txtBox[i].isSelect = false;
+                if (i == 3)
+                    cbBox.isSelect = false;
+                if (i == 5)
+                    symBox.isSelect = false;
+                if (i == 4)
+                    chkGPS.isSelect = false;
+            }
+            if (encoder0Pos < 3)
+                txtBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos == 5)
+                symBox.isSelect = true;
+            if (encoder0Pos == 4)
+                chkGPS.isSelect = true;
+            if (encoder0Pos == 3)
+                cbBox.isSelect = true;
+            for (i = 0; i < 3; i++)
+                txtBox[i].TextBoxShow();
+            symBox.Show();
+            chkGPS.CheckBoxShow();
+            cbBox.Show();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                if ((millis() - currentTime) > 2000)
+                {
+                    break; // OK Timeout
+                }
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i == 5)
+                {
+                    symBox.SelectItem();
+                    config.igate_symbol[0] = symBox.table;
+                    config.igate_symbol[1] = symBox.symbol;
+                    encoder0Pos = keyPrev;
+                }
+                else if (i == 4)
+                {
+                    chkGPS.Toggle();
+                    config.igate_gps = chkGPS.Checked;
+                    encoder0Pos = keyPrev;
+                    chkGPS.CheckBoxShow();
+                }
+                else if (i == 3)
+                {
+                    cbBox.SelectValue(0, 15, 1);
+                    config.aprs_ssid = cbBox.GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox.Show();
+                }
+                else
+                {
+                    txtBox[i].TextBox();
+                    switch (i)
+                    {
+                    case 0:
+                        strncpy(config.aprs_mycall, txtBox[i].text, 7);
+                        config.aprs_mycall[7] = 0;
+                        break;
+                    // case 1: config.myssid = atol(txtBox[i].text);
+                    //	break;
+                    case 1:
+                        config.igate_lat = atof(txtBox[i].text); // strcpy(config.mylat, txtBox[i].text);
+                        break;
+                    case 2:
+                        config.igate_lon = atof(txtBox[i].text); // strcpy(config.mylon, txtBox[i].text);
+                        break;
+                        // case 4: strcpy(config.mysymbol, txtBox[i].text);
+                        //	break;
+                    }
+                    encoder0Pos = keyPrev + 1;
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+void on_igate_function_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 6;
+    MyTextBox txtBox;
+    MyCheckBox chkBox[3];
+    MyComboBox cbBox[2];
+    String str;
+    // char ch[10];
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("=IGATE FUNCTION=");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox[0].Checked = config.rf2inet;
+    chkBox[0].x = 0;
+    chkBox[0].y = 18;
+    sprintf(chkBox[0].text, "RF2INET");
+
+    chkBox[1].Checked = config.inet2rf;
+    chkBox[1].x = 60;
+    chkBox[1].y = 18;
+    sprintf(chkBox[1].text, "INET2RF");
+
+    chkBox[2].Checked = config.igate_tlm;
+    chkBox[2].x = 0;
+    chkBox[2].y = 29;
+    sprintf(chkBox[2].text, "TLM");
+
+    display.setCursor(35, 30);
+    display.print("INTERVAL");
+    cbBox[0].isValue = true;
+    cbBox[0].x = 85;
+    cbBox[0].y = 28;
+    cbBox[0].length = 4;
+    cbBox[0].char_max = 1800;
+    cbBox[0].SetIndex(config.igate_tlm_interval);
+
+    display.setCursor(0, 42);
+    display.print("PTH:");
+    cbBox[1].isValue = false;
+    cbBox[1].x = 20;
+    cbBox[1].y = 40;
+    cbBox[1].length = 13;
+    int sel = 0;
+    cbBox[1].maxItem(4);
+    for (i = 0; i < 4; i++)
+    {
+        cbBox[1].AddItem(i, config.path[i]);
+        if (!strcmp(&config.igate_path[0], &config.path[i][0]))
+            sel = i;
+    }
+    cbBox[1].SetIndex(sel);
+
+    display.setCursor(0, 54);
+    display.print("TXT:");
+    txtBox.x = 20;
+    txtBox.y = 52;
+    txtBox.length = 14;
+    txtBox.type = ALL;
+    strcpy(txtBox.text, config.igate_comment);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+
+            for (i = 0; i < 3; i++)
+                chkBox[i].isSelect = false;
+            cbBox[0].isSelect = false;
+            cbBox[1].isSelect = false;
+            txtBox.isSelect = false;
+
+            if (encoder0Pos < 3)
+                chkBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos == 3)
+                cbBox[0].isSelect = true;
+            if (encoder0Pos == 4)
+                cbBox[1].isSelect = true;
+            if (encoder0Pos == 5)
+                txtBox.isSelect = true;
+            for (i = 0; i < 3; i++)
+                chkBox[i].CheckBoxShow();
+            cbBox[0].Show();
+            cbBox[1].Show();
+            txtBox.TextBoxShow();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                ;
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i == 5)
+                {
+                    txtBox.TextBox();
+                    strcpy(config.igate_comment, txtBox.text);
+                    encoder0Pos = keyPrev;
+                }
+                else if (i == 4)
+                {
+                    cbBox[1].SelectItem();
+                    int n = cbBox[1].GetIndex();
+                    if (n < 4)
+                    {
+                        strcpy(config.igate_path, config.path[n]);
+                    }
+                    encoder0Pos = keyPrev;
+                    cbBox[1].Show();
+                }
+                else if (i == 3)
+                {
+                    cbBox[0].SelectValue(0, 1800, 60);
+                    config.igate_tlm_interval = cbBox[0].GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox[0].Show();
+                }
+                else
+                {
+                    chkBox[i].Toggle();
+                    switch (i)
+                    {
+                    case 0:
+                        config.rf2inet = chkBox[i].Checked;
+                        break;
+                    case 1:
+                        config.inet2rf = chkBox[i].Checked;
+                        break;
+                    case 2:
+                        config.igate_tlm = chkBox[i].Checked;
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBox[i].CheckBoxShow();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+void on_igate_beacon_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 6;
+    MyTextBox txtBox[2];
+    MyCheckBox chkBox[3];
+    MyComboBox cbBox;
+    String str;
+    // char ch[10];
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("=IGATE BEACON=");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox[0].Checked = config.igate_bcn;
+    chkBox[0].x = 0;
+    chkBox[0].y = 18;
+    sprintf(chkBox[0].text, "BCN");
+
+    chkBox[1].Checked = config.igate_loc2rf;
+    chkBox[1].x = 0;
+    chkBox[1].y = 30;
+    sprintf(chkBox[1].text, "POS2RF");
+
+    chkBox[2].Checked = config.igate_loc2inet;
+    chkBox[2].x = 60;
+    chkBox[2].y = 30;
+    sprintf(chkBox[2].text, "POS2INET");
+
+    display.setCursor(35, 20);
+    display.print("INTERVAL");
+    cbBox.isValue = true;
+    cbBox.x = 85;
+    cbBox.y = 18;
+    cbBox.length = 4;
+    cbBox.char_max = 1800;
+    cbBox.SetIndex(config.igate_interval);
+
+    display.setCursor(0, 42);
+    display.print("OBJECT");
+    txtBox[0].x = 40;
+    txtBox[0].y = 40;
+    txtBox[0].length = 11;
+    txtBox[0].type = 0;
+    strcpy(txtBox[0].text, config.igate_object);
+
+    display.setCursor(0, 54);
+    display.print("PHG");
+    txtBox[1].x = 20;
+    txtBox[1].y = 52;
+    txtBox[1].length = 6;
+    txtBox[1].type = 0;
+    strcpy(txtBox[1].text, config.igate_phg);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < 3; i++)
+                chkBox[i].isSelect = false;
+            cbBox.isSelect = false;
+            txtBox[0].isSelect = false;
+            txtBox[1].isSelect = false;
+
+            if (encoder0Pos == 0)
+                chkBox[0].isSelect = true;
+            if (encoder0Pos == 2)
+                chkBox[1].isSelect = true;
+            if (encoder0Pos == 3)
+                chkBox[2].isSelect = true;
+            if (encoder0Pos == 1)
+                cbBox.isSelect = true;
+            if (encoder0Pos == 4)
+                txtBox[0].isSelect = true;
+            if (encoder0Pos == 5)
+                txtBox[1].isSelect = true;
+            for (i = 0; i < 3; i++)
+                chkBox[i].CheckBoxShow();
+            cbBox.Show();
+            txtBox[0].TextBoxShow();
+            txtBox[1].TextBoxShow();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                ;
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i == 5)
+                {
+                    txtBox[1].TextBox();
+                    strcpy(config.igate_phg, txtBox[1].text);
+                    encoder0Pos = keyPrev;
+                }
+                else if (i == 4)
+                {
+                    txtBox[0].TextBox();
+                    strcpy(config.igate_object, txtBox[0].text);
+                    encoder0Pos = keyPrev;
+                }
+                else if (i == 1)
+                {
+                    cbBox.SelectValue(0, 1800, 60);
+                    config.igate_interval = cbBox.GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox.Show();
+                }
+                else
+                {
+
+                    switch (i)
+                    {
+                    case 0:
+                        chkBox[0].Toggle();
+                        config.igate_bcn = chkBox[0].Checked;
+                        chkBox[0].CheckBoxShow();
+                        break;
+                    case 2:
+                        chkBox[1].Toggle();
+                        config.igate_loc2rf = chkBox[1].Checked;
+                        chkBox[1].CheckBoxShow();
+                        break;
+                    case 3:
+                        chkBox[2].Toggle();
+                        config.igate_loc2inet = chkBox[2].Checked;
+                        chkBox[2].CheckBoxShow();
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+void on_tracker_position_selected(MenuItem *p_menu_item)
 {
     int max_sel = 7;
     MyTextBox txtBox[3];
@@ -1112,29 +2573,23 @@ void on_stationconfig_selected(MenuItem *p_menu_item)
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
-    str = String("MY IGATE/STATION");
+    str = String("TRACKER POSITION");
     x = str.length() * 6;
     display.setCursor(64 - (x / 2), 4);
     display.print(str);
     display.setTextColor(WHITE);
 
-    // str = String(mycallsign);
-    // str.toUpperCase();
-    // str.toCharArray(&ch[0],10);
     display.setCursor(0, 18);
     display.print("MyCall:");
     txtBox[0].x = 41;
     txtBox[0].y = 16;
     txtBox[0].length = 7;
     txtBox[0].type = 0;
-    str = String(config.aprs_mycall);
+    str = String(config.trk_mycall);
     str.toUpperCase();
     str.toCharArray(&ch[0], 10);
     strcpy(txtBox[0].text, ch);
-    // TextBoxShow(&ch[0], 44, 16, 7);
-    // strcpy(mycallsign, ch);
 
-    // sprintf(ch, "%d", myssid);
     display.setCursor(95, 18);
     display.print("-");
     cbBox.isValue = true;
@@ -1143,24 +2598,15 @@ void on_stationconfig_selected(MenuItem *p_menu_item)
     cbBox.length = 2;
     cbBox.maxItem(15);
     cbBox.char_max = 15;
-    cbBox.SetIndex(config.aprs_ssid);
-    // txtBox[1].x = 106;
-    // txtBox[1].y = 16;
-    // txtBox[1].length = 2;
-    // txtBox[1].type = 1;
-    // sprintf(txtBox[1].text, "%d", config.myssid);
-    // TextBoxShow(&ch[0], 106, 16, 2);
-    // TextBoxArrayShow(&txtBox[0]);
-    // myssid = atol(ch);
+    cbBox.SetIndex(config.trk_ssid);
 
     display.setCursor(0, 30);
     display.print("LAT:");
-    // TextBoxShow(&mylat[0], 26, 28, 8);
     txtBox[1].x = 26;
     txtBox[1].y = 28;
     txtBox[1].length = 8;
     txtBox[1].type = 1;
-    sprintf(txtBox[1].text, "%.5f", config.gps_lat);
+    sprintf(txtBox[1].text, "%.5f", config.trk_lat);
 
     display.setCursor(0, 42);
     display.print("LON:");
@@ -1169,16 +2615,15 @@ void on_stationconfig_selected(MenuItem *p_menu_item)
     txtBox[2].y = 40;
     txtBox[2].length = 9;
     txtBox[2].type = 1;
-    sprintf(txtBox[2].text, "%.5f", config.gps_lon);
+    sprintf(txtBox[2].text, "%.5f", config.trk_lon);
 
-    chkGPS.Checked = config.mygps;
+    chkGPS.Checked = config.trk_gps;
     chkGPS.isSelect = false;
     chkGPS.x = 0;
     chkGPS.y = 54;
     sprintf(chkGPS.text, "GPS");
-    // chkGPS.CheckBoxShow();
 
-    chkSMBeacon.Checked = config.sta_smartbeacon;
+    chkSMBeacon.Checked = config.trk_smartbeacon;
     chkSMBeacon.isSelect = false;
     chkSMBeacon.x = 35;
     chkSMBeacon.y = 54;
@@ -1191,14 +2636,9 @@ void on_stationconfig_selected(MenuItem *p_menu_item)
     display.setTextColor(WHITE);
     symBox.x = 98;
     symBox.y = 43;
-    symBox.table = config.mysymbol[0];
-    symBox.symbol = config.mysymbol[1];
-    symBox.SetIndex(config.mysymbol[1]);
-
-    // txtBox[4].x = 44;
-    // txtBox[4].y = 52;
-    // txtBox[4].length = 2;
-    // strcpy(txtBox[4].text, config.mysymbol);
+    symBox.table = config.trk_symbol[0];
+    symBox.symbol = config.trk_symbol[1];
+    symBox.SetIndex(config.trk_symbol[1]);
 
     display.display();
     encoder0Pos = 0;
@@ -1262,15 +2702,15 @@ void on_stationconfig_selected(MenuItem *p_menu_item)
                 if (i == 6)
                 {
                     symBox.SelectItem();
-                    config.mysymbol[0] = symBox.table;
-                    config.mysymbol[1] = symBox.symbol;
+                    config.trk_symbol[0] = symBox.table;
+                    config.trk_symbol[1] = symBox.symbol;
                     encoder0Pos = keyPrev;
                 }
                 else if (i == 4)
                 {
                     chkGPS.Toggle();
-                    config.mygps = chkGPS.Checked;
-                    if (config.mygps == false)
+                    config.trk_gps = chkGPS.Checked;
+                    if (config.trk_gps == false)
                     {
                         chkSMBeacon.Checked = false;
                         chkSMBeacon.CheckBoxShow();
@@ -1281,14 +2721,14 @@ void on_stationconfig_selected(MenuItem *p_menu_item)
                 else if (i == 5)
                 {
                     chkSMBeacon.Toggle();
-                    config.sta_smartbeacon = chkSMBeacon.Checked;
+                    config.trk_smartbeacon = chkSMBeacon.Checked;
                     encoder0Pos = keyPrev;
                     chkSMBeacon.CheckBoxShow();
                 }
                 else if (i == 3)
                 {
                     cbBox.SelectValue(0, 15, 1);
-                    config.aprs_ssid = cbBox.GetValue();
+                    config.trk_ssid = cbBox.GetValue();
                     encoder0Pos = keyPrev;
                     cbBox.Show();
                 }
@@ -1298,19 +2738,15 @@ void on_stationconfig_selected(MenuItem *p_menu_item)
                     switch (i)
                     {
                     case 0:
-                        strncpy(config.aprs_mycall, txtBox[i].text, 7);
-                        config.aprs_mycall[7] = 0;
+                        strncpy(config.trk_mycall, txtBox[i].text, 7);
+                        config.trk_mycall[7] = 0;
                         break;
-                    // case 1: config.myssid = atol(txtBox[i].text);
-                    //	break;
                     case 1:
-                        config.gps_lat = atof(txtBox[i].text); // strcpy(config.mylat, txtBox[i].text);
+                        config.trk_lat = atof(txtBox[i].text); // strcpy(config.mylat, txtBox[i].text);
                         break;
                     case 2:
-                        config.gps_lon = atof(txtBox[i].text); // strcpy(config.mylon, txtBox[i].text);
+                        config.trk_lon = atof(txtBox[i].text); // strcpy(config.mylon, txtBox[i].text);
                         break;
-                        // case 4: strcpy(config.mysymbol, txtBox[i].text);
-                        //	break;
                     }
                     encoder0Pos = keyPrev + 1;
                 }
@@ -1323,20 +2759,18 @@ void on_stationconfig_selected(MenuItem *p_menu_item)
             }
         }
     } while (1);
-    /*display.clearDisplay();
-    display.setCursor(30, 4);
-    display.print("SAVE & EXIT");
-    display.display();*/
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
 }
-void on_aprsserver_selected(MenuItem *p_menu_item)
+
+void on_tracker_function_selected(MenuItem *p_menu_item)
 {
-    int max_sel = 4;
-    MyTextBox txtBox[3];
-    MyComboBox cbBox;
+    int max_sel = 8;
+    // MyTextBox txtBox[2];
+    MyCheckBox chkBox[6];
+    MyComboBox cbBox[2];
     String str;
     // char ch[10];
     int x, i;
@@ -1344,50 +2778,228 @@ void on_aprsserver_selected(MenuItem *p_menu_item)
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
-    str = String("APRS SERVER CONFIG");
+    str = String("=TRACKER FUNCION=");
     x = str.length() * 6;
     display.setCursor(64 - (x / 2), 4);
     display.print(str);
     display.setTextColor(WHITE);
 
-    display.setCursor(0, 18);
-    display.print("SERVER:");
-    txtBox[0].x = 0;
-    txtBox[0].y = 28;
-    txtBox[0].length = 17;
-    txtBox[0].type = 0;
-    strcpy(txtBox[0].text, config.aprs_host);
+    chkBox[0].Checked = config.trk_en;
+    chkBox[0].x = 0;
+    chkBox[0].y = 18;
+    sprintf(chkBox[0].text, "BCN");
 
-    display.setCursor(55, 18);
-    display.print("PORT:");
-    txtBox[1].x = 85;
-    txtBox[1].y = 16;
-    txtBox[1].length = 5;
-    txtBox[1].type = 1;
-    sprintf(txtBox[1].text, "%d", config.aprs_port);
-    // strcpy(txtBox[1].text, config.wifi_password);
+    chkBox[1].Checked = config.trk_loc2rf;
+    chkBox[1].x = 0;
+    chkBox[1].y = 30;
+    sprintf(chkBox[1].text, "POS2RF");
+
+    chkBox[2].Checked = config.trk_loc2inet;
+    chkBox[2].x = 60;
+    chkBox[2].y = 30;
+    sprintf(chkBox[2].text, "POS2INET");
+
+    chkBox[3].Checked = config.trk_compress;
+    chkBox[3].x = 0;
+    chkBox[3].y = 40;
+    sprintf(chkBox[3].text, "COMP");
+
+    chkBox[4].Checked = config.trk_altitude;
+    chkBox[4].x = 40;
+    chkBox[4].y = 40;
+    sprintf(chkBox[4].text, "ALT");
+
+    chkBox[5].Checked = config.trk_speed;
+    chkBox[5].x = 75;
+    chkBox[5].y = 40;
+    sprintf(chkBox[5].text, "CSR/SPD");
+
+    display.setCursor(35, 20);
+    display.print("INTERVAL");
+    cbBox[0].isValue = true;
+    cbBox[0].x = 85;
+    cbBox[0].y = 18;
+    cbBox[0].length = 4;
+    cbBox[0].char_max = 1800;
+    cbBox[0].SetIndex(config.trk_interval);
+
+    display.setCursor(0, 52);
+    display.print("PTH:");
+    cbBox[1].isValue = false;
+    cbBox[1].x = 20;
+    cbBox[1].y = 50;
+    cbBox[1].length = 13;
+    cbBox[1].maxItem(4);
+    int sel = 0;
+    for (i = 0; i < 4; i++)
+    {
+        cbBox[1].AddItem(i, config.path[i]);
+        if (!strcmp(&config.trk_path[0], &config.path[i][0]))
+            sel = i;
+    }
+    cbBox[1].SetIndex(sel);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < 6; i++)
+                chkBox[i].isSelect = false;
+            cbBox[0].isSelect = false;
+            cbBox[1].isSelect = false;
+
+            if (encoder0Pos < 6)
+                chkBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos == 6)
+                cbBox[0].isSelect = true;
+            if (encoder0Pos == 7)
+                cbBox[1].isSelect = true;
+
+            for (i = 0; i < 6; i++)
+                chkBox[i].CheckBoxShow();
+            cbBox[0].Show();
+            cbBox[1].Show();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                ;
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i == 7) // Select PATH
+                {
+                    cbBox[1].SelectItem();
+                    int n = cbBox[1].GetIndex();
+                    if (n < 4)
+                    {
+                        strcpy(config.trk_path, config.path[n]);
+                    }
+                    encoder0Pos = keyPrev;
+                    cbBox[1].Show();
+                }
+                else if (i == 6) 
+                {
+                    cbBox[0].SelectValue(0, 1800, 60);
+                    config.trk_interval = cbBox[0].GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox[0].Show();
+                }
+                else
+                {
+                    chkBox[i].Toggle();
+                    switch (i)
+                    {
+                    case 0:
+                        config.trk_en = chkBox[i].Checked;
+                        break;
+                    case 1:
+                        config.trk_loc2rf = chkBox[i].Checked;
+                        break;
+                    case 2:
+                        config.trk_loc2inet = chkBox[i].Checked;
+                        break;
+                    case 3:
+                        config.trk_compress = chkBox[i].Checked;
+                        break;
+                    case 4:
+                        config.trk_altitude = chkBox[i].Checked;
+                        break;
+                    case 5:
+                        config.trk_speed = chkBox[i].Checked;
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBox[i].CheckBoxShow();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+void on_tracker_option_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 6;
+    MyTextBox txtBox[3];
+    MyCheckBox chkBox[3];
+    String str;
+    // char ch[10];
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("=TRACKER OPTION=");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox[0].Checked = config.trk_bat;
+    chkBox[0].x = 0;
+    chkBox[0].y = 18;
+    sprintf(chkBox[0].text, "BAT");
+
+    chkBox[1].Checked = config.trk_sat;
+    chkBox[1].x = 40;
+    chkBox[1].y = 18;
+    sprintf(chkBox[1].text, "SAT");
+
+    chkBox[2].Checked = config.trk_dx;
+    chkBox[2].x = 75;
+    chkBox[2].y = 18;
+    sprintf(chkBox[2].text, "DX");
+
+    display.setCursor(0, 30);
+    display.print("OBJ:");
+    txtBox[0].x = 30;
+    txtBox[0].y = 28;
+    txtBox[0].length = 11;
+    txtBox[0].type = 0;
+    strcpy(txtBox[0].text, config.trk_object);
 
     display.setCursor(0, 42);
-    display.print("Filter:");
-    txtBox[2].x = 0;
-    txtBox[2].y = 52;
-    txtBox[2].length = 17;
-    txtBox[2].type = 0;
-    strcpy(txtBox[2].text, config.aprs_filter);
+    display.print("ITEM");
+    txtBox[1].x = 30;
+    txtBox[1].y = 40;
+    txtBox[1].length = 11;
+    txtBox[1].type = 0;
+    strcpy(txtBox[1].text, config.trk_item);
 
-    cbBox.isValue = false;
-    cbBox.x = 53;
-    cbBox.y = 40;
-    cbBox.length = 8;
-    cbBox.AddItem(0, "CALLSIGN");   // g/HS*/E2*
-    cbBox.AddItem(1, "THAI MSG");   // g/HS*/E2*
-    cbBox.AddItem(2, "THAI ALL");   // b/HS*/E2*
-    cbBox.AddItem(3, "THAI IGATE"); // e/HS*/E2*
-    cbBox.AddItem(4, "THAI DIGI");  // d/HS*/E2*
-    cbBox.AddItem(5, "NO RECV");    // m/1
-    cbBox.maxItem(6);
-    // cbBox.char_max = 999;
-    cbBox.SetIndex(0);
+    display.setCursor(0, 54);
+    display.print("TXT");
+    txtBox[2].x = 20;
+    txtBox[2].y = 52;
+    txtBox[2].length = 14;
+    txtBox[2].type = 0;
+    strcpy(txtBox[2].text, config.trk_comment);
 
     display.display();
     encoder0Pos = 0;
@@ -1402,14 +3014,197 @@ void on_aprsserver_selected(MenuItem *p_menu_item)
         {
             keyPrev = encoder0Pos;
             for (i = 0; i < 3; i++)
+                chkBox[i].isSelect = false;
+            for (i = 0; i < 3; i++)
                 txtBox[i].isSelect = false;
-            cbBox.isSelect = false;
+
+            if (encoder0Pos < 3)
+                chkBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos > 2)
+                txtBox[encoder0Pos - 3].isSelect = true;
+            for (i = 0; i < 3; i++)
+                chkBox[i].CheckBoxShow();
+            for (i = 0; i < 3; i++)
+                txtBox[i].TextBoxShow();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                ;
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i > 2)
+                {
+                    switch (i)
+                    {
+                    case 3:
+                        txtBox[0].TextBox();
+                        strcpy(config.trk_object, txtBox[0].text);
+                        break;
+                    case 4:
+                        txtBox[1].TextBox();
+                        strcpy(config.trk_item, txtBox[1].text);
+                        break;
+                    case 5:
+                        txtBox[2].TextBox();
+                        strcpy(config.trk_comment, txtBox[2].text);
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                }
+                else
+                {
+                    chkBox[i].Toggle();
+                    switch (i)
+                    {
+                    case 0:
+                        config.trk_bat = chkBox[i].Checked;
+                        break;
+                    case 1:
+                        config.trk_sat = chkBox[i].Checked;
+                        break;
+                    case 2:
+                        config.trk_dx = chkBox[i].Checked;
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBox[i].CheckBoxShow();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+void on_digi_position_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 6;
+    MyTextBox txtBox[3];
+    MySymbolBox symBox;
+    MyCheckBox chkGPS;
+    MyComboBox cbBox;
+    String str;
+    char ch[10];
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("DIGI POSITION");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    display.setCursor(0, 18);
+    display.print("MyCall:");
+    txtBox[0].x = 41;
+    txtBox[0].y = 16;
+    txtBox[0].length = 7;
+    txtBox[0].type = 0;
+    str = String(config.digi_mycall);
+    str.toUpperCase();
+    str.toCharArray(&ch[0], 10);
+    strcpy(txtBox[0].text, ch);
+
+    display.setCursor(95, 18);
+    display.print("-");
+    cbBox.isValue = true;
+    cbBox.x = 101;
+    cbBox.y = 16;
+    cbBox.length = 2;
+    cbBox.maxItem(15);
+    cbBox.char_max = 15;
+    cbBox.SetIndex(config.digi_ssid);
+
+    display.setCursor(0, 30);
+    display.print("LAT:");
+    txtBox[1].x = 26;
+    txtBox[1].y = 28;
+    txtBox[1].length = 8;
+    txtBox[1].type = 1;
+    sprintf(txtBox[1].text, "%.5f", config.digi_lat);
+
+    display.setCursor(0, 42);
+    display.print("LON:");
+    txtBox[2].x = 26;
+    txtBox[2].y = 40;
+    txtBox[2].length = 9;
+    txtBox[2].type = 1;
+    sprintf(txtBox[2].text, "%.5f", config.digi_lon);
+
+    chkGPS.Checked = config.digi_gps;
+    chkGPS.isSelect = false;
+    chkGPS.x = 0;
+    chkGPS.y = 54;
+    sprintf(chkGPS.text, "GPS");
+    // chkGPS.CheckBoxShow();
+
+    display.fillRect(98, 31, 30, 11, WHITE);
+    display.setTextColor(BLACK);
+    display.setCursor(100, 33);
+    display.print("ICON");
+    display.setTextColor(WHITE);
+    symBox.x = 98;
+    symBox.y = 43;
+    symBox.table = config.digi_symbol[0];
+    symBox.symbol = config.digi_symbol[1];
+    symBox.SetIndex(config.digi_symbol[1]);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < max_sel; i++)
+            {
+                if (i < 3)
+                    txtBox[i].isSelect = false;
+                if (i == 3)
+                    cbBox.isSelect = false;
+                if (i == 5)
+                    symBox.isSelect = false;
+                if (i == 4)
+                    chkGPS.isSelect = false;
+            }
             if (encoder0Pos < 3)
                 txtBox[encoder0Pos].isSelect = true;
-            else
+            if (encoder0Pos == 5)
+                symBox.isSelect = true;
+            if (encoder0Pos == 4)
+                chkGPS.isSelect = true;
+            if (encoder0Pos == 3)
                 cbBox.isSelect = true;
             for (i = 0; i < 3; i++)
                 txtBox[i].TextBoxShow();
+            symBox.Show();
+            chkGPS.CheckBoxShow();
             cbBox.Show();
         }
         else
@@ -1429,49 +3224,49 @@ void on_aprsserver_selected(MenuItem *p_menu_item)
             if ((millis() - currentTime) < 1500)
             {
                 i = encoder0Pos;
-                if (i < 3)
+                if (i == 5)
+                {
+                    symBox.SelectItem();
+                    config.digi_symbol[0] = symBox.table;
+                    config.digi_symbol[1] = symBox.symbol;
+                    encoder0Pos = keyPrev;
+                }
+                else if (i == 4)
+                {
+                    chkGPS.Toggle();
+                    config.digi_gps = chkGPS.Checked;
+                    encoder0Pos = keyPrev;
+                    chkGPS.CheckBoxShow();
+                }
+                else if (i == 3)
+                {
+                    cbBox.SelectValue(0, 15, 1);
+                    config.digi_ssid = cbBox.GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox.Show();
+                }
+                else
                 {
                     txtBox[i].TextBox();
                     switch (i)
                     {
                     case 0:
-                        strcpy(config.aprs_host, txtBox[0].text);
+                        strncpy(config.digi_mycall, txtBox[i].text, 7);
+                        config.digi_mycall[7] = 0;
                         break;
+                    // case 1: config.myssid = atol(txtBox[i].text);
+                    //	break;
                     case 1:
-                        config.aprs_port = atol(txtBox[1].text);
+                        config.digi_lat = atof(txtBox[i].text); // strcpy(config.mylat, txtBox[i].text);
                         break;
                     case 2:
-                        strcpy(config.aprs_filter, txtBox[2].text);
+                        config.digi_lon = atof(txtBox[i].text); // strcpy(config.mylon, txtBox[i].text);
                         break;
+                        // case 4: strcpy(config.mysymbol, txtBox[i].text);
+                        //	break;
                     }
+                    encoder0Pos = keyPrev + 1;
                 }
-                else
-                {
-                    cbBox.SelectItem();
-                    switch (cbBox.GetIndex())
-                    {
-                    case 0:
-                        strcpy(txtBox[2].text, "b/HS5TQA-9");
-                        break;
-                    case 1:
-                        strcpy(txtBox[2].text, "g/HS*/E2*");
-                        break;
-                    case 2:
-                        strcpy(txtBox[2].text, "b/HS*/E2*");
-                        break;
-                    case 3:
-                        strcpy(txtBox[2].text, "e/HS*/E2*");
-                        break;
-                    case 4:
-                        strcpy(txtBox[2].text, "d/HS*/E2*");
-                        break;
-                    case 5:
-                        strcpy(txtBox[2].text, "m/1");
-                        break;
-                    }
-                    strcpy(config.aprs_filter, txtBox[2].text);
-                }
-                encoder0Pos = keyPrev + 1;
                 while (digitalRead(keyPush) == LOW)
                     ;
             }
@@ -1481,25 +3276,18 @@ void on_aprsserver_selected(MenuItem *p_menu_item)
             }
         }
     } while (1);
-    /*display.clearDisplay();
-    display.setCursor(30, 4);
-    display.print("SAVE & EXIT");
-    display.display();*/
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
-    // client.flush();
-    // client.clearWriteError();
-    // delay(500);
-    // client.stop();
-    // conStatNetwork = CON_SERVER;
 }
-void on_tncfunction_selected(MenuItem *p_menu_item)
+
+void on_digi_function_selected(MenuItem *p_menu_item)
 {
-    int max_sel = 9;
+    int max_sel = 8;
     // MyTextBox txtBox[2];
-    MyCheckBox chkBox[9];
+    MyCheckBox chkBox[4];
+    MyComboBox cbBox[2];
     String str;
     // char ch[10];
     int x, i;
@@ -1507,61 +3295,56 @@ void on_tncfunction_selected(MenuItem *p_menu_item)
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
-    str = String("nTNC SETTING");
+    str = String("=DIGI FUNCION=");
     x = str.length() * 6;
     display.setCursor(64 - (x / 2), 4);
     display.print(str);
     display.setTextColor(WHITE);
 
-    chkBox[0].Checked = config.tnc;
+    chkBox[0].Checked = config.digi_en;
     chkBox[0].x = 0;
     chkBox[0].y = 18;
-    sprintf(chkBox[0].text, "TNC");
+    sprintf(chkBox[0].text, "Enable");
 
-    chkBox[1].Checked = config.tnc_digi;
-    chkBox[1].x = 35;
-    chkBox[1].y = 18;
-    sprintf(chkBox[1].text, "DIGI");
+    chkBox[1].Checked = config.digi_bcn;
+    chkBox[1].x = 0;
+    chkBox[1].y = 29;
+    sprintf(chkBox[1].text, "BCN");
 
-    chkBox[2].Checked = config.tnc_tracker;
-    chkBox[2].x = 75;
-    chkBox[2].y = 18;
-    sprintf(chkBox[2].text, "TRACKER");
+    chkBox[2].Checked = config.digi_loc2rf;
+    chkBox[2].x = 0;
+    chkBox[2].y = 41;
+    sprintf(chkBox[2].text, "POS2RF");
 
-    chkBox[3].Checked = config.tnc_beacon;
-    chkBox[3].x = 0;
-    chkBox[3].y = 28;
-    sprintf(chkBox[3].text, "BCN");
+    chkBox[3].Checked = config.digi_loc2inet;
+    chkBox[3].x = 60;
+    chkBox[3].y = 41;
+    sprintf(chkBox[3].text, "POS2INET");
 
-    chkBox[4].Checked = config.tnc_telemetry;
-    chkBox[4].x = 35;
-    chkBox[4].y = 28;
-    sprintf(chkBox[4].text, "RF_TLM");
+    display.setCursor(35, 30);
+    display.print("INTERVAL");
+    cbBox[0].isValue = true;
+    cbBox[0].x = 83;
+    cbBox[0].y = 29;
+    cbBox[0].length = 4;
+    cbBox[0].char_max = 1800;
+    cbBox[0].SetIndex(config.digi_interval);
 
-    chkBox[5].Checked = config.tnc_compress;
-    chkBox[5].x = 0;
-    chkBox[5].y = 38;
-    sprintf(chkBox[5].text, "COMP");
-
-    chkBox[6].Checked = config.tnc_telemetry;
-    chkBox[6].x = 60;
-    chkBox[6].y = 38;
-    sprintf(chkBox[6].text, "INET_TLM");
-
-    if (config.tnc_telemetry)
+    display.setCursor(0, 53);
+    display.print("PTH");
+    cbBox[1].isValue = false;
+    cbBox[1].x = 20;
+    cbBox[1].y = 51;
+    cbBox[1].length = 13;
+    cbBox[2].maxItem(4);
+    int sel = 0;
+    for (i = 0; i < 4; i++)
     {
-        chkBox[4].Checked = false;
+        cbBox[1].AddItem(i, config.path[i]);
+        if (strcmp(config.digi_path, config.path[i]) == 0)
+            sel = i;
     }
-
-    chkBox[7].Checked = config.rf2inet;
-    chkBox[7].x = 0;
-    chkBox[7].y = 48;
-    sprintf(chkBox[7].text, "RF->INET");
-
-    chkBox[8].Checked = config.inet2rf;
-    chkBox[8].x = 60;
-    chkBox[8].y = 48;
-    sprintf(chkBox[8].text, "INET->RF");
+    cbBox[1].SetIndex(sel);
 
     display.display();
     encoder0Pos = 0;
@@ -1575,11 +3358,22 @@ void on_tncfunction_selected(MenuItem *p_menu_item)
         if (keyPrev != encoder0Pos)
         {
             keyPrev = encoder0Pos;
-            for (i = 0; i < max_sel; i++)
+            for (i = 0; i < 4; i++)
                 chkBox[i].isSelect = false;
-            chkBox[encoder0Pos].isSelect = true;
-            for (i = 0; i < max_sel; i++)
+            cbBox[0].isSelect = false;
+            cbBox[1].isSelect = false;
+
+            if (encoder0Pos < 4)
+                chkBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos == 4)
+                cbBox[0].isSelect = true;
+            if (encoder0Pos == 5)
+                cbBox[1].isSelect = true;
+
+            for (i = 0; i < 4; i++)
                 chkBox[i].CheckBoxShow();
+            cbBox[0].Show();
+            cbBox[1].Show();
         }
         else
         {
@@ -1597,41 +3391,45 @@ void on_tncfunction_selected(MenuItem *p_menu_item)
             if ((millis() - currentTime) < 1500)
             {
                 i = encoder0Pos;
-                chkBox[i].Toggle();
-                switch (i)
+                if (i == 5) // Select PATH
                 {
-                case 0:
-                    config.tnc = chkBox[i].Checked;
-                    break;
-                case 1:
-                    config.tnc_digi = chkBox[i].Checked;
-                    break;
-                case 2:
-                    config.tnc_tracker = chkBox[i].Checked;
-                    break;
-                case 3:
-                    config.tnc_beacon = chkBox[i].Checked;
-                    break;
-                case 4:
-                    config.tnc_telemetry = chkBox[i].Checked;
-                    chkBox[6].Checked = false;
-                    break;
-                case 5:
-                    config.tnc_compress = chkBox[i].Checked;
-                    break;
-                case 6:
-                    config.tnc_telemetry = chkBox[i].Checked;
-                    chkBox[4].Checked = false;
-                    break;
-                case 7:
-                    config.rf2inet = chkBox[i].Checked;
-                    break;
-                case 8:
-                    config.inet2rf = chkBox[i].Checked;
-                    break;
+                    cbBox[1].SelectItem();
+                    int n = cbBox[1].GetIndex();
+                    if (n < 4)
+                    {
+                        strcpy(config.digi_path, config.path[n]);
+                    }
+                    encoder0Pos = keyPrev;
+                    cbBox[1].Show();
                 }
-                encoder0Pos = keyPrev;
-                chkBox[i].CheckBoxShow();
+                else if (i == 4) 
+                {
+                    cbBox[0].SelectValue(0, 1800, 60);
+                    config.digi_interval = cbBox[0].GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox[0].Show();
+                }
+                else
+                {
+                    chkBox[i].Toggle();
+                    switch (i)
+                    {
+                    case 0:
+                        config.digi_en = chkBox[i].Checked;
+                        break;
+                    case 1:
+                        config.digi_bcn = chkBox[i].Checked;
+                        break;
+                    case 2:
+                        config.digi_loc2rf = chkBox[i].Checked;
+                        break;
+                    case 3:
+                        config.digi_loc2inet = chkBox[i].Checked;
+                        break;                    
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBox[i].CheckBoxShow();
+                }
                 while (digitalRead(keyPush) == LOW)
                     ;
             }
@@ -1641,15 +3439,309 @@ void on_tncfunction_selected(MenuItem *p_menu_item)
             }
         }
     } while (1);
-    /*display.clearDisplay();
-    display.setCursor(30, 4);
-    display.print("SAVE & EXIT");
-    display.display();*/
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
 }
+
+void on_digi_option_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 4;
+    MyTextBox txtBox;
+    MyCheckBox chkBox;
+    MyComboBox cbBox[2];
+    String str;
+    // char ch[10];
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("=DIGI OPTION=");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox.Checked = config.digi_tlm;
+    chkBox.x = 0;
+    chkBox.y = 18;
+    sprintf(chkBox.text, "TLM");
+
+    display.setCursor(35, 20);
+    display.print("INTERVAL");
+    cbBox[0].isValue = true;
+    cbBox[0].x = 85;
+    cbBox[0].y = 18;
+    cbBox[0].length = 4;
+    cbBox[0].char_max = 1800;
+    cbBox[0].SetIndex(config.digi_interval);
+
+    display.setCursor(0, 32);
+    display.print("RPT_DELAY");
+    cbBox[1].isValue = true;
+    cbBox[1].x = 57;
+    cbBox[1].y = 30;
+    cbBox[1].length = 5;
+    cbBox[1].char_max = 9999;
+    cbBox[1].SetIndex(config.digi_delay);
+    display.setCursor(110, 32);
+    display.print("mS");
+
+    display.setCursor(0, 44);
+    display.print("TXT:");
+    txtBox.x = 20;
+    txtBox.y = 42;
+    txtBox.length = 14;
+    txtBox.type = ALL;
+    strcpy(txtBox.text, config.digi_comment);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+
+            for (i = 0; i < 2; i++)
+                cbBox[i].isSelect = false;
+            chkBox.isSelect = false;
+            txtBox.isSelect = false;
+
+            if (encoder0Pos == 0)
+                chkBox.isSelect = true;
+            if (encoder0Pos > 0 && encoder0Pos < 3)
+                cbBox[encoder0Pos - 1].isSelect = true;
+            if (encoder0Pos == 3)
+                txtBox.isSelect = true;
+            for (i = 0; i < 2; i++)
+                cbBox[i].Show();
+            chkBox.CheckBoxShow();
+            txtBox.TextBoxShow();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                ;
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i == 3)
+                {
+                    txtBox.TextBox();
+                    strcpy(config.digi_comment, txtBox.text);
+                    encoder0Pos = keyPrev;
+                }
+                else if (i == 0)
+                {
+                    chkBox.Toggle();
+                    config.digi_tlm = chkBox.Checked;
+                    encoder0Pos = keyPrev;
+                    chkBox.CheckBoxShow();
+                }
+                else
+                {
+                    i -= 1;
+                    switch (i)
+                    {
+                    case 0:
+                        cbBox[i].SelectValue(0, 1800, 60);
+                        config.digi_tlm_interval = cbBox[i].GetValue();
+                        break;
+                    case 1:
+                        cbBox[i].SelectValue(0, 9999, 10);
+                        config.digi_delay = cbBox[i].GetValue();
+                        break;                    
+                    }
+                    encoder0Pos = keyPrev;
+                    cbBox[i].Show();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+// void on_tncfunction_selected(MenuItem *p_menu_item)
+// {
+//     int max_sel = 9;
+//     // MyTextBox txtBox[2];
+//     MyCheckBox chkBox[9];
+//     String str;
+//     // char ch[10];
+//     int x, i;
+//     int keyPrev = -1;
+//     display.clearDisplay();
+//     display.fillRect(0, 0, 128, 16, WHITE);
+//     display.setTextColor(BLACK);
+//     str = String("nTNC SETTING");
+//     x = str.length() * 6;
+//     display.setCursor(64 - (x / 2), 4);
+//     display.print(str);
+//     display.setTextColor(WHITE);
+
+//     chkBox[0].Checked = config.tnc;
+//     chkBox[0].x = 0;
+//     chkBox[0].y = 18;
+//     sprintf(chkBox[0].text, "TNC");
+
+//     chkBox[1].Checked = config.tnc_digi;
+//     chkBox[1].x = 35;
+//     chkBox[1].y = 18;
+//     sprintf(chkBox[1].text, "DIGI");
+
+//     chkBox[2].Checked = config.tnc_tracker;
+//     chkBox[2].x = 75;
+//     chkBox[2].y = 18;
+//     sprintf(chkBox[2].text, "TRACKER");
+
+//     chkBox[3].Checked = config.tnc_beacon;
+//     chkBox[3].x = 0;
+//     chkBox[3].y = 28;
+//     sprintf(chkBox[3].text, "BCN");
+
+//     chkBox[4].Checked = config.tnc_telemetry;
+//     chkBox[4].x = 35;
+//     chkBox[4].y = 28;
+//     sprintf(chkBox[4].text, "RF_TLM");
+
+//     chkBox[5].Checked = config.tnc_compress;
+//     chkBox[5].x = 0;
+//     chkBox[5].y = 38;
+//     sprintf(chkBox[5].text, "COMP");
+
+//     chkBox[6].Checked = config.tnc_telemetry;
+//     chkBox[6].x = 60;
+//     chkBox[6].y = 38;
+//     sprintf(chkBox[6].text, "INET_TLM");
+
+//     if (config.tnc_telemetry)
+//     {
+//         chkBox[4].Checked = false;
+//     }
+
+//     chkBox[7].Checked = config.rf2inet;
+//     chkBox[7].x = 0;
+//     chkBox[7].y = 48;
+//     sprintf(chkBox[7].text, "RF->INET");
+
+//     chkBox[8].Checked = config.inet2rf;
+//     chkBox[8].x = 60;
+//     chkBox[8].y = 48;
+//     sprintf(chkBox[8].text, "INET->RF");
+
+//     display.display();
+//     encoder0Pos = 0;
+//     delay(100);
+//     do
+//     {
+//         if (encoder0Pos >= max_sel)
+//             encoder0Pos = 0;
+//         if (encoder0Pos < 0)
+//             encoder0Pos = max_sel - 1;
+//         if (keyPrev != encoder0Pos)
+//         {
+//             keyPrev = encoder0Pos;
+//             for (i = 0; i < max_sel; i++)
+//                 chkBox[i].isSelect = false;
+//             chkBox[encoder0Pos].isSelect = true;
+//             for (i = 0; i < max_sel; i++)
+//                 chkBox[i].CheckBoxShow();
+//         }
+//         else
+//         {
+//             delay(50);
+//         }
+//         if (digitalRead(keyPush) == LOW)
+//         {
+//             currentTime = millis();
+//             while (digitalRead(keyPush) == LOW)
+//             {
+//                 ;
+//                 if ((millis() - currentTime) > 2000)
+//                     break; // OK Timeout
+//             };
+//             if ((millis() - currentTime) < 1500)
+//             {
+//                 i = encoder0Pos;
+//                 chkBox[i].Toggle();
+//                 switch (i)
+//                 {
+//                 case 0:
+//                     config.tnc = chkBox[i].Checked;
+//                     break;
+//                 case 1:
+//                     config.tnc_digi = chkBox[i].Checked;
+//                     break;
+//                 case 2:
+//                     config.tnc_tracker = chkBox[i].Checked;
+//                     break;
+//                 case 3:
+//                     config.tnc_beacon = chkBox[i].Checked;
+//                     break;
+//                 case 4:
+//                     config.tnc_telemetry = chkBox[i].Checked;
+//                     chkBox[6].Checked = false;
+//                     break;
+//                 case 5:
+//                     config.tnc_compress = chkBox[i].Checked;
+//                     break;
+//                 case 6:
+//                     config.tnc_telemetry = chkBox[i].Checked;
+//                     chkBox[4].Checked = false;
+//                     break;
+//                 case 7:
+//                     config.rf2inet = chkBox[i].Checked;
+//                     break;
+//                 case 8:
+//                     config.inet2rf = chkBox[i].Checked;
+//                     break;
+//                 }
+//                 encoder0Pos = keyPrev;
+//                 chkBox[i].CheckBoxShow();
+//                 while (digitalRead(keyPush) == LOW)
+//                     ;
+//             }
+//             else
+//             {
+//                 break;
+//             }
+//         }
+//     } while (1);
+//     /*display.clearDisplay();
+//     display.setCursor(30, 4);
+//     display.print("SAVE & EXIT");
+//     display.display();*/
+//     msgBox("KEY EXIT");
+//     while (digitalRead(keyPush) == LOW)
+//         ;
+//     saveEEPROM();
+// }
 
 // void on_tnctracker_selected(MenuItem *p_menu_item)
 // {
@@ -1874,10 +3966,10 @@ void on_filter_selected(MenuItem *p_menu_item)
     display.print(str);
     display.setTextColor(WHITE);
 
-    chkBox[0].Checked = config.dispDelay;
+    chkBox[0].Checked = config.dispRF;
     chkBox[0].x = 0;
     chkBox[0].y = 16;
-    sprintf(chkBox[0].text, "TNC");
+    sprintf(chkBox[0].text, "RF");
 
     chkBox[1].Checked = config.dispINET;
     chkBox[1].x = 35;
@@ -2001,7 +4093,7 @@ void on_filter_selected(MenuItem *p_menu_item)
                     switch (i)
                     {
                     case 0:
-                        config.dispTNC = chkBox[i].Checked;
+                        config.dispRF = chkBox[i].Checked;
                         break;
                     case 1:
                         config.dispINET = chkBox[i].Checked;
@@ -2073,241 +4165,248 @@ void on_filter_selected(MenuItem *p_menu_item)
     saveEEPROM();
 }
 
-void on_tncconfig_selected(MenuItem *p_menu_item)
-{
-    int max_sel = 6;
-    MyTextBox txtBox[5];
-    // MySymbolBox symBox;
-    // MyCheckBox chkGPS;
-    MyComboBox cbBox;
-    MyCheckBox chkEn;
-    String str;
-    char ch[10];
-    int x, i;
-    int keyPrev = -1;
-    display.clearDisplay();
-    display.fillRect(0, 0, 128, 16, WHITE);
-    display.setTextColor(BLACK);
-    str = String("nTNC CONFIGURATION");
-    x = str.length() * 6;
-    display.setCursor(64 - (x / 2), 4);
-    display.print(str);
-    display.setTextColor(WHITE);
+// void on_tncconfig_selected(MenuItem *p_menu_item)
+// {
+//     int max_sel = 6;
+//     MyTextBox txtBox[5];
+//     // MySymbolBox symBox;
+//     // MyCheckBox chkGPS;
+//     MyComboBox cbBox;
+//     MyCheckBox chkEn;
+//     String str;
+//     char ch[10];
+//     int x, i;
+//     int keyPrev = -1;
+//     display.clearDisplay();
+//     display.fillRect(0, 0, 128, 16, WHITE);
+//     display.setTextColor(BLACK);
+//     str = String("nTNC CONFIGURATION");
+//     x = str.length() * 6;
+//     display.setCursor(64 - (x / 2), 4);
+//     display.print(str);
+//     display.setTextColor(WHITE);
 
-    display.setCursor(0, 18);
-    display.print("MyCall:");
-    txtBox[0].x = 41;
-    txtBox[0].y = 16;
-    txtBox[0].length = 7;
-    txtBox[0].type = 0;
-    str = String(config.aprs_mycall);
-    str.toUpperCase();
-    str.toCharArray(&ch[0], 10);
-    strcpy(txtBox[0].text, ch);
+//     display.setCursor(0, 18);
+//     display.print("MyCall:");
+//     txtBox[0].x = 41;
+//     txtBox[0].y = 16;
+//     txtBox[0].length = 7;
+//     txtBox[0].type = 0;
+//     str = String(config.aprs_mycall);
+//     str.toUpperCase();
+//     str.toCharArray(&ch[0], 10);
+//     strcpy(txtBox[0].text, ch);
 
-    // sprintf(ch, "%d", myssid);
-    display.setCursor(95, 18);
-    display.print("-");
-    cbBox.isValue = true;
-    cbBox.x = 101;
-    cbBox.y = 16;
-    cbBox.length = 2;
-    cbBox.maxItem(15);
-    cbBox.char_max = 15;
-    cbBox.SetIndex(config.aprs_ssid);
-    // txtBox[1].x = 106;
-    // txtBox[1].y = 16;
-    // txtBox[1].length = 2;
-    // txtBox[1].type = 1;
-    // sprintf(txtBox[1].text, "%d", config.aprs_ssid);
+//     // sprintf(ch, "%d", myssid);
+//     display.setCursor(95, 18);
+//     display.print("-");
+//     cbBox.isValue = true;
+//     cbBox.x = 101;
+//     cbBox.y = 16;
+//     cbBox.length = 2;
+//     cbBox.maxItem(15);
+//     cbBox.char_max = 15;
+//     cbBox.SetIndex(config.aprs_ssid);
+//     // txtBox[1].x = 106;
+//     // txtBox[1].y = 16;
+//     // txtBox[1].length = 2;
+//     // txtBox[1].type = 1;
+//     // sprintf(txtBox[1].text, "%d", config.aprs_ssid);
 
-    chkEn.Checked = config.tnc;
-    chkEn.x = 98;
-    chkEn.y = 29;
-    sprintf(chkEn.text, "TNC");
+//     chkEn.Checked = config.tnc;
+//     chkEn.x = 98;
+//     chkEn.y = 29;
+//     sprintf(chkEn.text, "TNC");
 
-    display.setCursor(0, 30);
-    display.print("ITEM:");
-    txtBox[2].x = 30;
-    txtBox[2].y = 28;
-    txtBox[2].length = 9;
-    strcpy(txtBox[2].text, config.tnc_item);
+//     display.setCursor(0, 30);
+//     display.print("ITEM:");
+//     txtBox[2].x = 30;
+//     txtBox[2].y = 28;
+//     txtBox[2].length = 9;
+//     strcpy(txtBox[2].text, config.tnc_item);
 
-    display.setCursor(0, 42);
-    display.print("PTH:");
-    txtBox[3].x = 25;
-    txtBox[3].y = 40;
-    txtBox[3].length = 14;
-    strcpy(txtBox[3].text, config.tnc_path);
+//     display.setCursor(0, 42);
+//     display.print("PTH:");
+//     txtBox[3].x = 25;
+//     txtBox[3].y = 40;
+//     txtBox[3].length = 14;
+//     strcpy(txtBox[3].text, config.tnc_path);
 
-    display.setCursor(0, 54);
-    display.print("CMN:");
-    txtBox[4].x = 25;
-    txtBox[4].y = 52;
-    txtBox[4].length = 14;
-    strcpy(txtBox[4].text, config.tnc_comment);
+//     display.setCursor(0, 54);
+//     display.print("CMN:");
+//     txtBox[4].x = 25;
+//     txtBox[4].y = 52;
+//     txtBox[4].length = 14;
+//     strcpy(txtBox[4].text, config.tnc_comment);
 
-    display.display();
-    encoder0Pos = 0;
-    delay(100);
-    do
-    {
-        if (encoder0Pos >= max_sel)
-            encoder0Pos = 0;
-        if (encoder0Pos < 0)
-            encoder0Pos = max_sel - 1;
-        if (keyPrev != encoder0Pos)
-        {
-            keyPrev = encoder0Pos;
-            for (i = 0; i < max_sel; i++)
-            {
-                if (i == 1)
-                    cbBox.isSelect = false;
-                else if (i == 5)
-                    chkEn.isSelect = false;
-                else
-                    txtBox[i].isSelect = false;
-            }
-            if (encoder0Pos == 1)
-                cbBox.isSelect = true;
-            else if (encoder0Pos == 5)
-                chkEn.isSelect = true;
-            else
-                txtBox[encoder0Pos].isSelect = true;
-            for (i = 0; i < max_sel; i++)
-            {
-                if (i == 1)
-                    cbBox.Show();
-                else if (i == 5)
-                    chkEn.CheckBoxShow();
-                else
-                    txtBox[i].TextBoxShow();
-            }
-        }
-        else
-        {
-            delay(50);
-        }
-        if (digitalRead(keyPush) == LOW)
-        {
-            currentTime = millis();
-            while (digitalRead(keyPush) == LOW)
-            {
-                if ((millis() - currentTime) > 2000)
-                    break; // OK Timeout
-            };
-            if ((millis() - currentTime) < 1500)
-            {
-                i = encoder0Pos;
-                if (i == 1)
-                {
-                    cbBox.SelectValue(0, 15, 1);
-                    config.aprs_ssid = cbBox.GetValue();
-                    encoder0Pos = keyPrev;
-                }
-                else if (i == 5)
-                {
-                    chkEn.Toggle();
-                    config.tnc = chkEn.Checked;
-                    encoder0Pos = keyPrev;
-                    chkEn.CheckBoxShow();
-                }
-                else
-                {
-                    txtBox[i].TextBox();
-                    switch (i)
-                    {
-                    case 0:
-                        strncpy(config.aprs_mycall, txtBox[i].text, 7);
-                        config.aprs_mycall[7] = 0;
-                        break;
-                    // case 1: config.aprs_ssid = atol(txtBox[i].text);
-                    //	break;
-                    case 2:
-                        strcpy(config.tnc_item, txtBox[i].text);
-                        break;
-                    case 3:
-                        strcpy(config.tnc_path, txtBox[i].text);
-                        break;
-                    case 4:
-                        strcpy(config.tnc_comment, txtBox[i].text);
-                        break;
-                    }
-                    encoder0Pos = keyPrev + 1;
-                }
-                while (digitalRead(keyPush) == LOW)
-                    ;
-            }
-            else
-            {
-                break;
-            }
-        }
-    } while (1);
-    // display.clearDisplay();
-    // display.setCursor(30, 4);
-    // display.print("SAVE & EXIT");
-    // display.display();
-    msgBox("KEY EXIT");
-    while (digitalRead(keyPush) == LOW)
-        ;
-}
+//     display.display();
+//     encoder0Pos = 0;
+//     delay(100);
+//     do
+//     {
+//         if (encoder0Pos >= max_sel)
+//             encoder0Pos = 0;
+//         if (encoder0Pos < 0)
+//             encoder0Pos = max_sel - 1;
+//         if (keyPrev != encoder0Pos)
+//         {
+//             keyPrev = encoder0Pos;
+//             for (i = 0; i < max_sel; i++)
+//             {
+//                 if (i == 1)
+//                     cbBox.isSelect = false;
+//                 else if (i == 5)
+//                     chkEn.isSelect = false;
+//                 else
+//                     txtBox[i].isSelect = false;
+//             }
+//             if (encoder0Pos == 1)
+//                 cbBox.isSelect = true;
+//             else if (encoder0Pos == 5)
+//                 chkEn.isSelect = true;
+//             else
+//                 txtBox[encoder0Pos].isSelect = true;
+//             for (i = 0; i < max_sel; i++)
+//             {
+//                 if (i == 1)
+//                     cbBox.Show();
+//                 else if (i == 5)
+//                     chkEn.CheckBoxShow();
+//                 else
+//                     txtBox[i].TextBoxShow();
+//             }
+//         }
+//         else
+//         {
+//             delay(50);
+//         }
+//         if (digitalRead(keyPush) == LOW)
+//         {
+//             currentTime = millis();
+//             while (digitalRead(keyPush) == LOW)
+//             {
+//                 if ((millis() - currentTime) > 2000)
+//                     break; // OK Timeout
+//             };
+//             if ((millis() - currentTime) < 1500)
+//             {
+//                 i = encoder0Pos;
+//                 if (i == 1)
+//                 {
+//                     cbBox.SelectValue(0, 15, 1);
+//                     config.aprs_ssid = cbBox.GetValue();
+//                     encoder0Pos = keyPrev;
+//                 }
+//                 else if (i == 5)
+//                 {
+//                     chkEn.Toggle();
+//                     config.tnc = chkEn.Checked;
+//                     encoder0Pos = keyPrev;
+//                     chkEn.CheckBoxShow();
+//                 }
+//                 else
+//                 {
+//                     txtBox[i].TextBox();
+//                     switch (i)
+//                     {
+//                     case 0:
+//                         strncpy(config.aprs_mycall, txtBox[i].text, 7);
+//                         config.aprs_mycall[7] = 0;
+//                         break;
+//                     // case 1: config.aprs_ssid = atol(txtBox[i].text);
+//                     //	break;
+//                     case 2:
+//                         strcpy(config.tnc_item, txtBox[i].text);
+//                         break;
+//                     case 3:
+//                         strcpy(config.tnc_path, txtBox[i].text);
+//                         break;
+//                     case 4:
+//                         strcpy(config.tnc_comment, txtBox[i].text);
+//                         break;
+//                     }
+//                     encoder0Pos = keyPrev + 1;
+//                 }
+//                 while (digitalRead(keyPush) == LOW)
+//                     ;
+//             }
+//             else
+//             {
+//                 break;
+//             }
+//         }
+//     } while (1);
+//     // display.clearDisplay();
+//     // display.setCursor(30, 4);
+//     // display.print("SAVE & EXIT");
+//     // display.display();
+//     msgBox("KEY EXIT");
+//     while (digitalRead(keyPush) == LOW)
+//         ;
+// }
 
 void on_rfconfig_selected(MenuItem *p_menu_item)
 {
-    MyTextBox txtBox;
-    MyCheckBox chkBoxWiFi;
+    MyTextBox txtBox[2];
+    MyCheckBox chkBoxRF;
     MyComboBox cbBox[2];
     String str;
     // char ch[10];
     int x, i;
-    int max_sel = 4;
+    int max_sel = 5;
     int keyPrev = -1;
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
-    str = String("RF Config");
+    str = String("=RF MODULE=");
     x = str.length() * 6;
     display.setCursor(64 - (x / 2), 4);
     display.print(str);
     display.setTextColor(WHITE);
 
-    chkBoxWiFi.Checked = config.tnc_rfmodule;
-    chkBoxWiFi.x = 0;
-    chkBoxWiFi.y = 18;
-    sprintf(chkBoxWiFi.text, "RF_ENABLE");
+    chkBoxRF.Checked = config.rf_en;
+    chkBoxRF.x = 0;
+    chkBoxRF.y = 18;
+    sprintf(chkBoxRF.text, "RF_ENABLE");
 
     display.setCursor(0, 30);
-    display.print("FREQ:");
-    display.setCursor(100, 30);
+    display.print("FREQ_TX:");
+    display.setCursor(110, 30);
     display.print("MHz");
-    txtBox.x = 35;
-    txtBox.y = 28;
-    txtBox.length = 8;
-    txtBox.type = 1;
-    // strcpy(txtBox.text, config.freq_tx);
-    sprintf(txtBox.text, "%.4f", config.freq_tx);
+    txtBox[0].x = 47;
+    txtBox[0].y = 28;
+    txtBox[0].length = 8;
+    txtBox[0].type = 1;
+    sprintf(txtBox[0].text, "%.4f", config.freq_tx);
+    display.setCursor(0, 40);
+    display.print("FREQ_RX:");
+    display.setCursor(110, 40);
+    display.print("MHz");
+    txtBox[1].x = 47;
+    txtBox[1].y = 38;
+    txtBox[1].length = 8;
+    txtBox[1].type = 1;
+    sprintf(txtBox[1].text, "%.4f", config.freq_rx);
 
-    display.setCursor(0, 42);
+    display.setCursor(0, 54);
     display.print("SEQ:");
     cbBox[0].isValue = true;
     cbBox[0].x = 25;
-    cbBox[0].y = 40;
+    cbBox[0].y = 52;
     cbBox[0].length = 1;
     cbBox[0].maxItem(8);
     cbBox[0].char_max = 8;
     cbBox[0].SetIndex(config.sql_level);
 
-    display.setCursor(0, 54);
+    display.setCursor(60, 54);
     display.print("PWR:");
     cbBox[1].isValue = false;
-    cbBox[1].x = 25;
+    cbBox[1].x = 80;
     cbBox[1].y = 52;
     cbBox[1].length = 3;
-    cbBox[1].AddItem(0, "LOW"); // g/HS*/E2*
-    cbBox[1].AddItem(1, "HI");  // g/HS*/E2*
+    cbBox[1].AddItem(0, "LOW");
+    cbBox[1].AddItem(1, "HI");
     cbBox[1].maxItem(2);
-    // cbBox.char_max = 999;
     cbBox[1].SetIndex(config.rf_power);
 
     display.display();
@@ -2324,18 +4423,22 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
             keyPrev = encoder0Pos;
             for (i = 0; i < 2; i++)
                 cbBox[i].isSelect = false;
-            chkBoxWiFi.isSelect = false;
-            txtBox.isSelect = false;
+            chkBoxRF.isSelect = false;
+            txtBox[0].isSelect = false;
+            txtBox[1].isSelect = false;
             if (encoder0Pos < 2)
                 cbBox[encoder0Pos].isSelect = true;
             if (encoder0Pos == 2)
-                chkBoxWiFi.isSelect = true;
+                chkBoxRF.isSelect = true;
             if (encoder0Pos == 3)
-                txtBox.isSelect = true;
+                txtBox[0].isSelect = true;
+            if (encoder0Pos == 4)
+                txtBox[1].isSelect = true;
             for (i = 0; i < 2; i++)
                 cbBox[i].Show();
-            chkBoxWiFi.CheckBoxShow();
-            txtBox.TextBoxShow();
+            chkBoxRF.CheckBoxShow();
+            txtBox[0].TextBoxShow();
+            txtBox[1].TextBoxShow();
         }
         else
         {
@@ -2371,20 +4474,28 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
                     encoder0Pos = keyPrev + 1;
                     cbBox[1].Show();
                 }
-                else if (encoder0Pos == 2)
+                else if (encoder0Pos == 2) // Focus Check Box Enable
                 {
-                    chkBoxWiFi.Toggle();
-                    config.tnc_rfmodule = chkBoxWiFi.Checked;
+                    chkBoxRF.Toggle();
+                    config.rf_en = chkBoxRF.Checked;
                     encoder0Pos = keyPrev;
-                    chkBoxWiFi.CheckBoxShow();
+                    chkBoxRF.CheckBoxShow();
                 }
                 else if (encoder0Pos == 3)
                 {
-                    txtBox.TextBox();
+                    txtBox[0].TextBox();
                     // strcpy(config.freq_tx, txtBox.text);
-                    config.freq_tx = atof(txtBox.text);
+                    config.freq_tx = atof(txtBox[0].text);
                     encoder0Pos = keyPrev;
-                    txtBox.TextBoxShow();
+                    txtBox[0].TextBoxShow();
+                }
+                else if (encoder0Pos == 4)
+                {
+                    txtBox[1].TextBox();
+                    // strcpy(config.freq_tx, txtBox.text);
+                    config.freq_rx = atof(txtBox[1].text);
+                    encoder0Pos = keyPrev;
+                    txtBox[1].TextBoxShow();
                 }
                 while (digitalRead(keyPush) == LOW)
                     delay(10);
@@ -2424,7 +4535,7 @@ void on_display_selected(MenuItem *p_menu_item)
     display.print(str);
     display.setTextColor(WHITE);
 
-    chkBoxWiFi.Checked = config.tnc_rfmodule;
+    chkBoxWiFi.Checked = config.title;
     chkBoxWiFi.x = 0;
     chkBoxWiFi.y = 18;
     sprintf(chkBoxWiFi.text, "TITLE");
@@ -2523,7 +4634,7 @@ void on_display_selected(MenuItem *p_menu_item)
                 if (encoder0Pos == 0)
                 {
                     chkBoxWiFi.Toggle();
-                    config.tnc_rfmodule = chkBoxWiFi.Checked;
+                    config.title = chkBoxWiFi.Checked;
                     encoder0Pos = keyPrev;
                     chkBoxWiFi.CheckBoxShow();
                 }
@@ -2923,33 +5034,36 @@ Menu mnuConfig("Save/Load");
 MenuItem mnuConfig_mi1("Save Config", &on_save_selected);
 MenuItem mnuConfig_mi2("Load Config", &on_load_selected);
 MenuItem mnuConfig_mi3("Factory Reset", &on_factory_selected);
+MenuItem mnuConfig_mi4("REBOOT", &on_reboot_selected);
+
+Menu mnuAPRS("APRS");
 
 Menu mnu1("WiFi/BT/RF");
-MenuItem mnu1_mi1("WiFi AP", &on_wifi_selected);
-MenuItem mnu1_mi2("WiFi Client", &on_wifi_selected);
-MenuItem mnu1_mi3("Blue Tooth", &on_wifi_selected);
+MenuItem mnu1_mi1("WiFi AP", &on_wifi_AP_selected);
+MenuItem mnu1_mi2("WiFi Client", &on_wifi_Client_selected);
+MenuItem mnu1_mi3("Bluetooth", &on_bluetooth_selected);
 MenuItem mnu1_mi4("RF Module", &on_rfconfig_selected);
 
-Menu mnu2("APRS IGATE");
+Menu mnu2("IGATE MODE");
 MenuItem mnu2_mi1("APRS-IS", &on_aprsserver_selected);
-MenuItem mnu2_mi2("Position", &on_stationconfig_selected);
-MenuItem mnu2_mi3("Filter", &on_filter_selected);
-MenuItem mnu2_mi4("Beacon", &on_stationbeacon_selected);
+MenuItem mnu2_mi2("Position", &on_igate_position_selected);
+MenuItem mnu2_mi3("Function", &on_igate_function_selected);
+MenuItem mnu2_mi4("Beacon", &on_igate_beacon_selected);
 
-Menu mnu3("APRS TRACKER");
-MenuItem mnu3_mi1("Position", &on_stationconfig_selected);
-MenuItem mnu3_mi2("Function", &on_tncfunction_selected);
-MenuItem mnu3_mi3("Filter", &on_filter_selected);
-MenuItem mnu3_mi4("SmartBeacon", &on_stationbeacon_selected);
+Menu mnu3("TRACKER MODE");
+MenuItem mnu3_mi1("Position", &on_tracker_position_selected);
+MenuItem mnu3_mi2("Function", &on_tracker_function_selected);
+MenuItem mnu3_mi3("Option", &on_tracker_option_selected);
+MenuItem mnu3_mi4("SmartBeacon", &on_smartbeacon_selected);
 
-Menu mnu4("DIGI REPEATER");
-MenuItem mnu4_mi1("Position", &on_stationconfig_selected);
-MenuItem mnu4_mi2("Function", &on_tncfunction_selected);
-MenuItem mnu4_mi3("Filter", &on_filter_selected);
-MenuItem mnu4_mi4("SmartBeacon", &on_stationbeacon_selected);
+Menu mnu4("REPEATER MODE");
+MenuItem mnu4_mi1("Position", &on_digi_position_selected);
+MenuItem mnu4_mi2("Function", &on_digi_function_selected);
+MenuItem mnu4_mi3("Option", &on_digi_option_selected);
+// MenuItem mnu4_mi4("Filter", &on_stationbeacon_selected);
 
 Menu mnu5("SYSTEM");
-MenuItem mnu5_mi1("Save/Load", &on_wifi_selected);
+// MenuItem mnu5_mi1("Save/Load", NULL);
 MenuItem mnu5_mi2("OLED Display", &on_display_selected);
 MenuItem mnu5_mi3("Monitor", &on_filter_selected);
 
@@ -3425,7 +5539,7 @@ void topBar(int ws)
     int wifiSignal = ws;
     uint8_t wifi = 0, i;
     int x, y;
-    if (config.wifi == false)
+    if (!(config.wifi_mode & WIFI_STA))
         wifiSignal = -30;
     // display.setTextColor(WHITE);
     display.fillRect(0, 0, 128, 16, BLACK);
@@ -3447,7 +5561,7 @@ void topBar(int ws)
     }
     // yield();
     display.setCursor(0, 8);
-    if (config.wifi)
+    if (config.wifi_mode & WIFI_STA)
     {
         display.print(wifiSignal);
         display.print("dBm");
@@ -3490,7 +5604,7 @@ void topBar(int ws)
     // Wifi Status
     // display.setCursor(15,0);
     // display.print("WiFi");
-    if (config.wifi)
+    if (config.wifi_mode & WIFI_STA)
     {
         if (WiFi.status() != WL_CONNECTED)
         {
@@ -3530,6 +5644,10 @@ void topBar(int ws)
             display.setCursor(15, 0);
             display.print("WiFi");
         }
+    }
+
+    if(config.bt_master){
+        display.drawBitmap(40, 0, bluetooth_icon, 7, 7, 1);
     }
     // DCS Status
     // display.setCursor(50,0);
@@ -3681,7 +5799,7 @@ void IRAM_ATTR doEncoder()
     {
         _position += KNOBDIR[thisState | (_oldState << 2)];
         _oldState = thisState;
-        //Serial.printf("Key:%d\n", _position >> 2);
+        // Serial.printf("Key:%d\n", _position >> 2);
         _positionExt = _position >> 2;
         if (_positionExtPrev != _positionExt)
         {
@@ -3694,8 +5812,8 @@ void IRAM_ATTR doEncoder()
                 encoder0Pos++;
             }
             _positionExtPrev = _positionExt;
-            //Serial.printf("Key:%d\n", _positionExt);
-        }        
+            // Serial.printf("Key:%d\n", _positionExt);
+        }
     }
     portEXIT_CRITICAL_ISR(&muxKey);
 }
@@ -3811,6 +5929,7 @@ void mainDisp(void *pvParameters)
     mnuConfig.add_item(&mnuConfig_mi1);
     mnuConfig.add_item(&mnuConfig_mi2);
     mnuConfig.add_item(&mnuConfig_mi3);
+    mnuConfig.add_item(&mnuConfig_mi4);
 
     ms.get_root_menu().add_menu(&mnu1); // Wiress
     mnu1.add_item(&mnu1_mi1);
@@ -3818,23 +5937,28 @@ void mainDisp(void *pvParameters)
     mnu1.add_item(&mnu1_mi3);
     mnu1.add_item(&mnu1_mi4);
 
-    ms.get_root_menu().add_menu(&mnu2); // IGATE
+    ms.get_root_menu().add_menu(&mnuAPRS); // APRS
+
+    // ms.get_root_menu().add_menu(&mnu2); // IGATE
+    mnuAPRS.add_menu(&mnu2);
     mnu2.add_item(&mnu2_mi1);
     mnu2.add_item(&mnu2_mi2);
     mnu2.add_item(&mnu2_mi3);
     mnu2.add_item(&mnu2_mi4);
 
-    ms.get_root_menu().add_menu(&mnu3); // TRACKER
+    // ms.get_root_menu().add_menu(&mnu3); // TRACKER
+    mnuAPRS.add_menu(&mnu3);
     mnu3.add_item(&mnu3_mi1);
     mnu3.add_item(&mnu3_mi2);
     mnu3.add_item(&mnu3_mi3);
     mnu3.add_item(&mnu3_mi4);
 
-    ms.get_root_menu().add_menu(&mnu4); // DIGI
+    // ms.get_root_menu().add_menu(&mnu4); // DIGI
+    mnuAPRS.add_menu(&mnu4);
     mnu4.add_item(&mnu4_mi1);
     mnu4.add_item(&mnu4_mi2);
     mnu4.add_item(&mnu4_mi3);
-    mnu4.add_item(&mnu4_mi4);
+    // mnu4.add_item(&mnu4_mi4);
 
     ms.get_root_menu().add_menu(&mnu5); // SYSTEM
     mnu5.add_menu(&mnuConfig);
@@ -3900,7 +6024,7 @@ void mainDisp(void *pvParameters)
     }
     topBar(-1);
 
-    if (config.mygps == false)
+    if (config.igate_gps == false)
     {
         tx_counter = 0;
         tx_interval = 10;
@@ -4591,9 +6715,9 @@ void dispTX(bool port)
 
     display.setFont(&FreeSansBold9pt7b);
     display.setCursor(20, 14);
-    if (strlen(config.tnc_item))
+    if (strlen(config.igate_object))
     {
-        display.print(config.tnc_item);
+        display.print(config.igate_object);
     }
     else
     {
@@ -4638,7 +6762,7 @@ void dispTX(bool port)
 
     display.setTextColor(WHITE);
     display.setCursor(50, 30);
-    if (config.mygps)
+    if (config.igate_gps)
     {
         display.printf("POSITION GPS");
         // display.setCursor(48, 39);
@@ -4725,15 +6849,15 @@ void dispWindow(String line, uint8_t mode, bool filter)
                 if (config.filterPosition && (aprs.packettype & T_POSITION))
                 {
                     double lat, lon;
-                    if ((config.mygps == true) && gps.location.isValid())
+                    if (gps.location.isValid())
                     {
                         lat = gps.location.lat();
                         lon = gps.location.lng();
                     }
                     else
                     {
-                        lat = config.gps_lat;
-                        lon = config.gps_lon;
+                        lat = config.igate_lat;
+                        lon = config.igate_lon;
                     }
                     double dist = aprsParse.distance(lon, lat, aprs.lng, aprs.lat);
                     if (config.filterDistant == 0)
@@ -4754,15 +6878,15 @@ void dispWindow(String line, uint8_t mode, bool filter)
                     if (aprs.flags & F_CSRSPD)
                     {
                         double lat, lon;
-                        if ((config.mygps == true) && gps.location.isValid())
+                        if (gps.location.isValid())
                         {
                             lat = gps.location.lat();
                             lon = gps.location.lng();
                         }
                         else
                         {
-                            lat = config.gps_lat;
-                            lon = config.gps_lon;
+                            lat = config.igate_lat;
+                            lon = config.igate_lon;
                         }
                         double dist = aprsParse.distance(lon, lat, aprs.lng, aprs.lat);
                         if (config.filterDistant == 0)
@@ -4786,15 +6910,15 @@ void dispWindow(String line, uint8_t mode, bool filter)
                         if (aprs.speed > 0)
                         {
                             double lat, lon;
-                            if ((config.mygps == true) && gps.location.isValid())
+                            if (gps.location.isValid())
                             {
                                 lat = gps.location.lat();
                                 lon = gps.location.lng();
                             }
                             else
                             {
-                                lat = config.gps_lat;
-                                lon = config.gps_lon;
+                                lat = config.igate_lat;
+                                lon = config.igate_lon;
                             }
                             double dist = aprsParse.distance(lon, lat, aprs.lng, aprs.lat);
                             if (config.filterDistant == 0)
@@ -4823,7 +6947,9 @@ void dispWindow(String line, uint8_t mode, bool filter)
         }
 
         if (Monitor)
-        {
+        {            
+            display.ssd1306_command(0xE4);
+            delay(10);
             display.clearDisplay();
             if (dispPush)
             {
@@ -5241,15 +7367,15 @@ void dispWindow(String line, uint8_t mode, bool filter)
                 {
                     // Serial.println("POS Display");
                     double lat, lon;
-                    if ((config.mygps == true) && gps.location.isValid())
+                    if (gps.location.isValid())
                     {
                         lat = gps.location.lat();
                         lon = gps.location.lng();
                     }
                     else
                     {
-                        lat = config.gps_lat;
-                        lon = config.gps_lon;
+                        lat = config.igate_lat;
+                        lon = config.igate_lon;
                     }
                     double dtmp = aprsParse.direction(lon, lat, aprs.lng, aprs.lat);
                     double dist = aprsParse.distance(lon, lat, aprs.lng, aprs.lat);
@@ -5314,15 +7440,15 @@ void dispWindow(String line, uint8_t mode, bool filter)
                 display.print(str);
 
                 double lat, lon;
-                if ((config.mygps == true) && gps.location.isValid())
+                if (gps.location.isValid())
                 {
                     lat = gps.location.lat();
                     lon = gps.location.lng();
                 }
                 else
                 {
-                    lat = config.gps_lat;
-                    lon = config.gps_lon;
+                    lat = config.igate_lat;
+                    lon = config.igate_lon;
                 }
                 double dtmp = aprsParse.direction(lon, lat, aprs.lng, aprs.lat);
                 double dist = aprsParse.distance(lon, lat, aprs.lng, aprs.lat);

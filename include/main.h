@@ -66,9 +66,9 @@
 #endif
 #endif
 
-#define WIFI_OFF_FIX 0
-#define WIFI_AP_FIX 1
-#define WIFI_STA_FIX 2
+#define WIFI_OFF_FIX 	0
+#define WIFI_AP_FIX 	1
+#define WIFI_STA_FIX 	2
 #define WIFI_AP_STA_FIX 3
 
 #define IMPLEMENTATION FIFO
@@ -83,7 +83,7 @@
 
 #define TLMLISTSIZE 100
 #define PKGLISTSIZE 100
-#define PKGTXSIZE 5
+#define PKGTXSIZE 100
 
 const int timeZone = 7; // Bangkok
 
@@ -110,63 +110,37 @@ enum M17Flags
 
 typedef struct Config_Struct
 {
+	int8_t timeZone;
 	bool synctime;
-	bool aprs;
-	
-	
-	
-	
-	float gps_lat;
-	float gps_lon;
-	float gps_alt;
-	
-	uint8_t aprs_moniSSID;
-	uint32_t api_id;
-	uint16_t mqtt_port;
-	bool tnc;
-
-	bool tnc_digi = false;
-	bool tnc_tracker = false;
-	bool tnc_telemetry = false;
-	bool tnc_rfmodule = false;
-	bool tnc_compress = false;
-	bool tnc_altitude = false;
-	bool tnc_speed = false;
-	uint8_t tnc_hspeed = 120;
-	uint8_t tnc_maxinterval = 15;
-	uint8_t tnc_minangle = 25;
-	char tnc_symmove[3] = "/>";
-	char tnc_symstop[3] = "\\>";
-	char tnc_item[10] = "";
-	char mysymbol[3] = "N&";
-	uint8_t tnc_ssid = 0;
-	int tnc_beacon = 0;
-	int aprs_beacon;
-	char aprs_table;
-	char aprs_symbol;
-	
-	char aprs_comment[50];
-	char aprs_path[72];	
+	bool title;
+	uint16_t tx_timeslot;
 
 	//WiFi/BT/RF
 	char wifi_mode; // WIFI_AP,WIFI_STA,WIFI_AP_STA,WIFI_OFF
 	char wifi_power;
 	//--WiFi Client
-	bool wifi;
+	//bool wifi_client;
 	char wifi_ssid[32];
 	char wifi_pass[63];
 	//--WiFi AP
-	bool wifi_ap;
+	//bool wifi_ap;
 	char wifi_ap_ch;
 	char wifi_ap_ssid[32];
 	char wifi_ap_pass[63];
+
 	//--Blue Tooth
 	bool bt_slave;
 	bool bt_master;
-	uint8_t bt_address[6];
+	char bt_mode; 
+	char bt_uuid[37];
+	char bt_uuid_rx[37];
+	char bt_uuid_tx[37];
 	char bt_name[20];
 	char bt_pin[5];
+	char bt_power;
+
 	//--RF Module
+	bool rf_en;
 	float freq_rx;
 	float freq_tx;
 	int offset_rx;
@@ -195,16 +169,19 @@ typedef struct Config_Struct
 	char aprs_moniCall[10];
 	char aprs_filter[30];
 	//--Position
-	float igate_gps;
+	bool igate_bcn;
+	bool igate_gps;
+	bool igate_tlm;
 	float igate_lat;
 	float igate_lon;
 	float igate_alt;
 	uint16_t igate_interval;
+	uint16_t igate_tlm_interval;
 	char igate_symbol[3] = "N&";
-	char igate_item[10] = "";
 	char igate_object[10];
 	char igate_phg[5];
 	char igate_path[72];
+	char igate_comment[50];
 	//--Filter
 
 	//DIGI REPEATER
@@ -214,46 +191,56 @@ typedef struct Config_Struct
 	uint8_t digi_ssid;
 	char digi_mycall[10];
 	char digi_path[72];
+	uint16_t digi_delay; //ms
 	//--Position
-	float digi_gps;
+	bool digi_bcn;
+	bool digi_compress = false;
+	bool digi_altitude = false;
+	bool digi_tlm=false;
+	bool digi_gps;
 	float digi_lat;
 	float digi_lon;
 	float digi_alt;
 	uint16_t digi_interval;
+	uint16_t digi_tlm_interval;
 	char digi_symbol[3] = "N&";
-	char digi_item[10] = "";
-	char digi_object[10];
-	char digi_phg[5];
+	bool digi_phg;
 	char digi_comment[50];
 
 	//TRACKER
-	bool sta_en;
-	bool sta_loc2rf;
-	bool sta_loc2inet;
-	uint8_t sta_ssid;
-	char sta_mycall[10];
-	char sta_path[72];
-	uint16_t digi_delay;
+	bool trk_en;
+	bool trk_loc2rf;
+	bool trk_loc2inet;
+	uint8_t trk_ssid;
+	char trk_mycall[10];
+	char trk_path[72];
 	//--Position
-	bool sta_smartbeacon = false;
-	bool sta_compress = false;
-	bool sta_altitude = false;
-	bool sta_speed = false;
-	int8_t sta_hspeed = 120;
-	int8_t sta_lspeed = 2;
-	int8_t sta_maxinterval = 15;
-	int8_t sta_mininterval = 5;
-	int8_t sta_minangle = 25;
-	uint16_t sta_slowinterval = 600;
-	char sta_symmove[3] = "/>";
-	char sta_symstop[3] = "\\>";
-	char sta_btext[17] = "";
-	char sta_mycall[10];
-	char sta_comment[50];
-	char sta_object[10];
-	//--Filter
-	
-	uint16_t tx_timeslot;
+	bool trk_gps;
+	float trk_lat;
+	float trk_lon;
+	float trk_alt;
+	uint16_t trk_interval;
+	bool trk_smartbeacon = false;
+	bool trk_compress = false;
+	bool trk_altitude = false;
+	bool trk_speed = false;
+	bool trk_bat=false;
+	bool trk_sat=false;
+	bool trk_dx=false;
+	int8_t trk_hspeed = 120;
+	int8_t trk_lspeed = 2;
+	int8_t trk_maxinterval = 15;
+	int8_t trk_mininterval = 5;
+	int8_t trk_minangle = 25;
+	uint16_t trk_slowinterval = 600;
+	char trk_symbol[3] = "\\>";
+	char trk_symmove[3] = "/>";
+	char trk_symstop[3] = "\\>";
+	char trk_btext[17] = "";
+	char trk_comment[50];
+	char trk_item[10] = "";
+	char trk_object[10];
+	//--Filter	
 
 	//OLED DISPLAY
 	bool oled_enable;
@@ -262,12 +249,9 @@ typedef struct Config_Struct
 	unsigned char contrast;
 	unsigned char startup;
 
-	bool vpn;
-	bool modem;
-	int8_t timeZone;
 	//Display
 	unsigned int dispDelay;
-	bool dispTNC;
+	bool dispRF;
 	bool dispINET;
 	bool filterMessage;
 	bool filterStatus;
@@ -277,11 +261,13 @@ typedef struct Config_Struct
 	bool filterMove;
 	bool filterPosition;
 	unsigned int filterDistant;
-	bool mygps;	
 	bool h_up = true;
 	bool tx_status = true;
-	
 
+	char path[4][15];
+
+	uint8_t gpio_sql_pin=-1;
+	
 } Configuration;
 
 typedef struct igateTLM_struct
@@ -375,7 +361,7 @@ int processPacket(String &tnc2);
 String send_fix_location();
 int digiProcess(AX25Msg &Packet);
 void printTime();
-bool pkgTxUpdate(const char *info, int delay);
+bool pkgTxPush(const char *info, int delay);
 void popTNC2Raw(int &ret);
 void pushTNC2Raw(int raw);
 int pkgListUpdate(char *call, char *raw, uint8_t type);

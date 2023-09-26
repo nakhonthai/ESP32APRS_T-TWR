@@ -47,6 +47,8 @@
 #define PKG_QUERY      6 // packet is a query
 #define PKG_STATUS     7 // packet is status 
 
+const char APRS_PATH[9][16] ={"","WIDE1-1","WIDE1-1,WIDE2-1","TRACK3-3","RS0ISS","YBOX-1","W3ADO-1","BJ1SI","PSAT2-1"};
+
 const unsigned char LOGO[] PROGMEM=
 {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -80,7 +82,8 @@ const unsigned char LOGO[] PROGMEM=
 0x3F, 0x3F, 0x3F, 0x1F, 0x03, 0x00, 0x00, 0x00
 };
 
-
+//Create icon from https://rickkas7.github.io/DisplayGenerator
+const uint8_t bluetooth_icon[] = {0x10, 0x5c, 0x38, 0x10, 0x38, 0x5c, 0x10};
 
 extern Adafruit_SSD1306 display;
 extern cppQueue dispBuffer;
@@ -126,6 +129,9 @@ void dispTX(bool port);
 // 	"DISCONNECTED"
 // };
 
+#define ALL 0
+#define NUMBER 1
+#define ALPHA 2
 class MyTextBox
 {
 private:
@@ -197,6 +203,7 @@ public:
 
 	void SelectValue(long val_min, long val_max, long step);
 	void AddItem(int index, char* str);
+	void AddItem(int index, const char* str);
 	void GetItem(int index, char* str);
 	void maxItem(unsigned char index);
 	unsigned long GetValue();

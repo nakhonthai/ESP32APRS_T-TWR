@@ -63,9 +63,9 @@ int igateProcess(AX25Msg &Packet)
 
     // Add qAR,callSSID
     header += String(F(",qAR,"));
-    if (strlen(config.tnc_item) >= 3)
+    if (strlen((const char*)config.igate_object) >= 3)
     {
-        header += String(config.tnc_item);
+        header += String(config.igate_object);
     }
     else
     {
