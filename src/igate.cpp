@@ -33,6 +33,15 @@ int igateProcess(AX25Msg &Packet)
         }
     }
 
+    for (idx = 0; idx < Packet.rpt_count; idx++)
+    {
+        if (!strncmp(&Packet.rpt_list[idx].call[0], "qA", 2))
+        {
+            // digiLog.DropRx++;
+            return 0;
+        }
+    }
+
     header = String(Packet.src.call);
     if (Packet.src.ssid > 0)
     {
@@ -61,14 +70,20 @@ int igateProcess(AX25Msg &Packet)
             header += "*";
     }
 
-    // Add qAR,callSSID
-    header += String(F(",qAR,"));
-    if (strlen((const char*)config.igate_object) >= 3)
+    if (strlen((const char *)config.igate_object) >= 3)
     {
-        header += String(config.igate_object);
+        header += "," + String(config.aprs_mycall);
+        if (config.aprs_ssid > 0)
+        {
+            header += String(F("-"));
+            header += String(config.aprs_ssid);
+        }
+        header += "*,qAO," + String(config.igate_object);
     }
     else
     {
+        // Add qAR,callSSID: qAR - Packet is placed on APRS-IS by an IGate from RF
+        header += String(F(",qAR,"));
         header += String(config.aprs_mycall);
         if (config.aprs_ssid > 0)
         {
@@ -80,12 +95,12 @@ int igateProcess(AX25Msg &Packet)
     // Add Infomation
     header += String(F(":"));
     uint8_t Raw[500];
-    memset(Raw, 0, sizeof(Raw));
+    memset(Raw, 0, sizeof(Raw)); // Clear frame packet
     size_t hSize = strlen(header.c_str());
-    memcpy(&Raw[0], header.c_str(), hSize);
-    memcpy(&Raw[hSize], &Packet.info[0], Packet.len);
-    aprsClient.write(&Raw[0], hSize + Packet.len); // info binary write aprsc support
-    aprsClient.println();
-    log_d("RF2INET: %s",Raw);
+    memcpy(&Raw[0], header.c_str(), hSize);           // Copy header to frame packet
+    memcpy(&Raw[hSize], &Packet.info[0], Packet.len); // Copy info to frame packet
+    aprsClient.write(&Raw[0], hSize + Packet.len);    // Send binary frame packet to APRS-IS (aprsc)
+    aprsClient.println();                             // Send CR LF the end frame packet
+    log_d("RF2INET: %s", Raw);
     return 1;
 }

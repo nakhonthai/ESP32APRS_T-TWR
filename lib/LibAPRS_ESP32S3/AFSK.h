@@ -163,46 +163,24 @@ inline static uint8_t sinSample(uint16_t i)
 #define CONFIG_AFSK_RXTIMEOUT 0
 #define CONFIG_AFSK_PREAMBLE_LEN 350UL
 #define CONFIG_AFSK_TRAILER_LEN 50UL
-#define CONFIG_AFSK_DAC_SAMPLERATE 9600
+#define CONFIG_AFSK_DAC_SAMPLERATE 48000
 #define SAMPLERATE 9600
 #define BITRATE 1200
-#define SAMPLESPERBIT (SAMPLERATE / BITRATE)
+#define SAMPLESPERBIT (CONFIG_AFSK_DAC_SAMPLERATE / BITRATE)
 #define BIT_STUFF_LEN 5
 #define MARK_FREQ 1200
 #define SPACE_FREQ 2200
-#define PHASE_BITS 8                           // How much to increment phase counter each sample
-#define PHASE_INC 1                            // Nudge by an eigth of a sample each adjustment
-#define PHASE_MAX (SAMPLESPERBIT * PHASE_BITS) // Resolution of our phase counter = 64
-#define PHASE_THRESHOLD (PHASE_MAX / 2)        // Target transition point of our phase window
+#define PHASE_BITS 8                                    // 8 How much to increment phase counter each sample
+#define PHASE_INC 1                                     // 1 Nudge by an eigth of a sample each adjustment
+#define PHASE_MAX ((SAMPLERATE / BITRATE) * PHASE_BITS) // Resolution of our phase counter = 64
+#define PHASE_THRESHOLD (PHASE_MAX / 2)                 // Target transition point of our phase window
 
-//#define I2S_INTERNAL
-
-#define SPK_PIN ADC1_CHANNEL_0 // Read ADC1_CH0 on GPIO1 
+#define SPK_PIN ADC1_CHANNEL_0 // Read ADC1_CH0 on GPIO1
 #define MIC_PIN 18             // Out wave to PIN 18
 #define RSSI_PIN -1
-#define PTT_PIN  41
+#define PTT_PIN 41
 #define LED_PIN -1
 #define LED_TX_PIN -1
-
-#ifdef I2S_INTERNAL
-#include "driver/i2s.h"
-#include "driver/dac.h"
-
-#define SAMPLE_RATE SAMPLERATE //9580 ปรับชดเชยแซมปลิงค์ของ I2S
-#define PIN_I2S_BCLK 26
-#define PIN_I2S_LRC 27
-#define PIN_I2S_DIN 35
-#define PIN_I2S_DOUT 25
-
-typedef enum
-{
-    LEFTCHANNEL = 0,
-    RIGHTCHANNEL = 1
-} SampleIndex;
-/// @parameter MODE : I2S_MODE_RX or I2S_MODE_TX
-/// @parameter BPS : I2S_BITS_PER_SAMPLE_16BIT or I2S_BITS_PER_SAMPLE_32BIT
-void I2S_Init(i2s_mode_t MODE, i2s_bits_per_sample_t BPS);
-#endif
 
 typedef struct Hdlc
 {
@@ -233,12 +211,12 @@ typedef struct Afsk
     uint16_t phaseAcc; // Phase accumulator
     uint16_t phaseInc; // Phase increment per sample
 
-    FIFOBuffer txFifo;                    // FIFO for transmit data
+    FIFOBuffer txFifo;                     // FIFO for transmit data
     uint16_t txBuf[CONFIG_AFSK_TX_BUFLEN]; // Actial data storage for said FIFO
 
     volatile bool sending; // Set when modem is sending
 
-    FIFOBuffer rxFifo;                    // FIFO for received data
+    FIFOBuffer rxFifo;                     // FIFO for received data
     uint16_t rxBuf[CONFIG_AFSK_RX_BUFLEN]; // Actual data storage for said FIFO
 
     int iirX[2]; // IIR Filter X cells
@@ -256,10 +234,9 @@ typedef struct Afsk
 #define MARK_INC (uint16_t)(DIV_ROUND(SIN_LEN * (uint32_t)MARK_FREQ, CONFIG_AFSK_DAC_SAMPLERATE))
 #define SPACE_INC (uint16_t)(DIV_ROUND(SIN_LEN * (uint32_t)SPACE_FREQ, CONFIG_AFSK_DAC_SAMPLERATE))
 
-#define PIXELS_PIN      (42)
+#define PIXELS_PIN (42)
 
 #include <Adafruit_NeoPixel.h>
-
 
 #define AFSK_DAC_IRQ_START()         \
     do                               \
@@ -273,20 +250,34 @@ typedef struct Afsk
         extern bool hw_afsk_dac_isr; \
         hw_afsk_dac_isr = false;     \
     } while (0)
-//#define AFSK_DAC_INIT()        do { DAC_DDR |= (DAC_PINS) ; PTT_DDR = 0b01000000;} while (0)
 
 // Here's some macros for controlling the RX/TX LEDs
 // THE _INIT() functions writes to the DDRB register
 // to configure the pins as output pins, and the _ON()
 // and _OFF() functions writes to the PORT registers
 // to turn the pins on or off.
-void LED_Color(uint8_t r,uint8_t g,uint8_t b);
+void LED_Color(uint8_t r, uint8_t g, uint8_t b);
 
-#define LED_RX_ON() {strip.setPixelColor(0, strip.Color(0, 255, 0));strip.show();}
-#define LED_RX_OFF() {strip.setPixelColor(0, strip.Color(0, 0, 0));strip.show();}
-#define LED_TX_ON() {LED_Color(255, 0, 0);}
-#define LED_TX_OFF() {LED_Color(0, 0, 0);}
-
+#define LED_RX_ON()                                     \
+    {                                                   \
+        strip.setPixelColor(0, strip.Color(0, 255, 0)); \
+        strip.show();                                   \
+    }
+#define LED_RX_OFF()                                  \
+    {                                                 \
+        strip.setPixelColor(0, strip.Color(0, 0, 0)); \
+        strip.show();                                 \
+    }
+#define LED_TX_ON()                                     \
+    {                                                   \
+        strip.setPixelColor(0, strip.Color(255, 0, 0)); \
+        strip.show();                                   \
+    }
+#define LED_TX_OFF()                                  \
+    {                                                 \
+        strip.setPixelColor(0, strip.Color(0, 0, 0)); \
+        strip.show();                                 \
+    }
 
 extern bool input_HPF;
 
@@ -294,9 +285,15 @@ void AFSK_init(Afsk *afsk);
 void AFSK_transmit(char *buffer, size_t size);
 void AFSK_poll(Afsk *afsk);
 
+bool getTransmit();
 void afsk_putchar(char c);
 int afsk_getchar(void);
-void AFSK_Poll(bool SA818,bool RFPower);
+void AFSK_Poll(bool SA818, bool RFPower);
 void AFSK_TimerEnable(bool sts);
+uint8_t AFSK_dac_isr(Afsk *afsk);
+void adcActive(bool sts);
+esp_err_t adc_init();
+// int IRAM_ATTR
+int read_adc_dma(uint32_t *ret_num, uint8_t *result);
 
 #endif

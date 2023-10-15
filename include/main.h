@@ -1,10 +1,9 @@
 /*
- Name:		ESP32 APRS Internet Gateway
- Created:	1-Nov-2021 14:27:23
+ Name:		ESP32APRS T-TWR Plus
+ Created:	13-10-2023 14:27:23
  Author:	HS5TQA/Atten
  Support IS: host:aprs.dprns.com port:14580 or aprs.hs5tqa.ampr.org:14580
  Support IS monitor: http://aprs.dprns.com:14501 or http://aprs.hs5tqa.ampr.org:14501
- Support in LINE Group APRS Only
 */
 
 #ifndef MAIN_H
@@ -25,9 +24,9 @@
 #define SA868_MIC (18)
 #define SA868_AU (1)
 
-#define MIC_CTRL_PIN    (17)
+#define MIC_CTRL_PIN (17)
 
-#define BUTTON_PTT_PIN  (3)
+#define BUTTON_PTT_PIN (3)
 #define BUTTON_DOWN_PIN (0)
 
 #define ENCODER_A_PIN (47)
@@ -35,28 +34,28 @@
 #define ENCODER_OK_PIN (21)
 
 #define BATTERY_ADC_PIN (-1)
-#define OLED_POWER_PIN  (-1)
-#define I2C_SDA         (8)
-#define I2C_SCL         (9)
-#define PMU_IRQ         (4)
+#define OLED_POWER_PIN (-1)
+#define I2C_SDA (8)
+#define I2C_SCL (9)
+#define PMU_IRQ (4)
 
-#define SPI_MOSI        (11)
-#define SPI_MISO        (13)
-#define SPI_SCK         (12)
-#define SD_CS           (10)
-#define USER_CS         (14)
+#define SPI_MOSI (11)
+#define SPI_MISO (13)
+#define SPI_SCK (12)
+#define SD_CS (10)
+#define USER_CS (14)
 
 #define GNSS_TX (6)
 #define GNSS_RX (5)
 #define GNSS_PPS (7)
 
-#define PIXELS_PIN      (42)
+#define PIXELS_PIN (42)
 
-#define ESP2SA868_MIC   (18)
+#define ESP2SA868_MIC (18)
 #define SA8682ESP_AUDIO (1)
 
 #define OLED
-// #define SDCARD
+#define SDCARD
 #define SA818
 // #define SR_FRS
 
@@ -66,26 +65,43 @@
 #endif
 #endif
 
-#define WIFI_OFF_FIX 	0
-#define WIFI_AP_FIX 	1
-#define WIFI_STA_FIX 	2
+#define WIFI_OFF_FIX 0
+#define WIFI_AP_FIX 1
+#define WIFI_STA_FIX 2
 #define WIFI_AP_STA_FIX 3
 
 #define IMPLEMENTATION FIFO
 
 #define TZ 7	 // (utc+) TZ in hours
 #define DST_MN 0 // use 60mn for summer time in some countries
-#define TZ_MN ((TZ)*60)
-#define TZ_SEC ((TZ)*3600)
-#define DST_SEC ((DST_MN)*60)
+#define TZ_MN ((TZ) * 60)
+#define TZ_SEC ((TZ) * 3600)
+#define DST_SEC ((DST_MN) * 60)
 
 #define FORMAT_SPIFFS_IF_FAILED true
 
-#define TLMLISTSIZE 100
+#ifdef BOARD_HAS_PSRAM
+#define TLMLISTSIZE 10
 #define PKGLISTSIZE 100
 #define PKGTXSIZE 100
+#else
+#define TLMLISTSIZE 10
+#define PKGLISTSIZE 10
+#define PKGTXSIZE 10
+#endif
 
-const int timeZone = 7; // Bangkok
+#define FILTER_ALL 0		// Packet is of position type
+#define FILTER_OBJECT 1		// packet is an object
+#define FILTER_ITEM 2		// packet is an item
+#define FILTER_MESSAGE 4	// packet is a message
+#define FILTER_WX 8			// packet is WX data
+#define FILTER_TELEMETRY 16 // packet is telemetry
+#define FILTER_QUERY 32		// packet is a query
+#define FILTER_STATUS 64	// packet is status
+#define FILTER_POSITION 128	// packet is not ax25
+#define FILTER_BUOY 256		// packet is buoy
+
+// const int timeZone = 7; // Bangkok
 
 #include <Arduino.h>
 #include <FS.h>
@@ -115,15 +131,15 @@ typedef struct Config_Struct
 	bool title;
 	uint16_t tx_timeslot;
 
-	//WiFi/BT/RF
+	// WiFi/BT/RF
 	char wifi_mode; // WIFI_AP,WIFI_STA,WIFI_AP_STA,WIFI_OFF
 	char wifi_power;
 	//--WiFi Client
-	//bool wifi_client;
+	// bool wifi_client;
 	char wifi_ssid[32];
 	char wifi_pass[63];
 	//--WiFi AP
-	//bool wifi_ap;
+	// bool wifi_ap;
 	char wifi_ap_ch;
 	char wifi_ap_ssid[32];
 	char wifi_ap_pass[63];
@@ -131,7 +147,7 @@ typedef struct Config_Struct
 	//--Blue Tooth
 	bool bt_slave;
 	bool bt_master;
-	char bt_mode; 
+	char bt_mode;
 	char bt_uuid[37];
 	char bt_uuid_rx[37];
 	char bt_uuid_tx[37];
@@ -154,7 +170,7 @@ typedef struct Config_Struct
 	uint8_t mic;
 	bool input_hpf;
 
-	//IGATE
+	// IGATE
 	bool igate_en;
 	bool rf2inet;
 	bool inet2rf;
@@ -171,43 +187,39 @@ typedef struct Config_Struct
 	//--Position
 	bool igate_bcn;
 	bool igate_gps;
-	bool igate_tlm;
 	float igate_lat;
 	float igate_lon;
 	float igate_alt;
 	uint16_t igate_interval;
-	uint16_t igate_tlm_interval;
 	char igate_symbol[3] = "N&";
 	char igate_object[10];
-	char igate_phg[5];
+	char igate_phg[8];
 	char igate_path[72];
 	char igate_comment[50];
 	//--Filter
 
-	//DIGI REPEATER
+	// DIGI REPEATER
 	bool digi_en;
 	bool digi_loc2rf;
 	bool digi_loc2inet;
 	uint8_t digi_ssid;
 	char digi_mycall[10];
 	char digi_path[72];
-	uint16_t digi_delay; //ms
+	uint16_t digi_delay; // ms
 	//--Position
 	bool digi_bcn;
 	bool digi_compress = false;
 	bool digi_altitude = false;
-	bool digi_tlm=false;
 	bool digi_gps;
 	float digi_lat;
 	float digi_lon;
 	float digi_alt;
 	uint16_t digi_interval;
-	uint16_t digi_tlm_interval;
 	char digi_symbol[3] = "N&";
-	bool digi_phg;
+	char digi_phg[8];
 	char digi_comment[50];
 
-	//TRACKER
+	// TRACKER
 	bool trk_en;
 	bool trk_loc2rf;
 	bool trk_loc2inet;
@@ -219,55 +231,61 @@ typedef struct Config_Struct
 	float trk_lat;
 	float trk_lon;
 	float trk_alt;
-	uint16_t trk_interval;
+	uint16_t trk_interval = 60;
 	bool trk_smartbeacon = false;
 	bool trk_compress = false;
 	bool trk_altitude = false;
-	bool trk_speed = false;
-	bool trk_bat=false;
-	bool trk_sat=false;
-	bool trk_dx=false;
-	int8_t trk_hspeed = 120;
-	int8_t trk_lspeed = 2;
-	int8_t trk_maxinterval = 15;
-	int8_t trk_mininterval = 5;
-	int8_t trk_minangle = 25;
+	bool trk_cst = false;
+	bool trk_bat = false;
+	bool trk_sat = false;
+	bool trk_dx = false;
+	uint16_t trk_hspeed = 120;
+	uint8_t trk_lspeed = 2;
+	uint8_t trk_maxinterval = 15;
+	uint8_t trk_mininterval = 5;
+	uint8_t trk_minangle = 25;
 	uint16_t trk_slowinterval = 600;
 	char trk_symbol[3] = "\\>";
 	char trk_symmove[3] = "/>";
 	char trk_symstop[3] = "\\>";
-	char trk_btext[17] = "";
+	// char trk_btext[17] = "";
 	char trk_comment[50];
 	char trk_item[10] = "";
-	char trk_object[10];
-	//--Filter	
+	// char trk_object[10];
+	//--Filter
 
-	//OLED DISPLAY
+	// OLED DISPLAY
 	bool oled_enable;
 	int oled_timeout;
 	unsigned char dim;
 	unsigned char contrast;
 	unsigned char startup;
 
-	//Display
+	// Display
 	unsigned int dispDelay;
-	bool dispRF;
-	bool dispINET;
-	bool filterMessage;
-	bool filterStatus;
-	bool filterTelemetry;
-	bool filterWeather;
-	bool filterTracker;
-	bool filterMove;
-	bool filterPosition;
 	unsigned int filterDistant;
 	bool h_up = true;
-	bool tx_status = true;
+	bool tx_display = true;
+	bool rx_display = true;
+	uint16_t dispFilter;
+	bool dispRF;
+	bool dispINET;
+
+	uint16_t rfFilter;
+	uint16_t inetFilter;
+	// bool filterMessage;
+	// bool filterStatus;
+	// bool filterTelemetry;
+	// bool filterWeather;
+	// bool filterTracker;
+	// bool filterMove;
+	// bool filterPosition;
+
 
 	char path[4][15];
 
-	uint8_t gpio_sql_pin=-1;
-	
+	uint8_t gpio_sql_pin = -1;
+
 } Configuration;
 
 typedef struct igateTLM_struct
@@ -288,9 +306,10 @@ typedef struct
 	char calsign[11];
 	char ssid[5];
 	unsigned int pkg;
-	uint8_t type;
+	uint16_t type;
 	uint8_t symbol;
-	char raw[300];
+	int16_t audio_level;
+	char raw[500];
 } pkgListType;
 
 typedef struct statisticStruct
@@ -305,6 +324,8 @@ typedef struct statisticStruct
 	uint32_t dropCount;
 	uint32_t rf2inet;
 	uint32_t inet2rf;
+	uint32_t txCount;
+	uint32_t rxCount;
 } statusType;
 
 typedef struct digiTLM_struct
@@ -337,7 +358,7 @@ typedef struct txQueue_struct
 	bool Active;
 	long timeStamp;
 	int Delay;
-	char Info[300];
+	char Info[500];
 } txQueueType;
 
 const char PARM[] = {"PARM.RF->INET,INET->RF,TxPkts,RxPkts,IGateDropRx"};
@@ -355,21 +376,25 @@ boolean isValidNumber(String str);
 void taskGPS(void *pvParameters);
 void taskAPRS(void *pvParameters);
 void taskNetwork(void *pvParameters);
+void taskTNC(void *pvParameters);
 void sort(pkgListType a[], int size);
 void sortPkgDesc(pkgListType a[], int size);
 int processPacket(String &tnc2);
 String send_fix_location();
 int digiProcess(AX25Msg &Packet);
 void printTime();
-bool pkgTxPush(const char *info, int delay);
-void popTNC2Raw(int &ret);
-void pushTNC2Raw(int raw);
-int pkgListUpdate(char *call, char *raw, uint8_t type);
+bool pkgTxPush(const char *info, size_t len, int dly);
+int popTNC2Raw(int &ret);
+int pushTNC2Raw(int raw);
+int pkgListUpdate(char *call, char *raw, uint16_t type);
+pkgListType getPkgList(int idx);
 String myBeacon(String Path);
 int tlmList_Find(char *call);
 int tlmListOld();
+TelemetryType getTlmList(int idx);
 void powerSave();
 void powerWakeup();
 bool powerStatus();
-int packet2Raw(String & tnc2, AX25Msg & Packet);
+int packet2Raw(String &tnc2, AX25Msg &Packet);
+bool waitResponse(String &data, String rsp = "\r\n", uint32_t timeout = 1000);
 #endif

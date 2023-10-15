@@ -1,5 +1,6 @@
 #include "gui_lcd.h"
 #include "esp_adc_cal.h"
+#include "AFSK.h"
 
 #include <HTTPClient.h>
 #include <ESP32httpUpdate.h>
@@ -776,7 +777,7 @@ MyRenderer my_renderer;
 //     chkBox[1].y = 18;
 //     sprintf(chkBox[1].text, "ALT");
 
-//     chkBox[2].Checked = config.trk_speed;
+//     chkBox[2].Checked = config.trk_cst;
 //     chkBox[2].x = 75;
 //     chkBox[2].y = 18;
 //     sprintf(chkBox[2].text, "CSR/SPD");
@@ -887,7 +888,7 @@ MyRenderer my_renderer;
 //                         config.trk_altitude = chkBox[i].Checked;
 //                         break;
 //                     case 2:
-//                         config.trk_speed = chkBox[i].Checked;
+//                         config.trk_cst = chkBox[i].Checked;
 //                         break;
 //                     }
 //                     encoder0Pos = keyPrev;
@@ -1166,7 +1167,7 @@ void on_wifi_AP_selected(MenuItem *p_menu_item)
     txtBox[0].type = 0;
     strcpy(txtBox[0].text, config.wifi_ap_ssid);
 
-    if (config.wifi_mode & WIFI_AP)
+    if (config.wifi_mode & WIFI_AP_FIX)
     {
         chkBoxWiFi.Checked = true;
     }
@@ -1263,11 +1264,11 @@ void on_wifi_AP_selected(MenuItem *p_menu_item)
                     chkBoxWiFi.Toggle();
                     if (chkBoxWiFi.Checked)
                     {
-                        config.wifi_mode |= WIFI_STA;
+                        config.wifi_mode |= WIFI_AP_FIX;
                     }
                     else
                     {
-                        config.wifi_mode &= ~WIFI_STA;
+                        config.wifi_mode &= ~WIFI_AP_FIX;
                     }
                     encoder0Pos = keyPrev;
                     chkBoxWiFi.CheckBoxShow();
@@ -1330,7 +1331,7 @@ void on_wifi_Client_selected(MenuItem *p_menu_item)
     txtBox[0].type = 0;
     strcpy(txtBox[0].text, config.wifi_ssid);
 
-    if (config.wifi_mode & WIFI_STA)
+    if (config.wifi_mode & WIFI_STA_FIX)
     {
         chkBoxWiFi.Checked = true;
     }
@@ -1427,11 +1428,11 @@ void on_wifi_Client_selected(MenuItem *p_menu_item)
                     chkBoxWiFi.Toggle();
                     if (chkBoxWiFi.Checked)
                     {
-                        config.wifi_mode |= WIFI_AP;
+                        config.wifi_mode |= WIFI_STA_FIX;
                     }
                     else
                     {
-                        config.wifi_mode &= ~WIFI_AP;
+                        config.wifi_mode &= ~WIFI_STA_FIX;
                     }
                     encoder0Pos = keyPrev;
                     chkBoxWiFi.CheckBoxShow();
@@ -2247,7 +2248,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
     chkBox[1].y = 18;
     sprintf(chkBox[1].text, "INET2RF");
 
-    chkBox[2].Checked = config.igate_tlm;
+    chkBox[2].Checked = false;
     chkBox[2].x = 0;
     chkBox[2].y = 29;
     sprintf(chkBox[2].text, "TLM");
@@ -2259,7 +2260,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
     cbBox[0].y = 28;
     cbBox[0].length = 4;
     cbBox[0].char_max = 1800;
-    cbBox[0].SetIndex(config.igate_tlm_interval);
+    cbBox[0].SetIndex(0);
 
     display.setCursor(0, 42);
     display.print("PTH:");
@@ -2354,7 +2355,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
                 else if (i == 3)
                 {
                     cbBox[0].SelectValue(0, 1800, 60);
-                    config.igate_tlm_interval = cbBox[0].GetValue();
+                    //config.igate_tlm_interval = cbBox[0].GetValue();
                     encoder0Pos = keyPrev;
                     cbBox[0].Show();
                 }
@@ -2370,7 +2371,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
                         config.inet2rf = chkBox[i].Checked;
                         break;
                     case 2:
-                        config.igate_tlm = chkBox[i].Checked;
+                        //config.igate_tlm = chkBox[i].Checked;
                         break;
                     }
                     encoder0Pos = keyPrev;
@@ -2809,7 +2810,7 @@ void on_tracker_function_selected(MenuItem *p_menu_item)
     chkBox[4].y = 40;
     sprintf(chkBox[4].text, "ALT");
 
-    chkBox[5].Checked = config.trk_speed;
+    chkBox[5].Checked = config.trk_cst;
     chkBox[5].x = 75;
     chkBox[5].y = 40;
     sprintf(chkBox[5].text, "CSR/SPD");
@@ -2923,7 +2924,7 @@ void on_tracker_function_selected(MenuItem *p_menu_item)
                         config.trk_altitude = chkBox[i].Checked;
                         break;
                     case 5:
-                        config.trk_speed = chkBox[i].Checked;
+                        config.trk_cst = chkBox[i].Checked;
                         break;
                     }
                     encoder0Pos = keyPrev;
@@ -2977,13 +2978,13 @@ void on_tracker_option_selected(MenuItem *p_menu_item)
     chkBox[2].y = 18;
     sprintf(chkBox[2].text, "DX");
 
-    display.setCursor(0, 30);
-    display.print("OBJ:");
+    // display.setCursor(0, 30);
+    // display.print("OBJ:");
     txtBox[0].x = 30;
     txtBox[0].y = 28;
     txtBox[0].length = 11;
     txtBox[0].type = 0;
-    strcpy(txtBox[0].text, config.trk_object);
+    //strcpy(txtBox[0].text, config.trk_object);
 
     display.setCursor(0, 42);
     display.print("ITEM");
@@ -3049,7 +3050,7 @@ void on_tracker_option_selected(MenuItem *p_menu_item)
                     {
                     case 3:
                         txtBox[0].TextBox();
-                        strcpy(config.trk_object, txtBox[0].text);
+                        //strcpy(config.trk_object, txtBox[0].text);
                         break;
                     case 4:
                         txtBox[1].TextBox();
@@ -3464,7 +3465,7 @@ void on_digi_option_selected(MenuItem *p_menu_item)
     display.print(str);
     display.setTextColor(WHITE);
 
-    chkBox.Checked = config.digi_tlm;
+    chkBox.Checked = false;
     chkBox.x = 0;
     chkBox.y = 18;
     sprintf(chkBox.text, "TLM");
@@ -3476,7 +3477,7 @@ void on_digi_option_selected(MenuItem *p_menu_item)
     cbBox[0].y = 18;
     cbBox[0].length = 4;
     cbBox[0].char_max = 1800;
-    cbBox[0].SetIndex(config.digi_interval);
+    cbBox[0].SetIndex(0);
 
     display.setCursor(0, 32);
     display.print("RPT_DELAY");
@@ -3551,7 +3552,7 @@ void on_digi_option_selected(MenuItem *p_menu_item)
                 else if (i == 0)
                 {
                     chkBox.Toggle();
-                    config.digi_tlm = chkBox.Checked;
+                    //config.digi_tlm = chkBox.Checked;
                     encoder0Pos = keyPrev;
                     chkBox.CheckBoxShow();
                 }
@@ -3562,7 +3563,7 @@ void on_digi_option_selected(MenuItem *p_menu_item)
                     {
                     case 0:
                         cbBox[i].SelectValue(0, 1800, 60);
-                        config.digi_tlm_interval = cbBox[i].GetValue();
+                        //config.digi_tlm_interval = cbBox[i].GetValue();
                         break;
                     case 1:
                         cbBox[i].SelectValue(0, 9999, 10);
@@ -4016,7 +4017,7 @@ void on_filter_selected(MenuItem *p_menu_item)
     chkBox[9].y = 43;
     sprintf(chkBox[9].text, "H-UP");
 
-    chkBox[10].Checked = config.tx_status;
+    chkBox[10].Checked = config.tx_display;
     chkBox[10].x = 35;
     chkBox[10].y = 43;
     sprintf(chkBox[10].text, "TXS");
@@ -4123,7 +4124,7 @@ void on_filter_selected(MenuItem *p_menu_item)
                         config.h_up = chkBox[i].Checked;
                         break;
                     case 10:
-                        config.tx_status = chkBox[i].Checked;
+                        config.tx_display = chkBox[i].Checked;
                         break;
                     }
                     encoder0Pos = keyPrev;
@@ -5187,15 +5188,16 @@ void pkgLastDisp()
     k = 0;
     for (i = 0; i < PKGLISTSIZE; i++)
     {
-        if (pkgList[i].time > 0)
+        pkgListType pkg=getPkgList(i);
+        if (pkg.time > 0)
         {
             y = 26 + (k * 9);
             // display.drawBitmap(3, y, &SYMBOL[0][0], 11, 6, WHITE);
             display.fillRoundRect(2, y, 7, 8, 2, WHITE);
             display.setCursor(3, y);
-            pkgList[i].calsign[10] = 0;
+            pkg.calsign[10] = 0;
             display.setTextColor(BLACK);
-            switch (pkgList[i].type)
+            switch (pkg.type)
             {
             case PKG_OBJECT:
                 display.print("O");
@@ -5224,15 +5226,9 @@ void pkgLastDisp()
             }
             display.setTextColor(WHITE);
             display.setCursor(10, y);
-            display.print(pkgList[i].calsign);
+            display.print(pkg.calsign);
             display.setCursor(126 - 48, y);
-            display.printf("%02d:%02d:%02d", hour(pkgList[i].time), minute(pkgList[i].time), second(pkgList[i].time));
-
-            // str = String(hour(pkgList[i].time),DEC) + ":" + String(minute(pkgList[i].time), DEC) + ":" + String(second(pkgList[i].time), DEC);
-            ////str = String(pkgList[pkgLast_array[i]].time, DEC);
-            // x = str.length() * 6;
-            // display.setCursor(126 - x, y);
-            // display.print(str);
+            display.printf("%02d:%02d:%02d", hour(pkg.time), minute(pkg.time), second(pkg.time));
             k++;
             if (k >= 4)
                 break;
@@ -5250,8 +5246,6 @@ void pkgCountDisp()
     // char list[4];
     int x, y;
     String str;
-    // String times;
-    // pkgListType *ptr[100];
 
     display.fillRect(0, 16, 128, 10, WHITE);
     display.drawLine(0, 16, 0, 63, WHITE);
@@ -5269,16 +5263,17 @@ void pkgCountDisp()
     k = 0;
     for (i = 0; i < PKGLISTSIZE; i++)
     {
-        if (pkgList[i].time > 0)
+        pkgListType pkg=getPkgList(i);
+        if (pkg.time > 0)
         {
             y = 26 + (k * 9);
             // display.drawBitmapV(2, y-1, &SYMBOL[pkgList[i].symbol][0], 11, 8, WHITE);
-            pkgList[i].calsign[10] = 0;
+            pkg.calsign[10] = 0;
             display.fillRoundRect(2, y, 7, 8, 2, WHITE);
             display.setCursor(3, y);
-            pkgList[i].calsign[10] = 0;
+            pkg.calsign[10] = 0;
             display.setTextColor(BLACK);
-            switch (pkgList[i].type)
+            switch (pkg.type)
             {
             case PKG_OBJECT:
                 display.print("O");
@@ -5307,8 +5302,8 @@ void pkgCountDisp()
             }
             display.setTextColor(WHITE);
             display.setCursor(10, y);
-            display.print(pkgList[i].calsign);
-            str = String(pkgList[i].pkg, DEC);
+            display.print(pkg.calsign);
+            str = String(pkg.pkg, DEC);
             x = str.length() * 6;
             display.setCursor(126 - x, y);
             display.print(str);
@@ -5329,8 +5324,6 @@ void systemDisp()
     int x;
     String str;
     time_t upTime = now(); // - startTime;
-    // String times;
-    // pkgListType *ptr[100];
 
     display.fillRect(0, 16, 128, 10, WHITE);
     display.drawLine(0, 16, 0, 63, WHITE);
@@ -5385,9 +5378,6 @@ void gpsDisp()
     // char list[4];
     int x;
     String str;
-    // time_t upTime = now() - startTime;
-    // String times;
-    // pkgListType *ptr[100];
 
     if (gps_mode == 0)
     {
@@ -5539,7 +5529,7 @@ void topBar(int ws)
     int wifiSignal = ws;
     uint8_t wifi = 0, i;
     int x, y;
-    if (!(config.wifi_mode & WIFI_STA))
+    if (!(config.wifi_mode & WIFI_STA_FIX))
         wifiSignal = -30;
     // display.setTextColor(WHITE);
     display.fillRect(0, 0, 128, 16, BLACK);
@@ -5561,7 +5551,7 @@ void topBar(int ws)
     }
     // yield();
     display.setCursor(0, 8);
-    if (config.wifi_mode & WIFI_STA)
+    if (config.wifi_mode & WIFI_STA_FIX)
     {
         display.print(wifiSignal);
         display.print("dBm");
@@ -5604,7 +5594,7 @@ void topBar(int ws)
     // Wifi Status
     // display.setCursor(15,0);
     // display.print("WiFi");
-    if (config.wifi_mode & WIFI_STA)
+    if (config.wifi_mode & WIFI_STA_FIX)
     {
         if (WiFi.status() != WL_CONNECTED)
         {
@@ -6045,31 +6035,43 @@ void mainDisp(void *pvParameters)
             powerSave();
         }
 
+        //Prevent RF interference with OLED
+        if (getTransmit()){
+            delay(100);
+            continue;
+        }
+
         if (conStat == CON_NORMAL)
         {
             menuTimeout = millis();
+            //continue;
             // readSerialGPS();
             if ((raw_count > 0) && (disp_delay == 0))
             {
                 saveTimeout = millis();
                 dispPush = false;
-                popTNC2Raw(selTab);
-                rawDisp = String(pkgList[selTab].raw);
-                dispWindow(rawDisp, dispMode, true);
+                int idx=0;                
+                if(popTNC2Raw(idx)>-1){
+                    pkgListType pkg=getPkgList(idx);
+                    rawDisp = String(pkg.raw);
+                    dispWindow(rawDisp, dispMode, true);
+                    selTab=idx;
+                }
                 // selTab = 1;
             }
-            // if (raw_count > 0)
-            //{
-            if (dispFlagTX == 1)
-            {
-                dispTX(1);
-                dispFlagTX = 0;
-            }
-            else if (dispFlagTX == 2)
-            {
-                dispTX(0);
-                dispFlagTX = 0;
-            }
+
+            // if (!getTransmit())
+            // {
+                if (dispFlagTX == 1)
+                {
+                    dispTX(1);
+                    dispFlagTX = 0;
+                }
+                else if (dispFlagTX == 2)
+                {
+                    dispTX(0);
+                    dispFlagTX = 0;
+                }
             //}
 
             if (millis() > (unsigned long)timeHalfSec)
@@ -6107,7 +6109,9 @@ void mainDisp(void *pvParameters)
             {
                 if (encoder0Pos != posNow)
                 {
+                    
                     saveTimeout = millis();
+                    pkgListType pkg=getPkgList(selTab);
                     if (config.dim == 2)
                         dimTimeout = millis();
                     if (encoder0Pos > posNow)
@@ -6115,7 +6119,7 @@ void mainDisp(void *pvParameters)
                         selTab++;
                         for (; selTab < PKGLISTSIZE; selTab++)
                         {
-                            if (pkgList[selTab].time > 0)
+                            if (pkg.time > 0)
                                 break;
                         }
                         if (selTab >= PKGLISTSIZE)
@@ -6126,16 +6130,17 @@ void mainDisp(void *pvParameters)
                         selTab--;
                         for (; selTab >= 0; selTab--)
                         {
-                            if (pkgList[selTab].time > 0)
+                            if (pkg.time > 0)
                                 break;
                         }
                         if (selTab < 0)
                             selTab = PKGLISTSIZE - 1;
                     }
                     posNow = encoder0Pos;
-                    if (pkgList[selTab].time > 0)
+                    
+                    if (pkg.time > 0)
                     {
-                        rawDisp = String(pkgList[selTab].raw);
+                        rawDisp = String(pkg.raw);
                         dispWindow(rawDisp, dispMode, false);
                     }
                 }
@@ -6210,7 +6215,8 @@ void mainDisp(void *pvParameters)
                     { // To Display mode.
                         dispMode = 0;
                         selTab = 0;
-                        rawDisp = String(pkgList[selTab].raw);
+                        pkgListType pkg=getPkgList(selTab);
+                        rawDisp = String(pkg.raw);
                         dispWindow(rawDisp, dispMode, false);
                         posNow = encoder0Pos;
                     }
@@ -6678,7 +6684,7 @@ void compass_arrow(signed int startx, signed int starty, unsigned int length, do
 
 void dispTX(bool port)
 {
-
+    //display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false);
     display.clearDisplay();
     // display.fillRect(0, 0, 128, 64, BLACK);
     disp_delay = 2000;

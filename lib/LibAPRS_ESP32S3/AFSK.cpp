@@ -1,4 +1,3 @@
-
 #include <string.h>
 #include "AFSK.h"
 #include "Arduino.h"
@@ -8,6 +7,12 @@
 #include "cppQueue.h"
 #include "ButterworthFilter.h"
 #include "fir_filter.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+
+#include "driver/sigmadelta.h"
 
 extern "C"
 {
@@ -34,24 +39,108 @@ static filter_t hpf;
 
 Afsk *AFSK_modem;
 
-// //กรองความถี่สูงผ่าน >300Hz  HPF Butterworth Filter. 0-300Hz ช่วงความถี่ต่ำใช้กับโทน CTCSS/DCS ในวิทยุสื่อสารจะถูกรองทิ้ง
-// ButterworthFilter hp_filter(600, SAMPLE_RATE, ButterworthFilter::ButterworthFilter::Highpass, 1);
-// //กรองความถี่ต่ำผ่าน <3KHz  LPF Butterworth Filter. ความถี่เสียงที่มากกว่า 3.5KHz ไม่ใช่ความถี่เสียงคนพูดจะถูกกรองทิ้ง
-// ButterworthFilter lp_filter(3500, 9600, ButterworthFilter::ButterworthFilter::Lowpass, 2);
+#define ADC_RESULT_BYTE 4
+#define ADC_CONV_LIMIT_EN 0
 
-// // Bandpass Filter
-// void bandpass_filter(float *h, int n)
-// {
-//   int i = 0;
-//   for (i = 0; i < n; i++)
-//   {
-//     h[i] = lp_filter.Update(h[i]);
-//   }
-//   for (i = 0; i < n; i++)
-//   {
-//     h[i] = hp_filter.Update(h[i]);
-//   }
-// }
+static bool check_valid_data(const adc_digi_output_data_t *data);
+
+#define TIMES 1920
+#define GET_UNIT(x) ((x >> 3) & 0x1)
+static uint16_t adc1_chan_mask = BIT(0);
+static uint16_t adc2_chan_mask = 0;
+static adc_channel_t channel[1] = {(adc_channel_t)ADC1_CHANNEL_0};
+static const char *TAG = "--(TAG ADC DMA)--";
+#define ADC_OUTPUT_TYPE ADC_DIGI_OUTPUT_FORMAT_TYPE2
+
+static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask, adc_channel_t *channel, uint8_t channel_num)
+{
+  // channel[0] = (adc_channel_t)digitalPinToAnalogChannel(1);
+  log_d("adc_digi_initialize");
+
+  adc_digi_init_config_t adc_dma_config = {
+      .max_store_buf_size = 8 * TIMES,
+      .conv_num_each_intr = TIMES,
+      .adc1_chan_mask = adc1_chan_mask,
+      .adc2_chan_mask = adc2_chan_mask,
+  };
+
+  ESP_ERROR_CHECK(adc_digi_initialize(&adc_dma_config));
+
+  log_d("adc_digi_config");
+  adc_digi_configuration_t dig_cfg = {
+      .conv_limit_en = ADC_CONV_LIMIT_EN,
+      .conv_limit_num = 250,
+      .sample_freq_hz = SAMPLERATE,
+      .conv_mode = ADC_CONV_SINGLE_UNIT_1,   ////ESP32 only supports ADC1 DMA mode
+      .format = ADC_DIGI_OUTPUT_FORMAT_TYPE2 // ADC_DIGI_OUTPUT_FORMAT_TYPE2,
+  };
+
+  adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
+  dig_cfg.pattern_num = channel_num;
+
+  log_d("adc_digi_controller");
+  int i = 0;
+  for (int i = 0; i < channel_num; i++)
+  {
+    uint8_t unit = GET_UNIT(channel[i]);
+    uint8_t ch = channel[i] & 0x7;
+    adc_pattern[i].atten = ADC_ATTEN_DB_11;
+    adc_pattern[i].channel = ch;
+    adc_pattern[i].unit = unit;
+    adc_pattern[i].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH; // 11 data bits limit
+
+    ESP_LOGI(TAG, "adc_pattern[%d].atten is :%x", i, adc_pattern[i].atten);
+    ESP_LOGI(TAG, "adc_pattern[%d].channel is :%x", i, adc_pattern[i].channel);
+    ESP_LOGI(TAG, "adc_pattern[%d].unit is :%x", i, adc_pattern[i].unit);
+  }
+  dig_cfg.adc_pattern = adc_pattern;
+  ESP_ERROR_CHECK(adc_digi_controller_configure(&dig_cfg));
+}
+
+#if !CONFIG_IDF_TARGET_ESP32
+static bool check_valid_data(const adc_digi_output_data_t *data)
+{
+  const unsigned int unit = data->type2.unit;
+  if (unit > 0)
+    return false;
+  if (data->type2.channel > 0)
+    return false;
+  return true;
+}
+#endif
+
+void adcActive(bool sts)
+{
+  if (sts)
+    adc_digi_start();
+  else
+    adc_digi_stop();
+}
+
+esp_err_t adc_init()
+{
+  esp_err_t error_code;
+
+  continuous_adc_init(adc1_chan_mask, adc2_chan_mask, channel, sizeof(channel) / sizeof(adc_channel_t));
+  // continuous_adc_init(0, 0, channel, 1);
+  //  error_code = adc1_config_width(ADC_WIDTH_BIT_12);
+  //  log_d("adc1_config_width error_code=%d", error_code);
+
+  // if (error_code != ESP_OK)
+  // {
+  //   return error_code;
+  // }
+  adc_digi_start();
+
+  return ESP_OK;
+}
+
+int IRAM_ATTR read_adc_dma(uint32_t *ret_num, uint8_t *result)
+{
+  esp_err_t ret;
+  ret = adc_digi_read_bytes(result, TIMES, ret_num, ADC_MAX_DELAY);
+  return ret;
+}
 
 uint8_t CountOnesFromInteger(uint8_t value)
 {
@@ -63,147 +152,13 @@ uint8_t CountOnesFromInteger(uint8_t value)
 
 #define IMPLEMENTATION FIFO
 
-#ifndef I2S_INTERNAL
 cppQueue adcq(sizeof(int16_t), 19200, IMPLEMENTATION); // Instantiate queue
-#endif
 
 // Forward declerations
 int afsk_getchar(void);
 void afsk_putchar(char c);
 
-#ifdef I2S_INTERNAL
-// #define ADC_PATT_LEN_MAX (16)
-// #define ADC_CHECK_UNIT(unit) RTC_MODULE_CHECK(adc_unit < ADC_UNIT_2, "ADC unit error, only support ADC1 for now", ESP_ERR_INVALID_ARG)
-// #define RTC_MODULE_CHECK(a, str, ret_val)                                             \
-//   if (!(a))                                                                           \
-//   {                                                                                   \
-//     ESP_LOGE(RTC_MODULE_TAG, "%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str); \
-//     return (ret_val);                                                                 \
-//   }
-
-i2s_event_t i2s_evt;
-static QueueHandle_t i2s_event_queue;
-
-// static esp_err_t adc_set_i2s_data_len(adc_unit_t adc_unit, int patt_len)
-// {
-//   ADC_CHECK_UNIT(adc_unit);
-//   RTC_MODULE_CHECK((patt_len < ADC_PATT_LEN_MAX) && (patt_len > 0), "ADC pattern length error", ESP_ERR_INVALID_ARG);
-//   // portENTER_CRITICAL(&rtc_spinlock);
-//   if (adc_unit & ADC_UNIT_1)
-//   {
-//     SYSCON.saradc_ctrl.sar1_patt_len = patt_len - 1;
-//   }
-//   if (adc_unit & ADC_UNIT_2)
-//   {
-//     SYSCON.saradc_ctrl.sar2_patt_len = patt_len - 1;
-//   }
-//   // portEXIT_CRITICAL(&rtc_spinlock);
-//   return ESP_OK;
-// }
-
-// static esp_err_t adc_set_i2s_data_pattern(adc_unit_t adc_unit, int seq_num, adc_channel_t channel, adc_bits_width_t bits, adc_atten_t atten)
-// {
-//   ADC_CHECK_UNIT(adc_unit);
-//   if (adc_unit & ADC_UNIT_1)
-//   {
-//     RTC_MODULE_CHECK((adc1_channel_t)channel < ADC1_CHANNEL_MAX, "ADC1 channel error", ESP_ERR_INVALID_ARG);
-//   }
-//   RTC_MODULE_CHECK(bits < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
-//   RTC_MODULE_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
-
-//   // portENTER_CRITICAL(&rtc_spinlock);
-//   // Configure pattern table, each 8 bit defines one channel
-//   //[7:4]-channel [3:2]-bit width [1:0]- attenuation
-//   // BIT WIDTH: 3: 12BIT  2: 11BIT  1: 10BIT  0: 9BIT
-//   // ATTEN: 3: ATTEN = 11dB 2: 6dB 1: 2.5dB 0: 0dB
-//   uint8_t val = (channel << 4) | (bits << 2) | (atten << 0);
-//   if (adc_unit & ADC_UNIT_1)
-//   {
-//     SYSCON.saradc_sar1_patt_tab[seq_num / 4] &= (~(0xff << ((3 - (seq_num % 4)) * 8)));
-//     SYSCON.saradc_sar1_patt_tab[seq_num / 4] |= (val << ((3 - (seq_num % 4)) * 8));
-//   }
-//   if (adc_unit & ADC_UNIT_2)
-//   {
-//     SYSCON.saradc_sar2_patt_tab[seq_num / 4] &= (~(0xff << ((3 - (seq_num % 4)) * 8)));
-//     SYSCON.saradc_sar2_patt_tab[seq_num / 4] |= (val << ((3 - (seq_num % 4)) * 8));
-//   }
-//   // portEXIT_CRITICAL(&rtc_spinlock);
-//   return ESP_OK;
-// }
-
-void I2S_Init(i2s_mode_t MODE, i2s_bits_per_sample_t BPS)
-{
-  i2s_config_t i2s_config = {
-      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN),
-      .sample_rate = SAMPLE_RATE,
-      .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-      .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-      .communication_format = (i2s_comm_format_t)I2S_COMM_FORMAT_STAND_I2S,
-      .intr_alloc_flags = 0, // ESP_INTR_FLAG_LEVEL1,
-      .dma_buf_count = 3,
-      .dma_buf_len = 768,
-      //.tx_desc_auto_clear   = true,
-      .use_apll = false // no Audio PLL ( I dont need the adc to be accurate )
-  };
-
-  if (MODE == I2S_MODE_RX || MODE == I2S_MODE_TX)
-  {
-    Serial.println("using I2S_MODE");
-    i2s_pin_config_t pin_config;
-    pin_config.bck_io_num = PIN_I2S_BCLK;
-    pin_config.ws_io_num = PIN_I2S_LRC;
-    if (MODE == I2S_MODE_RX)
-    {
-      pin_config.data_out_num = I2S_PIN_NO_CHANGE;
-      pin_config.data_in_num = PIN_I2S_DIN;
-    }
-    else if (MODE == I2S_MODE_TX)
-    {
-      pin_config.data_out_num = PIN_I2S_DOUT;
-      pin_config.data_in_num = I2S_PIN_NO_CHANGE;
-    }
-
-    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
-    i2s_set_pin(I2S_NUM_0, &pin_config);
-    i2s_set_clk(I2S_NUM_0, SAMPLE_RATE, BPS, I2S_CHANNEL_MONO);
-  }
-  else if (MODE == I2S_MODE_DAC_BUILT_IN || MODE == I2S_MODE_ADC_BUILT_IN)
-  {
-    Serial.println("Using I2S DAC/ADC_builtin");
-    // install and start i2s driver
-    if (i2s_driver_install(I2S_NUM_0, &i2s_config, 5, &i2s_event_queue) != ESP_OK)
-    {
-      Serial.println("ERROR: Unable to install I2S drives");
-    }
-    // GPIO36, VP
-    // init ADC pad
-    i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_0);
-    // i2s_set_clk(I2S_NUM_0, SAMPLE_RATE, BPS, I2S_CHANNEL_MONO);
-    i2s_adc_enable(I2S_NUM_0);
-    delay(500); // required for stability of ADC
-
-    // ***IMPORTANT*** enable continuous adc sampling
-    SYSCON.saradc_ctrl2.meas_num_limit = 0;
-    // sample time SAR setting
-    SYSCON.saradc_ctrl.sar_clk_div = 2;
-    SYSCON.saradc_fsm.sample_cycle = 2;
-    // adc_set_i2s_data_pattern(ADC_UNIT_1, 0, ADC_CHANNEL_0, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_0); // Input Vref 1.36V=4095,Offset 0.6324V=1744
-    // adc_set_i2s_data_len(ADC_UNIT_1, 1);
-
-    i2s_set_pin(I2S_NUM_0, NULL);
-    i2s_set_dac_mode(I2S_DAC_CHANNEL_LEFT_EN); // IO26
-    i2s_zero_dma_buffer(I2S_NUM_0);
-    // i2s_start(I2S_NUM_0);
-    //  dac_output_enable(DAC_CHANNEL_1);
-    dac_output_enable(DAC_CHANNEL_2);
-    dac_i2s_enable();
-  }
-}
-
-#else
-
 hw_timer_t *timer = NULL;
-
 
 void AFSK_TimerEnable(bool sts)
 {
@@ -215,64 +170,61 @@ void AFSK_TimerEnable(bool sts)
     timerAlarmDisable(timer);
 }
 
-#endif
-
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(1, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
 
-void LED_Color(uint8_t r,uint8_t g,uint8_t b){
-    strip.setPixelColor(0, strip.Color(r, g,b));
-    strip.show();
+void LED_Color(uint8_t r, uint8_t g, uint8_t b)
+{
+  strip.setPixelColor(0, strip.Color(r, g, b));
+  strip.show();
 }
+
+bool getTransmit()
+{
+  bool ret;
+  if (digitalRead(PTT_PIN) == 0)
+    ret = true;
+  else
+    ret = false;
+  return ret;
+}
+
+uint32_t ret_num;
+uint8_t *resultADC;
 
 void AFSK_hw_init(void)
 {
   // Set up ADC
-  //pinMode(RSSI_PIN, INPUT_PULLUP);
+  log_d("AFSK hardware Initialize");
+  // pinMode(RSSI_PIN, INPUT_PULLUP);
   pinMode(PTT_PIN, OUTPUT);
-  //pinMode(4, OUTPUT);
+  pinMode(17, OUTPUT); // MIC_SEL
+  pinMode(18, OUTPUT); // ESP2MIC
+  pinMode(1, ANALOG);  // AUDIO2ESP
 
-  //pinMode(LED_PIN, OUTPUT);
-  //digitalWrite(LED_PIN, LOW);
+  digitalWrite(17, HIGH);
+  digitalWrite(PTT_PIN, HIGH); // PTT not active
 
-  digitalWrite(PTT_PIN, HIGH);
+  resultADC = (uint8_t *)malloc(TIMES * sizeof(uint8_t));
 
-#ifdef I2S_INTERNAL
-  //  Initialize the I2S peripheral
-  I2S_Init(I2S_MODE_DAC_BUILT_IN, I2S_BITS_PER_SAMPLE_16BIT);
-#else
-  // pinMode(MIC_PIN, INPUT);
-  //  Init ADC and Characteristics
-  //  esp_adc_cal_characteristics_t characteristics;
-  adc1_config_width(ADC_WIDTH_BIT_12);
-  //adc1_config_channel_atten(SPK_PIN, ADC_ATTEN_DB_0); // Input 1.24Vp-p,Use R 33K-(10K//10K) divider input power 1.2Vref
-  adc1_config_channel_atten(SPK_PIN, ADC_ATTEN_DB_11); //Input 3.3Vp-p,Use R 10K divider input power 3.3V
-  // esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, &characteristics);
-  // Serial.printf("v_ref routed to 3.3V\n");
+  adc_init();
 
-  // Start a timer at 9.6kHz to sample the ADC and play the audio on the DAC.
-  timer = timerBegin(0, 10, true);                // 80 MHz / 10 = 8MHz hardware clock
-  timerAttachInterrupt(timer, &sample_isr, true); // Attaches the handler function to the timer
-  timerAlarmWrite(timer, 834, true);              // Interrupts when counter == 834, 9592.3 times a second
-  //timerAlarmWrite(timer, 417, true);              // Interrupts when counter == 834, 9592.3 times a second
+  sigmadelta_config_t sdm_config{
+      .channel = SIGMADELTA_CHANNEL_0,
+      .sigmadelta_duty = 127,    /*!< Sigma-delta duty, duty ranges from -128 to 127. */
+      .sigmadelta_prescale = 96, /*!< Sigma-delta prescale, prescale ranges from 0 to 255. */
+      .sigmadelta_gpio = MIC_PIN};
+  sigmadelta_config(&sdm_config);
+  // Sample the play the audio on the DAC.
+  timer = timerBegin(0, 4, true);                                                // 80MHz%4 = 20MHz hardware clock
+  timerAttachInterrupt(timer, &sample_isr, true);                                // Attaches the handler function to the timer
+  timerAlarmWrite(timer, (uint64_t)20000000 / CONFIG_AFSK_DAC_SAMPLERATE, true); // Interrupts when counter == 20MHz/CONFIG_AFSK_DAC_SAMPLERATE
   timerAlarmEnable(timer);
-
-  pinMode(1, ANALOG);
-  pinMode(17, OUTPUT);
-  digitalWrite(17,1);
-  pinMode(MIC_PIN, OUTPUT);
-  ledcSetup(0, 64000, 8); // PWM 128KHz 8Bit
-  ledcAttachPin(MIC_PIN, 0);
-  //timerAlarmDisable(timer);
-  //timerAlarmEnable(timer);
-
-  strip.begin();
-  strip.setBrightness(50);
-  strip.show(); // Initialize all pixels to 'off'
-#endif
+  AFSK_TimerEnable(false);
 }
 
 void AFSK_init(Afsk *afsk)
 {
+  log_d("AFSK software Initialize");
   // Allocate modem struct memory
   memset(afsk, 0, sizeof(*afsk));
   AFSK_modem = afsk;
@@ -289,7 +241,7 @@ void AFSK_init(Afsk *afsk)
       .pass_freq = 0,
       .cutoff_freq = 1200,
   };
-  int16_t *lpf_an, *bpf_an,*hpf_an;
+  int16_t *lpf_an, *bpf_an, *hpf_an;
   // LPF
   lpf_an = filter_coeff(&flt);
   // BPF
@@ -317,24 +269,17 @@ static void AFSK_txStart(Afsk *afsk)
 {
   if (!afsk->sending)
   {
-    AFSK_TimerEnable(true);
     fifo_flush(&AFSK_modem->txFifo);
     // Serial.println("TX Start");
     afsk->sending = true;
     afsk->phaseInc = MARK_INC;
     afsk->phaseAcc = 0;
     afsk->bitstuffCount = 0;
-    // LED_TX_ON();
-    //digitalWrite(LED_TX_PIN, HIGH);
     digitalWrite(PTT_PIN, LOW);
     afsk->preambleLength = DIV_ROUND(custom_preamble * BITRATE, 4800);
     AFSK_DAC_IRQ_START();
-    //LED_TX_ON();
-#ifdef I2S_INTERNAL
-    i2s_zero_dma_buffer(I2S_NUM_0);
-    // i2s_adc_disable(I2S_NUM_0);
-    dac_i2s_enable();
-#endif
+    // LED_TX_ON();
+    AFSK_TimerEnable(true);
   }
   noInterrupts();
   afsk->tailLength = DIV_ROUND(custom_tail * BITRATE, 4800);
@@ -378,17 +323,12 @@ uint8_t AFSK_dac_isr(Afsk *afsk)
 {
   if (afsk->sampleIndex == 0)
   {
-    // LED_RX_ON();
-    // digitalWrite(LED_PIN), LOW);
     if (afsk->txBit == 0)
     {
       if (fifo_isempty(&afsk->txFifo) && afsk->tailLength == 0)
       {
         AFSK_DAC_IRQ_STOP();
-        //LED_TX_OFF();
         afsk->sending = false;
-        // LED_TX_OFF();
-        // digitalWrite(PTT_PIN, LOW);
         return 0;
       }
       else
@@ -418,10 +358,7 @@ uint8_t AFSK_dac_isr(Afsk *afsk)
           if (fifo_isempty(&afsk->txFifo))
           {
             AFSK_DAC_IRQ_STOP();
-            //LED_TX_OFF();
             afsk->sending = false;
-            // LED_TX_OFF();
-            // digitalWrite(PTT_PIN, LOW);
             return 0;
           }
           else
@@ -463,13 +400,13 @@ uint8_t AFSK_dac_isr(Afsk *afsk)
   afsk->phaseAcc %= SIN_LEN;
   if (afsk->sampleIndex > 0)
     afsk->sampleIndex--;
-  // LED_RX_OFF();
 
   return sinSample(afsk->phaseAcc);
 }
 
 int hdlc_flag_count = 0;
 bool hdlc_flage_end = false;
+bool sync_flage = false;
 static bool hdlcParse(Hdlc *hdlc, bool bit, FIFOBuffer *fifo)
 {
   // Initialise a return value. We start with the
@@ -502,6 +439,7 @@ static bool hdlcParse(Hdlc *hdlc, bool bit, FIFOBuffer *fifo)
       {
         fifo_flush(fifo);
         LED_RX_ON();
+        sync_flage = true;
       }
       fifo_push(fifo, HDLC_FLAG);
     }
@@ -527,6 +465,7 @@ static bool hdlcParse(Hdlc *hdlc, bool bit, FIFOBuffer *fifo)
     hdlc->bitIndex = 0;
     return ret;
   }
+  sync_flage = false;
 
   // Check if we have received a RESET flag (01111111)
   // In this comparison we also detect when no transmission
@@ -785,66 +724,39 @@ int16_t abufPos = 0;
 extern void APRS_poll();
 uint8_t poll_timer = 0;
 // int adc_count = 0;
-int offset_new = 0, offset = 2080, offset_count = 0;
+int offset_new = 0, offset = 2090, offset_count = 0;
 
-#ifndef I2S_INTERNAL
-// int x=0;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+double sinwave;
 
-void IRAM_ATTR  sample_isr()
+void IRAM_ATTR sample_isr()
 {
-  //portENTER_CRITICAL_ISR(&timerMux); // ISR start
-
   if (hw_afsk_dac_isr)
   {
-    uint8_t sinwave = AFSK_dac_isr(AFSK_modem);
-    //   abufPos += 45;
-    //sinwave = (uint8_t)filter(&hpf, (int16_t)sinwave);
-    // sinwave =(uint8_t)(127+(sin((float)abufPos/57)*128));
-    // if(abufPos>=315) abufPos=0;
-    // if(x++<16) Serial.printf("%d,",sinwave);
-    // dacWrite(MIC_PIN, sinwave);
-    ledcWrite(0, sinwave); // DAC PWM
-    if (AFSK_modem->sending == false){
-      digitalWrite(PTT_PIN, HIGH);
-      //AFSK_TimerEnable(false);
-    }
-  }
-  else
-  {
-    // digitalWrite(4, HIGH);
-    adcVal = adc1_get_raw(SPK_PIN); // Read ADC1_0 From PIN 36(VP)
-    //adcVal=analogRead(1);
-    // Auto offset level
-    offset_new += adcVal;
-    offset_count++;
-    if (offset_count >= 96) //192
+    portENTER_CRITICAL_ISR(&timerMux);          // ISR start
+    sinwave = (double)AFSK_dac_isr(AFSK_modem); // Return sine wave value 0-255
+    // Sigma-delta duty of one channel, the value ranges from -128 to 127, recommended range is -90 ~ 90.The waveform is more like a random one in this range.
+    int8_t sine = (int8_t)((sinwave - 127) / 1.5); // Redue sine = -85 ~ 85
+    sigmadelta_set_duty(SIGMADELTA_CHANNEL_0, sine);
+
+    // End of packet
+    if (AFSK_modem->sending == false)
     {
-      //Serial.printf("%d,",adcVal);
-      offset = offset_new / offset_count;
-      offset_count = 0;
-      offset_new = 0;
-      if (offset > 3000 || offset < 1000) // Over dc offset to default
-        offset = 2080;
+      digitalWrite(PTT_PIN, HIGH);
+      AFSK_TimerEnable(false);
+      // LED_TX_OFF();
     }
-    // Convert unsign wave to sign wave form
-    adcVal -= offset;
-    // adcVal-=2030;
-    //int8_t adcR = (int8_t)((int16_t)(adcVal >> 4)); // Reduce 12bit to 8bit
-    // int8_t adcR = (int8_t)(adcVal / 16); // Reduce 12bit to 8bit
-    adcq.push(&adcVal); // Add queue buffer
-    // digitalWrite(4, LOW);
+    portEXIT_CRITICAL_ISR(&timerMux); // ISR end
   }
-  //portEXIT_CRITICAL_ISR(&timerMux); // ISR end
 }
-#else
+
 bool tx_en = false;
-#endif
 
 extern int mVrms;
 extern float dBV;
 extern bool afskSync;
 
+double Vrms = 0;
 long mVsum = 0;
 int mVsumCount = 0;
 long lastVrms = 0;
@@ -856,122 +768,22 @@ void AFSK_Poll(bool SA818, bool RFPower)
   int mV;
   int x = 0;
   size_t writeByte;
-  // uint8_t sintable[8] = {127, 217, 254, 217, 127, 36, 0, 36};
-#ifdef I2S_INTERNAL
-  size_t bytesRead;
-  uint16_t pcm_in[ADC_SAMPLES_COUNT];
-  uint16_t pcm_out[ADC_SAMPLES_COUNT];
-#else
   int16_t adc;
-#endif
 
-  if (hw_afsk_dac_isr)
+  if (!hw_afsk_dac_isr)
   {
-#ifdef I2S_INTERNAL
-    memset(pcm_out, 0, sizeof(pcm_out));
-    for (x = 0; x < ADC_SAMPLES_COUNT; x++)
+    memset(resultADC, 0xcc, TIMES * sizeof(uint8_t));
+    esp_err_t ret = read_adc_dma(&ret_num, &resultADC[0]);
+    if (ret == ESP_OK || ret == ESP_ERR_INVALID_STATE)
     {
-      // LED_RX_ON();
-      adcVal = (int)AFSK_dac_isr(AFSK_modem);
-      // Serial.print(adcVal,HEX);
-      // Serial.print(",");
-      if (AFSK_modem->sending == false && adcVal == 0)
-        break;
-
-      // ไม่สามารถใช้งานในโหมด MONO ได้ จะต้องส่งข้อมูลตามลำดับซ้ายและขวา เอาต์พุต DAC บน I2S เป็นสเตอริโอเสมอ
-      //  Ref: https://lang-ship.com/blog/work/esp32-i2s-dac/#toc6
-      //  Left Channel GPIO 26
-      pcm_out[x] = (uint16_t)adcVal; // MSB
-                                     // if(SA818){
-                                     //   pcm_out[x] <<= 7;
-                                     //   pcm_out[x]+=10000;
-                                     // }else{
-      pcm_out[x] <<= 8;
-      pcm_out[x] |= (uint16_t)adcVal; // MSB
-      //}
-      x++;
-      // Right Channel GPIO 25
-      pcm_out[x] = 0;
-    }
-
-    int availableBytes = x * sizeof(uint16_t);
-    int buffer_position = 0;
-    size_t bytesWritten = 0;
-    if (x > 0)
-    {
-      // do
-      // {
-
-      //   // do we have something to write?
-      //   if (availableBytes > 0)
-      //   {
-      //     // write data to the i2s peripheral
-      //     i2s_write(I2S_NUM_0, buffer_position + (char *)&pcm_out,availableBytes, &bytesWritten, portMAX_DELAY);
-      //     availableBytes -= bytesWritten;
-      //     buffer_position += bytesWritten;
-      //   }
-      // } while (bytesWritten > 0);
-
-      if (i2s_write(I2S_NUM_0, (char *)&pcm_out, (x * sizeof(uint16_t)),&writeByte, portMAX_DELAY) == ESP_OK)
+      // ESP_LOGI("TASK:", "ret is %x, ret_num is %d", ret, ret_num);
+      for (int i = 0; i < ret_num; i += ADC_RESULT_BYTE)
       {
-        Serial.println("I2S Write Error");
-      }
-    }
-
-    // รอให้ I2S DAC ส่งให้หมดบัพเฟอร์ก่อนสั่งปิด DAC/PTT
-    if (AFSK_modem->sending == false)
-    {
-      int txEvents = 0;
-      memset(pcm_out, 0, sizeof(pcm_out));
-      // Serial.println("TX TAIL");
-      //  Clear Delay DMA Buffer
-      for (int i = 0; i < 5; i++)
-        i2s_write(I2S_NUM_0, (char *)&pcm_out, (ADC_SAMPLES_COUNT * sizeof(uint16_t)), &writeByte, portMAX_DELAY);
-      // wait on I2S event queue until a TX_DONE is found
-      while (xQueueReceive(i2s_event_queue, &i2s_evt, portMAX_DELAY) == pdPASS)
-      {
-        if (i2s_evt.type == I2S_EVENT_TX_DONE) // I2S DMA finish sent 1 buffer
+        adc_digi_output_data_t *p = (adc_digi_output_data_t *)&resultADC[i];
+        if (check_valid_data(p))
         {
-          if (++txEvents > 6)
-          {
-            // Serial.println("TX DONE");
-            break;
-          }
-        }
-      }
-      dac_i2s_disable();
-      i2s_zero_dma_buffer(I2S_NUM_0);
-      // i2s_adc_enable(I2S_NUM_0);
-      digitalWrite(PTT_PIN, LOW);
-      if (SA818)
-      {
-        digitalWrite(12, LOW); // RF Power LOW
-      }
-    }
-#endif
-  }
-  else
-  {
-#ifdef I2S_INTERNAL
-    if (digitalRead(34) == LOW)
-    {
-      if (sqlActive == false)
-      { // Falling Edge SQL
-        log_d("RX Signal");
-        // i2s_stop(I2S_NUM_0);
-        // ac.DumpRegisters();
-        //  ac.SetMode(AC101::MODE_LINE);
-        //  memset(pcm_in,0,sizeof(pcm_in));
-        //  i2s_zero_dma_buffer(I2S_NUM_0);
-        //  i2s_start(I2S_NUM_0);
-        sqlActive = true;
-      }
-      if (i2s_read(I2S_NUM_0, (char *)&pcm_in, (ADC_SAMPLES_COUNT * sizeof(uint16_t)), &bytesRead, portMAX_DELAY) == ESP_OK)
-      {
-
-        for (int i = 0; i < (bytesRead / sizeof(uint16_t)); i += 2)
-        {
-          adcVal = (int)pcm_in[i];
+          // if(i<100) log_d("ret%x i=%d  Unit: %d,_Channel: %d, Value: %d\n",ret, i, p->type2.unit, p->type2.channel, p->type2.data);
+          adcVal = p->type2.data;
           offset_new += adcVal;
           offset_count++;
           if (offset_count >= ADC_SAMPLES_COUNT) // 192
@@ -979,83 +791,49 @@ void AFSK_Poll(bool SA818, bool RFPower)
             offset = offset_new / offset_count;
             offset_count = 0;
             offset_new = 0;
-            if (offset > 3300 || offset < 1300) // Over dc offset to default
-              offset = 2303;
+            if (offset > 3000 || offset < 1000) // Over dc offset to default
+              offset = 2090;
           }
-          adcVal -= offset; // Convert unsinewave to sinewave
+          adcVal -= offset; // Convert unsinewave to sinewave, offset=1.762V ,raw=2090
+
+          if (sync_flage == true)
+          {
+            mV = (int)((float)adcVal / 1.1862F); // ADC Raw to mV
+            mVsum += powl(mV, 2);                // VRMS = √(1/n)(V1^2 +V2^2 + … + Vn^2)
+            mVsumCount++;
+          }
 
           if (input_HPF)
           {
             adcVal = (int)filter(&bpf, (int16_t)adcVal);
           }
 
-          if (afskSync == false)
-          {
-            mV = abs((int)adcVal);         // mVp-p
-            mV = (int)((float)mV / 3.68F); // mV=(mV*625)/36848;
-            mVsum += powl(mV, 2);
-            mVsumCount++;
-          }
-          // int8_t adcR = (int8_t)((int16_t)(adcVal >> 4)); // Reduce 12bit to 8bit
-          // int8_t adcR=(int8_t)(adcVal/16);
-
           AFSK_adc_isr(AFSK_modem, (int16_t)adcVal); // Process signal IIR
-          if (i % 32 == 0)
+          if (i % PHASE_BITS == 0)
             APRS_poll(); // Poll check every 1 bit
         }
-        // Get mVrms on Sync flage 0x7E
-        if (afskSync == false)
+      }
+      // Get mVrms on Sync affter flage 0x7E
+      // if (afskSync == false)
+      if (sync_flage == false)
+      {
+        if (mVsumCount > 500)
         {
-          if (hdlc_flag_count > 3 && hdlc_flage_end == true)
-          {
-            if (mVsumCount > 960)
-            {
-              mVrms = sqrtl(mVsum / mVsumCount);
-              mVsum = 0;
-              mVsumCount = 0;
-              lastVrms = millis() + 500;
-              VrmsFlag = true;
-              // if(millis()>lastVrms){
-              //  double Vrms=(double)mVrms/1000;
-              //  dBV = 20.0F * log10(Vrms);
-              //  //dBu = 20 * log10(Vrms / 0.7746);
-              //  Serial.printf("mVrms=%d dBV=%0.1f agc=%0.2f\n",mVrms,dBV);
-              // afskSync = true;
-              //}
-            }
-          }
-          if (millis() > lastVrms && VrmsFlag)
-          {
-            afskSync = true;
-            VrmsFlag = false;
-          }
+          mVrms = sqrtl(mVsum / mVsumCount); // VRMS = √(1/mVsumCount)(mVsum)
+          mVsum = 0;
+          mVsumCount = 0;
+          lastVrms = millis() + 500;
+          VrmsFlag = true;
+          // Tool conversion dBv <--> Vrms at http://sengpielaudio.com/calculator-db-volt.htm
+          // dBV = 20.0F * log10(Vrms);
+          log_d("Audio dc_offset=%d mVrms=%d", offset, mVrms);
+        }
+        if (millis() > lastVrms && VrmsFlag)
+        {
+          afskSync = true;
+          VrmsFlag = false;
         }
       }
     }
-    else
-    {
-      // if(sqlActive==true){
-      //   i2s_stop(I2S_NUM_0);
-      // }
-      LED_RX_OFF();
-      sqlActive = false;
-    }
-#else
-    if (adcq.getCount() >= ADC_SAMPLES_COUNT)
-    {
-      for (x = 0; x < ADC_SAMPLES_COUNT; x++)
-      {
-        if (!adcq.pop(&adc)) // Pull queue buffer
-          break;
-        // audiof[x] = (float)adc;
-        //  Serial.printf("%02x ", (unsigned char)adc);
-        //int adcFir = (int)filter(&bpf, (int16_t)adc);
-        AFSK_adc_isr(AFSK_modem, adc); // Process signal IIR
-        if (x % 2 == 0)
-          APRS_poll(); // Poll check every 1 byte
-      }
-      APRS_poll();
-    }
-#endif
   }
 }
