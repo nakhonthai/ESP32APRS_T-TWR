@@ -293,6 +293,8 @@ void AFSK_TimerEnable(bool sts);
 uint8_t AFSK_dac_isr(Afsk *afsk);
 void adcActive(bool sts);
 esp_err_t adc_init();
+void afskSetHPF(bool val);
+void afskSetBPF(bool val);
 // int IRAM_ATTR
 int read_adc_dma(uint32_t *ret_num, uint8_t *result);
 

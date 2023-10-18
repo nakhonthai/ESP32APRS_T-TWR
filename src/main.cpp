@@ -25,6 +25,9 @@
 #include "cppQueue.h"
 #include "digirepeater.h"
 #include "igate.h"
+#include "wireguardif.h"
+#include "wireguard.h"
+#include "wireguard_vpn.h"
 
 #include "time.h"
 
@@ -81,13 +84,11 @@ ParseAPRS aprsParse;
 
 TinyGPSPlus gps;
 
-#ifdef SA818
 #define VBAT_PIN 36
 #define POWER_PIN SA868_PWR_PIN
 #define PULLDOWN_PIN SA868_PD_PIN
 #define SQL_PIN -1
 HardwareSerial SerialRF(1);
-#endif
 
 #define PWR_VDD 4
 
@@ -519,6 +520,7 @@ void defaultConfig()
 
   //--RF Module
   config.rf_en = true;
+  config.rf_type = RF_SA868_VHF;
   config.freq_rx = 144.3900;
   config.freq_tx = 144.3900;
   config.offset_rx = 0;
@@ -530,8 +532,6 @@ void defaultConfig()
   config.rf_power = LOW;
   config.volume = 6;
   config.mic = 8;
-  config.input_hpf = false;
-  input_HPF = config.input_hpf;
 
   // IGATE
   config.igate_bcn = false;
@@ -552,7 +552,7 @@ void defaultConfig()
   config.igate_gps = false;
   config.igate_lat = 13.7555;
   config.igate_lon = 100.4930;
-  config.igate_alt = 1;
+  config.igate_alt = 0;
   config.igate_interval = 600;
   sprintf(config.igate_symbol, "/&");
   sprintf(config.igate_object, "");
@@ -571,11 +571,11 @@ void defaultConfig()
   config.digi_gps = false;
   config.digi_lat = 13.7555;
   config.digi_lon = 100.4930;
-  config.digi_alt = 1;
+  config.digi_alt = 0;
   config.digi_interval = 600;
   config.digi_delay = 0;
   sprintf(config.digi_symbol, "/#");
-  // sprintf(config.digi_phg,"");
+  sprintf(config.digi_phg, "");
   sprintf(config.digi_comment, "DIGI MODE");
 
   // Tracker
@@ -593,7 +593,7 @@ void defaultConfig()
   config.trk_gps = false;
   config.trk_lat = 13.7555;
   config.trk_lon = 100.4930;
-  config.trk_alt = 1;
+  config.trk_alt = 0;
   config.trk_interval = 600;
   // Smart beacon
   config.trk_smartbeacon = true;
@@ -630,14 +630,10 @@ void defaultConfig()
   config.filterDistant = 0;
   config.h_up = true;
   config.tx_display = true;
-  config.filterMessage = true;
-  config.filterStatus = false;
-  config.filterTelemetry = false;
-  config.filterWeather = true;
-  config.filterTracker = true;
-  config.filterMove = true;
-  config.filterPosition = true;
-
+  config.audio_hpf = false;
+  config.audio_bpf = false;
+  config.preamble = 3;
+  sprintf(config.ntp_host, "ntp.dprns.com");
 
   sprintf(config.path[0], "WIDE1-1");
   sprintf(config.path[1], "WIDE1-1,WIDE2-1");
@@ -645,13 +641,14 @@ void defaultConfig()
   sprintf(config.path[3], "RS0ISS");
 
   // VPN Wireguard
-  //  config.wg_port = 51820;
-  //  sprintf(config.wg_peer_address, "203.150.19.23");
-  //  sprintf(config.wg_local_address, "44.63.31.223");
-  //  sprintf(config.wg_netmask_address, "255.255.255.255");
-  //  sprintf(config.wg_gw_address, "44.63.31.193");
-  //  sprintf(config.wg_public_key, "");
-  //  sprintf(config.wg_private_key, "");
+  config.vpn = false;
+  config.wg_port = 51820;
+  sprintf(config.wg_peer_address, "vpn.dprns.com");
+  sprintf(config.wg_local_address, "192.168.1.2");
+  sprintf(config.wg_netmask_address, "255.255.255.0");
+  sprintf(config.wg_gw_address, "192.168.1.1");
+  sprintf(config.wg_public_key, "");
+  sprintf(config.wg_private_key, "");
 
   config.gpio_sql_pin = -1;
 
@@ -663,7 +660,7 @@ unsigned long pingTimeout;
 
 bool psramBusy = false;
 
-const char *lastTitle = "LAST HERT";
+// const char *lastTitle = "LAST HEARD";
 
 int tlmList_Find(char *call)
 {
@@ -819,9 +816,17 @@ uint16_t pkgType(const char *raw)
 
   switch (packettype)
   {
+  case '$': // NMEA
+    type |= FILTER_POSITION;
+    break;
+  case 0x27: /* ' */
+  case 0x60: /* ` */
+    type |= FILTER_POSITION;
+    type |= FILTER_MICE;
+    break;
   case '!':
   case '=':
-    type|=FILTER_POSITION;
+    type |= FILTER_POSITION;
     if (body[18] == '_' || body[10] == '_')
     {
       type |= FILTER_WX;
@@ -829,7 +834,7 @@ uint16_t pkgType(const char *raw)
     }
   case '/':
   case '@':
-    type|=FILTER_POSITION;
+    type |= FILTER_POSITION;
     if (body[25] == '_' || body[16] == '_')
     {
       type |= FILTER_WX;
@@ -852,14 +857,16 @@ uint16_t pkgType(const char *raw)
   case ':':
     type = FILTER_MESSAGE;
     if (body[9] == ':' &&
-        (memcmp(body + 9, ":PARM.", 6) == 0 ||
-         memcmp(body + 9, ":UNIT.", 6) == 0 ||
-         memcmp(body + 9, ":EQNS.", 6) == 0 ||
-         memcmp(body + 9, ":BITS.", 6) == 0))
+        (memcmp(body + 10, "PARM", 4) == 0 ||
+         memcmp(body + 10, "UNIT", 4) == 0 ||
+         memcmp(body + 10, "EQNS", 4) == 0 ||
+         memcmp(body + 10, "BITS", 4) == 0))
     {
       type |= FILTER_TELEMETRY;
     }
     break;
+  case '{': // User defind
+  case '<': // statcapa
   case '>':
     type |= FILTER_STATUS;
     break;
@@ -874,6 +881,9 @@ uint16_t pkgType(const char *raw)
     break;
   case ')':
     type |= FILTER_ITEM;
+    break;
+  case '}':
+    type |= FILTER_THIRDPARTY;
     break;
   case 'T':
     type |= FILTER_TELEMETRY;
@@ -1064,18 +1074,14 @@ bool pkgTxSend()
         memset(info, 0, sizeof(info));
         strcpy(info, txQueue[i].Info);
         psramBusy = false;
-#ifdef SA818
         digitalWrite(POWER_PIN, config.rf_power); // RF Power LOW
-#endif
         status.txCount++;
         LED_Color(255, 0, 0);
         adcActive(false);
-        APRS_setPreamble(350L);
+        APRS_setPreamble(config.preamble * 100);
         APRS_sendTNC2Pkt(String(info)); // Send packet to RF
-#ifdef DEBUG_TNC
         // printTime();
         log_d("TX->RF: %s\n", info);
-#endif
 
         for (int i = 0; i < 100; i++)
         {
@@ -1223,36 +1229,38 @@ String SA868_getVERSION()
   }
 }
 
-#ifdef SA818
 unsigned long SA818_Timeout = 0;
-void SA818_INIT(bool boot)
-{
-#ifdef SR_FRS
-  log_d("Radio Module SR_FRS Init");
-#else
-  log_d("Radio Module SA818/SA868 Init");
-#endif
-  // if(config.rf_en==false){
-  // digitalWrite(POWER_PIN, LOW);
-  // digitalWrite(PULLDOWN_PIN, LOW);
-  // AFSK_TimerEnable(false);
-  //   return;
-  // }
 
-  // if (boot)
-  //{
+void RF_MODULE_SLEEP()
+{
+  digitalWrite(POWER_PIN, LOW);
+  digitalWrite(PULLDOWN_PIN, LOW);
+  // PMU.disableDC3();
+}
+
+void RF_MODULE(bool boot)
+{
+  String data;
+  if (config.rf_en==false)
+  {
+    RF_MODULE_SLEEP();
+    return;
+  }
+  if (config.rf_type == RF_NONE)
+    return;
+  log_d("RF Module %s Init", RF_TYPE[config.rf_type]);
   //! DC3 Radio & Pixels VDD , Don't change
   // PMU.setDC3Voltage(3400);
   // PMU.disableDC3();
 
   pinMode(SA868_PD_PIN, OUTPUT);
-  digitalWrite(SA868_PD_PIN, HIGH);
+  digitalWrite(SA868_PD_PIN, HIGH); //PWR HIGH
 
   pinMode(SA868_PWR_PIN, OUTPUT);
-  digitalWrite(SA868_PWR_PIN, LOW);
+  digitalWrite(SA868_PWR_PIN, LOW); //RF POWER LOW
 
   pinMode(SA868_PTT_PIN, OUTPUT);
-  digitalWrite(SA868_PTT_PIN, HIGH);
+  digitalWrite(SA868_PTT_PIN, HIGH); //PTT HIGH
 
   setupPowerRF();
   // pinMode(POWER_PIN, OUTPUT);
@@ -1267,56 +1275,72 @@ void SA818_INIT(bool boot)
   // digitalWrite(PTT_PIN, HIGH);
   // digitalWrite(PULLDOWN_PIN, HIGH);
   // delay(500);
+  if (boot)
+  {
+    SerialRF.begin(9600, SERIAL_8N1, SA868_RX_PIN, SA868_TX_PIN);
+  }
 
-  SerialRF.begin(9600, SERIAL_8N1, SA868_RX_PIN, SA868_TX_PIN);
-  //}
-  SerialRF.println();
-  // RF_VERSION=SA868_getVERSION();
   delay(1500);
-  char str[100];
+  SerialRF.write("\r\n");
+  RF_VERSION=SA868_getVERSION();
+  log_d("RF Module Version %s",RF_VERSION);
+  
+  char str[200];
   if (config.sql_level > 8)
     config.sql_level = 8;
-#ifdef SR_FRS
-  sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%d,%01d,%d,0", config.band, config.freq_tx + ((float)config.offset_tx / 1000000), config.freq_rx + ((float)config.offset_rx / 1000000), config.tone_rx, config.sql_level, config.tone_tx);
-  SerialRF.println(str);
-  delay(500);
-  // Module auto power save setting
-  SerialRF.println("AT+DMOAUTOPOWCONTR=1");
-  delay(500);
-  SerialRF.println("AT+DMOSETVOX=0");
-  delay(500);
-  SerialRF.println("AT+DMOSETMIC=6,0");
-  delay(500);
-  SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
-#else
-  SerialRF.println("AT+DMOCONNECT");
-  delay(500);
-  sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%04d,%01d,%04d\r\n", config.band, config.freq_tx, config.freq_rx, config.tone_tx, config.sql_level, config.tone_rx);
-  SerialRF.print(str);
-  delay(500);
-  SerialRF.println("AT+SETTAIL=0");
-  delay(500);
-  SerialRF.println("AT+SETFILTER=1,1,1");
-  delay(500);
-  SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
-#endif
-  // SerialRF.println(str);
-  // delay(500);
-  // if (config.volume > 8)
-  //     config.volume = 8;
-  // SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
+  if ((config.rf_type == RF_SR_1WV) || (config.rf_type == RF_SR_1WU) || (config.rf_type == RF_SR_1W350))
+  {
+    sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%d,%01d,%d,0", config.band, config.freq_tx + ((float)config.offset_tx / 1000000), config.freq_rx + ((float)config.offset_rx / 1000000), config.tone_rx, config.sql_level, config.tone_tx);
+    SerialRF.println(str);
+    log_d("Write to SR_FRS: %s",str);
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    // Module auto power save setting
+    SerialRF.println("AT+DMOAUTOPOWCONTR=1");
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.println("AT+DMOSETVOX=0");
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.println("AT+DMOSETMIC=6,0");
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+  }
+  else if ((config.rf_type == RF_SA868_VHF) || (config.rf_type == RF_SA868_UHF) || (config.rf_type == RF_SA868_350))
+  {
+    SerialRF.println("AT+DMOCONNECT");
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%04d,%01d,%04d\r\n", config.band, config.freq_tx, config.freq_rx, config.tone_tx, config.sql_level, config.tone_rx);
+    SerialRF.print(str);
+    log_d("Write to SA868: %s",str);
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.println("AT+SETTAIL=0");
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.println("AT+SETFILTER=1,1,1");
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+  }
+  else if ((config.rf_type == RF_SR_2WVS) || (config.rf_type == RF_SR_2WUS))
+  {
+    uint8_t flag = 0;  // Bit0:busy lock 0:OFF,1:ON Bit1:band 0:Wide,1:Narrow
+    uint8_t flag1 = 0; // Bit0: Hi/Lo 0:2W,1:0.5W  Bit1:Middle 0:2W/0.5W 1:1W
+    if (config.band == 0)
+      flag |= 0x02;
+    if (config.rf_power == 0)
+      flag1 |= 0x02;
+
+    SerialRF.printf("AT+DMOGRP=%0.5f,%0.5f,%04d,%04d,%d,%d\r\n", config.freq_rx, config.freq_tx, config.tone_rx, config.tone_tx, flag, flag1);
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.printf("AT+DMOSAV=1\r\n");
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.printf("AT+DMOVOL=%d\r\n", config.volume);
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.printf("AT+DMOVOX=0\r\n");
+    if (SA868_waitResponse(data, "\r\n", 1000)) log_d("%s",data.c_str());
+    SerialRF.printf("AT+DMOFUN=%01d,2,1,0,0\r\n", config.sql_level);
+  }
 }
 
-void SA818_SLEEP()
-{
-  digitalWrite(POWER_PIN, LOW);
-  digitalWrite(PULLDOWN_PIN, LOW);
-  // PMU.disableDC3();
-  //  SerialGPS.print("$PMTK161,0*28\r\n");
-  // AFSK_TimerEnable(false);
-}
-
-void SA818_CHECK()
+void RF_MODULE_CHECK()
 {
   while (SerialRF.available() > 0)
     SerialRF.read();
@@ -1328,92 +1352,19 @@ void SA818_CHECK()
     if (ret.indexOf("DMOCONNECT") > 0)
     {
       SA818_Timeout = millis();
-#ifdef DEBUG
       // Serial.println(SerialRF.readString());
-      log_d("Radio SA818/SR_FRS Activated");
-#endif
+      log_d("RF Module %s Activate", RF_TYPE[config.rf_type]);
     }
   }
   else
   {
-    log_d("Radio SA818/SR_FRS deActive");
+    log_d("RF Module %s sleep", RF_TYPE[config.rf_type]);
     digitalWrite(POWER_PIN, LOW);
     digitalWrite(PULLDOWN_PIN, LOW);
     delay(500);
-    SA818_INIT(true);
+    RF_MODULE(true);
   }
-  // SerialGPS.print("$PMTK161,0*28\r\n");
-  // AFSK_TimerEnable(false);
 }
-#endif
-// #ifdef SA818
-// unsigned long SA818_Timeout = 0;
-// void SA818_INIT(uint8_t HL)
-// {
-
-//     pinMode(0, INPUT);
-//     pinMode(POWER_PIN, OUTPUT);
-//     pinMode(PULLDOWN_PIN, OUTPUT);
-//     pinMode(SQL_PIN, INPUT_PULLUP);
-
-//     SerialRF.begin(9600, SERIAL_8N1, 14, 13);
-
-//     digitalWrite(PULLDOWN_PIN, HIGH);
-//     digitalWrite(POWER_PIN, LOW);
-//     delay(500);
-//     // AT+DMOSETGROUP=1,144.3900,144.3900,0,1,0,0
-//     SerialRF.println("AT+DMOSETGROUP=0,144.3900,144.3900,0,1,0,0");
-//     delay(10);
-//     SerialRF.println("AT+DMOAUTOPOWCONTR=1");
-//     delay(10);
-//     SerialRF.println("AT+DMOSETVOLUME=9");
-//     delay(10);
-//     SerialRF.println("AT+DMOSETVOX=0");
-//     delay(10);
-//     SerialRF.println("AT+DMOSETMIC=8,0,0");
-//     delay(100);
-//     // AFSK_TimerEnable(true);
-//     digitalWrite(POWER_PIN, HL);
-// }
-
-// void SA818_SLEEP()
-// {
-//     digitalWrite(POWER_PIN, LOW);
-//     digitalWrite(PULLDOWN_PIN, LOW);
-//     // SerialGPS.print("$PMTK161,0*28\r\n");
-//     // AFSK_TimerEnable(false);
-// }
-
-// void SA818_CHECK()
-// {
-//     while (SerialRF.available() > 0)
-//         SerialRF.read();
-//     SerialRF.println("AT+DMOCONNECT");
-//     delay(100);
-//     if (SerialRF.available() > 0)
-//     {
-//         String ret = SerialRF.readString();
-//         if (ret.indexOf("DMOCONNECT") > 0)
-//         {
-//             SA818_Timeout = millis();
-// #ifdef DEBUG
-//             // Serial.println(SerialRF.readString());
-//             Serial.println("SA818 Activated");
-// #endif
-//         }
-//     }
-//     else
-//     {
-//         Serial.println("SA818 deActive");
-//         digitalWrite(POWER_PIN, LOW);
-//         digitalWrite(PULLDOWN_PIN, LOW);
-//         delay(500);
-//         SA818_INIT(LOW);
-//     }
-//     // SerialGPS.print("$PMTK161,0*28\r\n");
-//     // AFSK_TimerEnable(false);
-// }
-// #endif
 
 WiFiClient aprsClient;
 
@@ -1917,7 +1868,6 @@ void setup()
     display.display();
     defaultConfig();
   }
-  input_HPF = config.input_hpf;
 
   if (config.bt_master == true)
   {
@@ -1949,9 +1899,9 @@ void setup()
     pServer->getAdvertising()->start();
   }
 
-#ifdef SA818
-  SA818_INIT(true);
-#endif
+
+  RF_MODULE(true);
+
 
 #ifdef OLED
   display.clearDisplay();
@@ -2039,10 +1989,10 @@ float conv_coords(float in_coords)
 
 void DD_DDDDDtoDDMMSS(float DD_DDDDD, int *DD, int *MM, int *SS)
 {
-
-  *DD = (int)DD_DDDDD;                       // сделали из 37.45545 это 37 т.е. Градусы
-  *MM = (int)((DD_DDDDD - *DD) * 60);        // получили минуты
-  *SS = ((DD_DDDDD - *DD) * 60 - *MM) * 100; // получили секунды
+  DD_DDDDD = abs(DD_DDDDD);
+  *DD = (int)DD_DDDDD;
+  *MM = (int)((DD_DDDDD - *DD) * 60);
+  *SS = ((DD_DDDDD - *DD) * 60 - *MM) * 100;
 }
 
 String compress_position(double nowLat, double nowLng, int alt_feed, double course, uint16_t spdKnot, char table, char symbol, bool gps)
@@ -2121,46 +2071,58 @@ String compress_position(double nowLat, double nowLng, int alt_feed, double cour
   return str_comp;
 }
 
-String send_fix_location()
-{
-  String tnc2Raw = "";
-  int lat_dd, lat_mm, lat_ss, lon_dd, lon_mm, lon_ss;
-  char strtmp[300], loc[30];
-  memset(strtmp, 0, 300);
-  DD_DDDDDtoDDMMSS(config.igate_lat, &lat_dd, &lat_mm, &lat_ss);
-  DD_DDDDDtoDDMMSS(config.igate_lon, &lon_dd, &lon_mm, &lon_ss);
-  // sprintf(loc, "!%02d%02d.%02dN%c%03d%02d.%02dE%c", lat_dd, lat_mm, lat_ss, config.aprs_table, lon_dd, lon_mm, lon_ss, config.aprs_symbol);
-  if (strlen(config.igate_object) >= 3)
-  {
-    sprintf(loc, ")%s!%02d%02d.%02dN%c%03d%02d.%02dE%c", config.igate_object, lat_dd, lat_mm, lat_ss, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, config.igate_symbol[1]);
-  }
-  else
-  {
-    sprintf(loc, "!%02d%02d.%02dN%c%03d%02d.%02dE%c", lat_dd, lat_mm, lat_ss, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, config.igate_symbol[1]);
-  }
-  if (config.aprs_ssid == 0)
-    sprintf(strtmp, "%s>APTWR", config.aprs_mycall);
-  else
-    sprintf(strtmp, "%s-%d>APTWR", config.aprs_mycall, config.aprs_ssid);
-  tnc2Raw = String(strtmp);
-  if (config.igate_path[0] != 0)
-  {
-    tnc2Raw += ",";
-    tnc2Raw += String(config.igate_path);
-  }
-  tnc2Raw += ":";
-  char object[10];
-  memset(object, 0, 10);
-  memcpy(object, config.igate_object, strlen(config.igate_object));
-  object[9] = 0;
-  if (strlen(object) > 3)
-  {
-    tnc2Raw += ")" + String(object);
-  }
-  tnc2Raw += String(loc);
-  tnc2Raw += String(config.igate_comment);
-  return tnc2Raw;
-}
+// String send_fix_location()
+// {
+//   String tnc2Raw = "";
+//   int lat_dd, lat_mm, lat_ss, lon_dd, lon_mm, lon_ss;
+//   char strtmp[300], loc[30];
+//   char lon_ew = 'E';
+//   char lat_ns = 'N';
+//   if (config.igate_lat < 0)
+//     lat_ns = 'S';
+//   if (config.igate_lon < 0)
+//     lon_ew = 'W';
+//   memset(strtmp, 0, 300);
+//   DD_DDDDDtoDDMMSS(config.igate_lat, &lat_dd, &lat_mm, &lat_ss);
+//   DD_DDDDDtoDDMMSS(config.igate_lon, &lon_dd, &lon_mm, &lon_ss);
+//   char strAltitude[10];
+//     memset(strAltitude, 0, sizeof(strAltitude));
+//     if (config.igate_alt>0)
+//     {
+//       sprintf(strAltitude, "/A=%06d", (int)config.igate_alt*3.280839895F);
+//     }
+//   // sprintf(loc, "!%02d%02d.%02dN%c%03d%02d.%02dE%c", lat_dd, lat_mm, lat_ss, config.aprs_table, lon_dd, lon_mm, lon_ss, config.aprs_symbol);
+//   if (strlen(config.igate_object) >= 3)
+//   {
+//     sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", config.igate_object, lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1],strAltitude);
+//   }
+//   else
+//   {
+//     sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1],strAltitude);
+//   }
+//   if (config.aprs_ssid == 0)
+//     sprintf(strtmp, "%s>APTWR", config.aprs_mycall);
+//   else
+//     sprintf(strtmp, "%s-%d>APTWR", config.aprs_mycall, config.aprs_ssid);
+//   tnc2Raw = String(strtmp);
+//   if (config.igate_path[0] != 0)
+//   {
+//     tnc2Raw += ",";
+//     tnc2Raw += String(config.igate_path);
+//   }
+//   tnc2Raw += ":";
+//   char object[10];
+//   memset(object, 0, 10);
+//   memcpy(object, config.igate_object, strlen(config.igate_object));
+//   object[9] = 0;
+//   if (strlen(object) > 3)
+//   {
+//     tnc2Raw += ")" + String(object);
+//   }
+//   tnc2Raw += String(loc);
+//   tnc2Raw += String(config.igate_comment);
+//   return tnc2Raw;
+// }
 
 String trk_gps_postion(String comment)
 {
@@ -2253,13 +2215,6 @@ String trk_gps_postion(String comment)
     LastLng = nowLng;
     lastTimeStamp = nowTime;
 
-    char strAltitude[10];
-    memset(strAltitude, 0, sizeof(strAltitude));
-    if (config.trk_altitude)
-    {
-      sprintf(strAltitude, "/A=%06d", (int)gps.altitude.feet());
-    }
-
     if (config.trk_compress)
     { // Compress DATA
 
@@ -2268,16 +2223,22 @@ String trk_gps_postion(String comment)
       if (strlen(object) >= 3)
       {
         // sprintf(rawTNC, "%s-%d>APTWR1,%s:)%s!%c%s", config.aprs_mycall, config.aprs_ssid, Path.c_str(), object, aprs_table, aprs_position);
-        sprintf(rawTNC, ")%s!%s%s", object, compPosition.c_str(), strAltitude);
+        sprintf(rawTNC, ")%s!%s", object, compPosition.c_str());
       }
       else
       {
-        sprintf(rawTNC, "!%s%s", compPosition.c_str(), strAltitude);
+        sprintf(rawTNC, "!%s", compPosition.c_str());
       }
     }
     else
     { // None compress DATA
       int lat_dd, lat_mm, lat_ss, lon_dd, lon_mm, lon_ss;
+      char lon_ew = 'E';
+      char lat_ns = 'N';
+      if (nowLat < 0)
+        lat_ns = 'S';
+      if (nowLng < 0)
+        lon_ew = 'W';
       DD_DDDDDtoDDMMSS(nowLat, &lat_dd, &lat_mm, &lat_ss);
       DD_DDDDDtoDDMMSS(nowLng, &lon_dd, &lon_mm, &lon_ss);
       char csd_spd[8];
@@ -2292,11 +2253,11 @@ String trk_gps_postion(String comment)
         memset(object, 0, 10);
         memcpy(object, config.trk_item, strlen(config.trk_item));
         object[9] = 0;
-        sprintf(rawTNC, ")%s!%02d%02d.%02dN%c%03d%02d.%02dE%c%s%s", object, object, lat_dd, lat_mm, lat_ss, aprs_table, lon_dd, lon_mm, lon_ss, aprs_symbol, csd_spd, strAltitude);
+        sprintf(rawTNC, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", object, object, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
       }
       else
       {
-        sprintf(rawTNC, "!%02d%02d.%02dN%c%03d%02d.%02dE%c%s%s", lat_dd, lat_mm, lat_ss, aprs_table, lon_dd, lon_mm, lon_ss, aprs_symbol, csd_spd, strAltitude);
+        sprintf(rawTNC, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
       }
     }
   }
@@ -2321,6 +2282,16 @@ String trk_gps_postion(String comment)
   }
   tnc2Raw += ":";
   tnc2Raw += String(rawTNC);
+  if (config.trk_altitude)
+  {
+    char strAltitude[10];
+    memset(strAltitude, 0, sizeof(strAltitude));
+    if (gps.altitude.isValid())
+    {
+      sprintf(strAltitude, "/A=%06d", (int)gps.altitude.feet());
+      tnc2Raw += String(strAltitude);
+    }
+  }
   tnc2Raw += comment + " " + String(config.trk_comment);
   return tnc2Raw;
 }
@@ -2330,20 +2301,32 @@ String trk_fix_position(String comment)
   String tnc2Raw = "";
   int lat_dd, lat_mm, lat_ss, lon_dd, lon_mm, lon_ss;
   char strtmp[300], loc[30];
+  char lon_ew = 'E';
+  char lat_ns = 'N';
+  if (config.trk_lat < 0)
+    lat_ns = 'S';
+  if (config.trk_lon < 0)
+    lon_ew = 'W';
   memset(strtmp, 0, 300);
   DD_DDDDDtoDDMMSS(config.trk_lat, &lat_dd, &lat_mm, &lat_ss);
   DD_DDDDDtoDDMMSS(config.trk_lon, &lon_dd, &lon_mm, &lon_ss);
+  char strAltitude[12];
+  memset(strAltitude, 0, sizeof(strAltitude));
+  if (config.trk_alt > 0)
+  {
+    sprintf(strAltitude, "/A=%06d", (int)(config.trk_alt * 3.28F));
+  }
   if (strlen(config.trk_item) >= 3)
   {
     char object[10];
     memset(object, 0, 10);
     memcpy(object, config.trk_item, strlen(config.trk_item));
     object[9] = 0;
-    sprintf(loc, ")%s!%02d%02d.%02dN%c%03d%02d.%02dE%c", object, lat_dd, lat_mm, lat_ss, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, config.trk_symbol[1]);
+    sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
   }
   else
   {
-    sprintf(loc, "!%02d%02d.%02dN%c%03d%02d.%02dE%c", lat_dd, lat_mm, lat_ss, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, config.trk_symbol[1]);
+    sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
   }
   if (config.trk_ssid == 0)
     sprintf(strtmp, "%s>APTWR", config.trk_mycall);
@@ -2357,29 +2340,42 @@ String trk_fix_position(String comment)
   }
   tnc2Raw += ":";
   tnc2Raw += String(loc);
+  tnc2Raw += String(strAltitude);
   tnc2Raw += comment + " " + String(config.trk_comment);
   return tnc2Raw;
 }
 
-String igate_position(double lat, double lon, String comment)
+String igate_position(double lat, double lon, double alt, String comment)
 {
   String tnc2Raw = "";
   int lat_dd, lat_mm, lat_ss, lon_dd, lon_mm, lon_ss;
   char strtmp[300], loc[30];
+  char lon_ew = 'E';
+  char lat_ns = 'N';
+  if (lat < 0)
+    lat_ns = 'S';
+  if (lon < 0)
+    lon_ew = 'W';
   memset(strtmp, 0, 300);
   DD_DDDDDtoDDMMSS(lat, &lat_dd, &lat_mm, &lat_ss);
   DD_DDDDDtoDDMMSS(lon, &lon_dd, &lon_mm, &lon_ss);
+  char strAltitude[12];
+  memset(strAltitude, 0, sizeof(strAltitude));
+  if (alt > 0)
+  {
+    sprintf(strAltitude, "/A=%06d", (int)(alt * 3.28F));
+  }
   if (strlen(config.igate_object) >= 3)
   {
     char object[10];
     memset(object, 0, 10);
     memcpy(object, config.igate_object, strlen(config.igate_object));
     object[9] = 0;
-    sprintf(loc, ")%s!%02d%02d.%02dN%c%03d%02d.%02dE%c", object, lat_dd, lat_mm, lat_ss, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, config.igate_symbol[1]);
+    sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object, lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
   }
   else
   {
-    sprintf(loc, "!%02d%02d.%02dN%c%03d%02d.%02dE%c", lat_dd, lat_mm, lat_ss, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, config.igate_symbol[1]);
+    sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
   }
   if (config.aprs_ssid == 0)
     sprintf(strtmp, "%s>APTWR", config.aprs_mycall);
@@ -2393,20 +2389,32 @@ String igate_position(double lat, double lon, String comment)
   }
   tnc2Raw += ":";
   tnc2Raw += String(loc);
-  tnc2Raw += String(config.igate_phg) + comment + " " + String(config.igate_comment);
+  tnc2Raw += String(config.igate_phg) + String(strAltitude);
+  tnc2Raw += comment + " " + String(config.igate_comment);
   return tnc2Raw;
 }
 
-String digi_position(double lat, double lon, String comment)
+String digi_position(double lat, double lon, double alt, String comment)
 {
   String tnc2Raw = "";
   int lat_dd, lat_mm, lat_ss, lon_dd, lon_mm, lon_ss;
   char strtmp[300], loc[30];
+  char lon_ew = 'E';
+  char lat_ns = 'N';
+  if (lat < 0)
+    lat_ns = 'S';
+  if (lon < 0)
+    lon_ew = 'W';
   memset(strtmp, 0, 300);
   DD_DDDDDtoDDMMSS(lat, &lat_dd, &lat_mm, &lat_ss);
   DD_DDDDDtoDDMMSS(lon, &lon_dd, &lon_mm, &lon_ss);
-
-  sprintf(loc, "!%02d%02d.%02dN%c%03d%02d.%02dE%c", lat_dd, lat_mm, lat_ss, config.digi_symbol[0], lon_dd, lon_mm, lon_ss, config.digi_symbol[1]);
+  char strAltitude[12];
+  memset(strAltitude, 0, sizeof(strAltitude));
+  if (alt > 0)
+  {
+    sprintf(strAltitude, "/A=%06d", (int)(alt * 3.28F));
+  }
+  sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.digi_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.digi_symbol[1]);
   if (config.digi_ssid == 0)
     sprintf(strtmp, "%s>APTWR", config.digi_mycall);
   else
@@ -2419,7 +2427,8 @@ String digi_position(double lat, double lon, String comment)
   }
   tnc2Raw += ":";
   tnc2Raw += String(loc);
-  tnc2Raw += String(config.digi_phg) + comment + " " + String(config.digi_comment);
+  tnc2Raw += String(config.digi_phg) + String(strAltitude);
+  tnc2Raw += comment + " " + String(config.digi_comment);
   return tnc2Raw;
 }
 
@@ -2710,6 +2719,8 @@ void taskAPRS(void *pvParameters)
   AFSKInitAct = true;
   timeSlot = millis();
   timeAprs = 0;
+  afskSetHPF(config.audio_hpf);
+  afskSetBPF(config.audio_bpf);
   // AFSK_TimerEnable(true);
 
   unsigned long timeAprsOld = millis();
@@ -2734,11 +2745,7 @@ void taskAPRS(void *pvParameters)
 
     if (AFSKInitAct == true)
     {
-#ifdef SA818
-      // AFSK_Poll(true, config.rf_power);
-#else
-      AFSK_Poll(false, LOW);
-#endif
+
     }
 
     if (config.rf_en)
@@ -2952,9 +2959,13 @@ void taskAPRS(void *pvParameters)
       memcpy(rawP, tnc2.c_str(), tnc2.length());
       int idx = pkgListUpdate(call, rawP, type, 0);
       free(rawP);
-      if (idx > -1){
-        if(config.rx_display&&config.dispRF&&(type&config.dispFilter)){
+      if (idx > -1)
+      {
+
+        if (config.rx_display && config.dispRF && (type & config.dispFilter))
+        {
           pushTNC2Raw(idx);
+          log_d("RF_putQueueDisp:[pkgList_idx=%d,Type=%d] %s\n", idx, type, call);
         }
       }
 
@@ -2977,11 +2988,11 @@ void taskAPRS(void *pvParameters)
           if (config.igate_gps)
           { // IGATE Send GPS position
             if (gps.location.isValid())
-              rawData = igate_position(gps.location.lat(), gps.location.lng(), "");
+              rawData = igate_position(gps.location.lat(), gps.location.lng(), gps.altitude.meters(), "");
           }
           else
           { // IGATE Send fix position
-            rawData = igate_position(config.igate_lat, config.igate_lon, "");
+            rawData = igate_position(config.igate_lat, config.igate_lon, config.igate_alt, "");
           }
           // dispFlagTX = 1;
           if (rawData != "")
@@ -3012,7 +3023,11 @@ void taskAPRS(void *pvParameters)
         newIGatePkg = false;
         if (config.rf2inet && aprsClient.connected())
         {
-          int ret = igateProcess(incomingPacket);
+          int ret = 0;
+          uint16_t type = pkgType((const char *)&incomingPacket.info[0]);
+          // IGate Filter RF->INET
+          if ((type & config.rf2inetFilter))
+            ret = igateProcess(incomingPacket);
           if (ret == 0)
           {
             status.dropCount++;
@@ -3046,11 +3061,11 @@ void taskAPRS(void *pvParameters)
           if (config.digi_gps)
           { // DIGI Send GPS position
             if (gps.location.isValid())
-              rawData = digi_position(gps.location.lat(), gps.location.lng(), "");
+              rawData = digi_position(gps.location.lat(), gps.location.lng(), gps.altitude.meters(), "");
           }
           else
           { // DIGI Send fix position
-            rawData = digi_position(config.digi_lat, config.digi_lon, "");
+            rawData = digi_position(config.digi_lat, config.digi_lon, config.digi_alt, "");
           }
           if (rawData != "")
           {
@@ -3080,43 +3095,48 @@ void taskAPRS(void *pvParameters)
       if (newDigiPkg)
       {
         newDigiPkg = false;
-        int dlyFlag = digiProcess(incomingPacket);
-        if (dlyFlag > 0)
+        uint16_t type = pkgType((const char *)&incomingPacket.info[0]);
+        // Digi repeater filter
+        if ((type & config.digiFilter))
         {
-          int digiDelay;
-          status.digiCount++;
-          if (dlyFlag == 1)
+          int dlyFlag = digiProcess(incomingPacket);
+          if (dlyFlag > 0)
           {
-            digiDelay = 0;
-          }
-          else
-          {
-            if (config.digi_delay == 0)
-            { // Auto mode
-              if (digiCount > 20)
-                digiDelay = random(5000);
-              else if (digiCount > 10)
-                digiDelay = random(3000);
-              else if (digiCount > 0)
-                digiDelay = random(1500);
-              else
-                digiDelay = random(500);
+            int digiDelay;
+            status.digiCount++;
+            if (dlyFlag == 1)
+            {
+              digiDelay = 0;
             }
             else
             {
-              digiDelay = random(config.digi_delay);
+              if (config.digi_delay == 0)
+              { // Auto mode
+                if (digiCount > 20)
+                  digiDelay = random(5000);
+                else if (digiCount > 10)
+                  digiDelay = random(3000);
+                else if (digiCount > 0)
+                  digiDelay = random(1500);
+                else
+                  digiDelay = random(500);
+              }
+              else
+              {
+                digiDelay = random(config.digi_delay);
+              }
             }
-          }
 
-          String digiPkg;
-          packet2Raw(digiPkg, incomingPacket);
-          log_d("DIGI_REPEAT: %s", digiPkg.c_str());
-          log_d("DIGI delay=%d ms.", digiDelay);
-          char *rawP = (char *)malloc(digiPkg.length());
-          // digiPkg.toCharArray(rawP, digiPkg.length());
-          memcpy(rawP, digiPkg.c_str(), digiPkg.length());
-          pkgTxPush(rawP, digiPkg.length(), digiDelay);
-          free(rawP);
+            String digiPkg;
+            packet2Raw(digiPkg, incomingPacket);
+            log_d("DIGI_REPEAT: %s", digiPkg.c_str());
+            log_d("DIGI delay=%d ms.", digiDelay);
+            char *rawP = (char *)malloc(digiPkg.length());
+            // digiPkg.toCharArray(rawP, digiPkg.length());
+            memcpy(rawP, digiPkg.c_str(), digiPkg.length());
+            pkgTxPush(rawP, digiPkg.length(), digiDelay);
+            free(rawP);
+          }
         }
       }
     }
@@ -3197,7 +3217,7 @@ void taskNetwork(void *pvParameters)
         // Serial.println("Config NTP");
         // setSyncProvider(getNtpTime);
         log_d("Contacting Time Server\n");
-        configTime(3600 * config.timeZone, 0, "203.150.19.26", "110.170.126.101", "77.68.122.252");
+        configTime(3600 * config.timeZone, 0, config.ntp_host);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         time_t systemTime;
         time(&systemTime);
@@ -3207,6 +3227,14 @@ void taskNetwork(void *pvParameters)
           systemUptime = time(NULL);
         }
         pingTimeout = millis() + 2000;
+        if (config.vpn)
+        {
+          if (!wireguard_active())
+          {
+            log_d("Setup Wiregurad VPN!");
+            wireguard_setup();
+          }
+        }
       }
 
       if (config.igate_en)
@@ -3244,39 +3272,39 @@ void taskNetwork(void *pvParameters)
               status.allCount++;
               status.rxCount++;
               igateTLM.RX++;
-              if (config.rf_en && config.inet2rf)
-              {
-                if (line.indexOf(msg_call) <= 0) // src callsign = msg callsign ไม่ใช่หัวข้อโทรมาตร
-                {
-                  if (line.indexOf(":T#") < 0) // ไม่ใช่ข้อความโทรมาตร
-                  {
-                    if (line.indexOf("::") > 0) // ข้อความเท่านั้น
-                    {                           // message only
-                      char *rawP = (char *)malloc(line.length());
-                      // line.toCharArray(rawP, line.length());
-                      memcpy(rawP, line.c_str(), line.length());
-                      pkgTxPush(rawP, line.length(), 0);
-                      free(rawP);
-                      // APRS_sendTNC2Pkt(line); // Send out RF by TNC build in
-                      //  tncTxEnable = true;
-                      status.inet2rf++;
-                      igateTLM.INET2RF++;
-#ifdef DEBUG
-                      // printTime();
-                      log_d("INET->RF ");
-                      log_d("%s\n", line.c_str());
-#endif
-                    }
-                  }
-                }
-                else
-                {
-                  igateTLM.DROP++;
-                  log_d("INET Message TELEMETRY from ");
-                  log_d("%s\n", src_call.c_str());
-                  ;
-                }
-              }
+              //               if (config.rf_en && config.inet2rf)
+              //               {
+              //                 if (line.indexOf(msg_call) <= 0) // src callsign = msg callsign ไม่ใช่หัวข้อโทรมาตร
+              //                 {
+              //                   if (line.indexOf(":T#") < 0) // ไม่ใช่ข้อความโทรมาตร
+              //                   {
+              //                     if (line.indexOf("::") > 0) // ข้อความเท่านั้น
+              //                     {                           // message only
+              //                       char *rawP = (char *)malloc(line.length());
+              //                       // line.toCharArray(rawP, line.length());
+              //                       memcpy(rawP, line.c_str(), line.length());
+              //                       pkgTxPush(rawP, line.length(), 0);
+              //                       free(rawP);
+              //                       // APRS_sendTNC2Pkt(line); // Send out RF by TNC build in
+              //                       //  tncTxEnable = true;
+              //                       status.inet2rf++;
+              //                       igateTLM.INET2RF++;
+              // #ifdef DEBUG
+              //                       // printTime();
+              //                       log_d("INET->RF ");
+              //                       log_d("%s\n", line.c_str());
+              // #endif
+              //                     }
+              //                   }
+              //                 }
+              //                 else
+              //                 {
+              //                   igateTLM.DROP++;
+              //                   log_d("INET Message TELEMETRY from ");
+              //                   log_d("%s\n", src_call.c_str());
+              //                   ;
+              //                 }
+              //               }
 
               log_d("INET: %s\n", line.c_str());
               char raw[500];
@@ -3296,8 +3324,8 @@ void taskNetwork(void *pvParameters)
                 if (start_dstssid > 0)
                   ssid = line.charAt(start_dstssid + 1);
 
-                //if ((type != PKG_TELEMETRY) && (type != PKG_QUERY) && (type != PKG_STATUS) && (type != PKG_MESSAGE) && (ssid > 47 && ssid < 58))
-                if(ssid > 47 && ssid < 58)
+                // if ((type != PKG_TELEMETRY) && (type != PKG_QUERY) && (type != PKG_STATUS) && (type != PKG_MESSAGE) && (ssid > 47 && ssid < 58))
+                if (ssid > 47 && ssid < 58)
                 {
                   size_t len = src_call.length();
                   char call[15];
@@ -3313,32 +3341,73 @@ void taskNetwork(void *pvParameters)
                   int cnt = 0;
                   if (idx > -1)
                   {
-                      if(config.rx_display&&config.dispINET&&(type&config.dispFilter)){
-                        cnt = pushTNC2Raw(idx);
-                      }
+                    // Put queue affter filter for display popup
+                    if (config.rx_display && config.dispINET && (type & config.dispFilter))
+                    {
+                      cnt = pushTNC2Raw(idx);
+                      log_d("INET_putQueueDisp:[pkgList_idx=%d/queue=%d,Type=%d] %s\n", idx, cnt, type, call);
+                    }
                   }
-                  log_d("INET_Push:[pkgList_idx=%d/queue=%d] %s\n", idx, cnt, call);
+
+                  // INET2RF affter filter
+                  if (config.rf_en && config.inet2rf)
+                  {
+                    if (type & config.inet2rfFilter)
+                    {
+                      char strtmp[300];
+                      String tnc2Raw = "";
+                      if (config.aprs_ssid == 0)
+                        sprintf(strtmp, "%s>APTWR", config.aprs_mycall);
+                      else
+                        sprintf(strtmp, "%s-%d>APTWR", config.aprs_mycall, config.aprs_ssid);
+                      tnc2Raw = String(strtmp);
+                      tnc2Raw += ",RFONLY"; // fix path to rf only not send loop to inet
+                      tnc2Raw += ":}";      // 3rd-party frame
+                      tnc2Raw += line;
+                      pkgTxPush(tnc2Raw.c_str(), tnc2Raw.length(), 0);
+                      status.inet2rf++;
+                      igateTLM.INET2RF++;
+                      log_d("INET2RF: %s\n", line);
+                    }
+                  }
                 }
               }
-              // free(raw);
             }
+            // free(raw);
           }
         }
       }
+    }
 
-      if (millis() > pingTimeout)
+    if (millis() > pingTimeout)
+    {
+      pingTimeout = millis() + 300000;
+      log_d("Ping GW to %s\n", WiFi.gatewayIP().toString().c_str());
+      if (ping_start(WiFi.gatewayIP(), 3, 0, 0, 5) == true)
       {
-        pingTimeout = millis() + 300000;
-        log_d("Ping GW to %s\n", WiFi.gatewayIP().toString().c_str());
-        if (ping_start(WiFi.gatewayIP(), 3, 0, 0, 5) == true)
+        log_d("GW Success!!\n");
+      }
+      else
+      {
+        log_d("GW Fail!\n");
+        WiFi.disconnect();
+        wifiTTL = 0;
+      }
+      if (config.vpn)
+      {
+        IPAddress vpnIP;
+        vpnIP.fromString(String(config.wg_gw_address));
+        log_d("Ping VPN to %s", vpnIP.toString().c_str());
+        if (ping_start(vpnIP, 2, 0, 0, 10) == true)
         {
-          log_d("GW Success!!\n");
+          log_d("VPN Ping Success!!");
         }
         else
         {
-          log_d("GW Fail!\n");
-          WiFi.disconnect();
-          wifiTTL = 0;
+          log_d("VPN Ping Fail!");
+          wireguard_remove();
+          delay(3000);
+          wireguard_setup();
         }
       }
     }

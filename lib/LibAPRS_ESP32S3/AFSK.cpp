@@ -27,6 +27,7 @@ extern unsigned long custom_tail;
 int adcVal;
 
 bool input_HPF = false;
+bool input_BPF = false;
 
 static const adc_unit_t unit = ADC_UNIT_1;
 
@@ -188,6 +189,15 @@ bool getTransmit()
   return ret;
 }
 
+void afskSetHPF(bool val)
+{
+  input_HPF=val;
+}
+void afskSetBPF(bool val)
+{
+  input_BPF=val;
+}
+
 uint32_t ret_num;
 uint8_t *resultADC;
 
@@ -257,8 +267,8 @@ void AFSK_init(Afsk *afsk)
 
   // HPF
   flt.size = FIR_BPF_N;
-  flt.pass_freq = 1100;
-  flt.cutoff_freq = 3500;
+  flt.pass_freq = 1000;
+  flt.cutoff_freq = 6000;
   hpf_an = filter_coeff(&flt);
   filter_init(&hpf, hpf_an, FIR_BPF_N);
 
@@ -804,6 +814,10 @@ void AFSK_Poll(bool SA818, bool RFPower)
           }
 
           if (input_HPF)
+          {
+            adcVal = (int)filter(&hpf, (int16_t)adcVal);
+          }
+          if (input_BPF)
           {
             adcVal = (int)filter(&bpf, (int16_t)adcVal);
           }

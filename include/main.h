@@ -10,7 +10,7 @@
 #define MAIN_H
 
 #define VERSION "0.1"
-#define VERSION_BUILD 'a'
+#define VERSION_BUILD 'b'
 
 // #define DEBUG
 // #define DEBUG_IS
@@ -56,14 +56,6 @@
 
 #define OLED
 #define SDCARD
-#define SA818
-// #define SR_FRS
-
-#ifdef SR_FRS
-#ifndef SA818
-#define SA818
-#endif
-#endif
 
 #define WIFI_OFF_FIX 0
 #define WIFI_AP_FIX 1
@@ -90,18 +82,30 @@
 #define PKGTXSIZE 10
 #endif
 
-#define FILTER_ALL 0		// Packet is of position type
-#define FILTER_OBJECT 1		// packet is an object
-#define FILTER_ITEM 2		// packet is an item
-#define FILTER_MESSAGE 4	// packet is a message
-#define FILTER_WX 8			// packet is WX data
-#define FILTER_TELEMETRY 16 // packet is telemetry
-#define FILTER_QUERY 32		// packet is a query
-#define FILTER_STATUS 64	// packet is status
-#define FILTER_POSITION 128	// packet is not ax25
-#define FILTER_BUOY 256		// packet is buoy
+#define FILTER_ALL 0				// Packet is disable all packet
+#define FILTER_OBJECT (1 << 0)		// packet is an object
+#define FILTER_ITEM (1 << 1)		// packet is an item
+#define FILTER_MESSAGE (1 << 2)		// packet is a message
+#define FILTER_WX (1 << 3)			// packet is WX data
+#define FILTER_TELEMETRY (1 << 4)	// packet is telemetry
+#define FILTER_QUERY (1 << 5)		// packet is a query
+#define FILTER_STATUS (1 << 6)		// packet is status
+#define FILTER_POSITION (1 << 7)	// packet is postion
+#define FILTER_BUOY (1 << 8)		// packet is buoy
+#define FILTER_MICE (1 << 9)		// packet is MIC-E
+#define FILTER_THIRDPARTY (1 << 10) // packet is 3rd-party packet from INET2RF
 
 // const int timeZone = 7; // Bangkok
+
+#define RF_NONE 0
+#define RF_SA868_VHF 1 // G-NiceRF SA818,SA868 VHF band 134~174 MHz
+#define RF_SA868_UHF 2 // G-NiceRF SA818,SA868 UHF band 400~470 MHz
+#define RF_SA868_350 3 // G-NiceRF SA818,SA868 350 band frequency：320-400MHz
+#define RF_SR_1WV 4	   // SUNRISE SR110V,FRS-1WV VHF band 136~174 MHz
+#define RF_SR_1WU 5	   // SUNRISE SR110U,FRS-1WU UHF band 400~470 MHz
+#define RF_SR_1W350 6  // SUNRISE SR350P 350 band frequency：350-390MHz
+#define RF_SR_2WVS 7   // SUNRISE SR120V,SR_2WVS VHF band 136~174 MHz
+#define RF_SR_2WUS 8   // SUNRISE SR120U,SR_2WUS UHF band 400~470 MHz
 
 #include <Arduino.h>
 #include <FS.h>
@@ -126,10 +130,9 @@ enum M17Flags
 
 typedef struct Config_Struct
 {
-	int8_t timeZone;
+	float timeZone;
 	bool synctime;
 	bool title;
-	uint16_t tx_timeslot;
 
 	// WiFi/BT/RF
 	char wifi_mode; // WIFI_AP,WIFI_STA,WIFI_AP_STA,WIFI_OFF
@@ -157,6 +160,7 @@ typedef struct Config_Struct
 
 	//--RF Module
 	bool rf_en;
+	uint8_t rf_type;
 	float freq_rx;
 	float freq_tx;
 	int offset_rx;
@@ -168,7 +172,6 @@ typedef struct Config_Struct
 	bool rf_power;
 	uint8_t volume;
 	uint8_t mic;
-	bool input_hpf;
 
 	// IGATE
 	bool igate_en;
@@ -176,6 +179,8 @@ typedef struct Config_Struct
 	bool inet2rf;
 	bool igate_loc2rf;
 	bool igate_loc2inet;
+	uint16_t rf2inetFilter;
+	uint16_t inet2rfFilter;
 	//--APRS-IS
 	uint8_t aprs_ssid;
 	uint16_t aprs_port;
@@ -206,6 +211,7 @@ typedef struct Config_Struct
 	char digi_mycall[10];
 	char digi_path[72];
 	uint16_t digi_delay; // ms
+	uint16_t digiFilter;
 	//--Position
 	bool digi_bcn;
 	bool digi_compress = false;
@@ -271,16 +277,23 @@ typedef struct Config_Struct
 	bool dispRF;
 	bool dispINET;
 
-	uint16_t rfFilter;
-	uint16_t inetFilter;
-	// bool filterMessage;
-	// bool filterStatus;
-	// bool filterTelemetry;
-	// bool filterWeather;
-	// bool filterTracker;
-	// bool filterMove;
-	// bool filterPosition;
+	// AFSK,TNC
+	bool audio_hpf;
+	bool audio_bpf;
+	uint8_t preamble;
+	uint16_t tx_timeslot;
+	char ntp_host[20];
 
+	// VPN wiregurad
+	bool vpn;
+	bool modem;
+	uint16_t wg_port;
+	char wg_peer_address[16];
+	char wg_local_address[16];
+	char wg_netmask_address[16];
+	char wg_gw_address[16];
+	char wg_public_key[45];
+	char wg_private_key[45];
 
 	char path[4][15];
 
@@ -368,6 +381,8 @@ const char EQNS[] = {"EQNS.0,1,0,0,1,0,0,1,0,0,1,0,0,1,0"};
 const float ctcss[] = {0, 67, 71.9, 74.4, 77, 79.7, 82.5, 85.4, 88.5, 91.5, 94.8, 97.4, 100, 103.5, 107.2, 110.9, 114.8, 118.8, 123, 127.3, 131.8, 136.5, 141.3, 146.2, 151.4, 156.7, 162.2, 167.9, 173.8, 179.9, 186.2, 192.8, 203.5, 210.7, 218.1, 225.7, 233.6, 241.8, 250.3};
 const float wifiPwr[12][2] = {{-4, -1}, {8, 2}, {20, 5}, {28, 7}, {34, 8.5}, {44, 11}, {52, 13}, {60, 15}, {68, 17}, {74, 18.5}, {76, 19}, {78, 19.5}};
 
+const char RF_TYPE[9][11] = {"NONE", "SA868_VHF", "SA868_UHF", "SA868_350", "SR110V_VHF", "SR110U_UHF", "SR350P", "SR120V_VHF", "SR120U_UHF"};
+
 uint8_t checkSum(uint8_t *ptr, size_t count);
 void saveEEPROM();
 void defaultConfig();
@@ -380,7 +395,7 @@ void taskTNC(void *pvParameters);
 void sort(pkgListType a[], int size);
 void sortPkgDesc(pkgListType a[], int size);
 int processPacket(String &tnc2);
-String send_fix_location();
+// String send_fix_location();
 int digiProcess(AX25Msg &Packet);
 void printTime();
 bool pkgTxPush(const char *info, size_t len, int dly);

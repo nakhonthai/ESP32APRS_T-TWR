@@ -2,6 +2,7 @@
 
 extern WiFiClient aprsClient;
 extern Configuration config;
+extern statusType status;
 
 int igateProcess(AX25Msg &Packet)
 {
@@ -11,7 +12,7 @@ int igateProcess(AX25Msg &Packet)
     j = 0;
     if (Packet.len < 2)
     {
-        // digiLog.ErPkts++;
+        status.dropCount++;
         return 0; // NO INFO DATA
     }
 
@@ -19,7 +20,7 @@ int igateProcess(AX25Msg &Packet)
     {
         if (!strncmp(&Packet.rpt_list[idx].call[0], "RFONLY", 6))
         {
-            // digiLog.DropRx++;
+            status.dropCount++;
             return 0;
         }
     }
@@ -28,7 +29,7 @@ int igateProcess(AX25Msg &Packet)
     {
         if (!strncmp(&Packet.rpt_list[idx].call[0], "TCPIP", 5))
         {
-            // digiLog.DropRx++;
+            status.dropCount++;
             return 0;
         }
     }
@@ -37,10 +38,20 @@ int igateProcess(AX25Msg &Packet)
     {
         if (!strncmp(&Packet.rpt_list[idx].call[0], "qA", 2))
         {
-            // digiLog.DropRx++;
+            status.dropCount++;
             return 0;
         }
     }
+
+    for (idx = 0; idx < Packet.rpt_count; idx++)
+    {
+        if (!strncmp(&Packet.rpt_list[idx].call[0], "NOGATE", 6))
+        {
+            status.dropCount++;
+            return 0;
+        }
+    }    
+
 
     header = String(Packet.src.call);
     if (Packet.src.ssid > 0)
@@ -99,8 +110,21 @@ int igateProcess(AX25Msg &Packet)
     size_t hSize = strlen(header.c_str());
     memcpy(&Raw[0], header.c_str(), hSize);           // Copy header to frame packet
     memcpy(&Raw[hSize], &Packet.info[0], Packet.len); // Copy info to frame packet
-    aprsClient.write(&Raw[0], hSize + Packet.len);    // Send binary frame packet to APRS-IS (aprsc)
-    aprsClient.println();                             // Send CR LF the end frame packet
+    uint8_t *ptr=&Raw[0];
+    int i,rmv=0;
+    //Remove CR,LF in frame packet
+    for(i=0;i<(hSize + Packet.len-rmv);i++)
+    {
+        if((Raw[i]=='\r') || (Raw[i]=='\n'))
+        {
+            ptr++;
+            rmv++;
+        }else{
+            Raw[i]=*ptr++;
+        }
+    }
+    aprsClient.write(&Raw[0], i);    // Send binary frame packet to APRS-IS (aprsc)
+    aprsClient.write("\r\n");   // Send CR LF the end frame packet
     log_d("RF2INET: %s", Raw);
     return 1;
 }

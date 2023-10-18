@@ -3977,40 +3977,40 @@ void on_filter_selected(MenuItem *p_menu_item)
     chkBox[1].y = 16;
     sprintf(chkBox[1].text, "INET");
 
-    chkBox[2].Checked = config.filterStatus;
+    chkBox[2].Checked = (config.dispFilter&FILTER_STATUS)?1:0;
     chkBox[2].x = 75;
     chkBox[2].y = 16;
     sprintf(chkBox[2].text, "STATUS");
 
-    chkBox[3].Checked = config.filterWeather;
+    chkBox[3].Checked = (config.dispFilter&FILTER_WX)?1:0;
     chkBox[3].x = 0;
     chkBox[3].y = 25;
     sprintf(chkBox[3].text, "WX");
 
-    chkBox[4].Checked = config.filterTelemetry;
+    chkBox[4].Checked = (config.dispFilter&FILTER_TELEMETRY)?1:0;
     chkBox[4].x = 35;
     chkBox[4].y = 25;
     sprintf(chkBox[4].text, "TLM");
 
-    chkBox[5].Checked = config.filterTracker;
+    chkBox[5].Checked = (config.dispFilter&FILTER_ITEM)?1:0;
     chkBox[5].x = 75;
     chkBox[5].y = 25;
-    sprintf(chkBox[5].text, "TRACKER");
+    sprintf(chkBox[5].text, "ITEM");
 
-    chkBox[6].Checked = config.filterMessage;
+    chkBox[6].Checked = (config.dispFilter&FILTER_MESSAGE)?1:0;
     chkBox[6].x = 0;
     chkBox[6].y = 34;
     sprintf(chkBox[6].text, "MSG");
 
-    chkBox[7].Checked = config.filterMove;
+    chkBox[7].Checked = (config.dispFilter&FILTER_POSITION)?1:0;
     chkBox[7].x = 35;
     chkBox[7].y = 34;
-    sprintf(chkBox[7].text, "MOVE");
+    sprintf(chkBox[7].text, "POS");
 
-    chkBox[8].Checked = config.filterPosition;
+    chkBox[8].Checked = (config.dispFilter&FILTER_BUOY)?1:0;
     chkBox[8].x = 75;
     chkBox[8].y = 34;
-    sprintf(chkBox[8].text, "STATION");
+    sprintf(chkBox[8].text, "BUOY");
 
     chkBox[9].Checked = config.h_up;
     chkBox[9].x = 0;
@@ -4099,27 +4099,27 @@ void on_filter_selected(MenuItem *p_menu_item)
                     case 1:
                         config.dispINET = chkBox[i].Checked;
                         break;
-                    case 2:
-                        config.filterStatus = chkBox[i].Checked;
-                        break;
-                    case 3:
-                        config.filterWeather = chkBox[i].Checked;
-                        break;
-                    case 4:
-                        config.filterTelemetry = chkBox[i].Checked;
-                        break;
-                    case 5:
-                        config.filterTracker = chkBox[i].Checked;
-                        break;
-                    case 6:
-                        config.filterMessage = chkBox[i].Checked;
-                        break;
-                    case 7:
-                        config.filterMove = chkBox[i].Checked;
-                        break;
-                    case 8:
-                        config.filterPosition = chkBox[i].Checked;
-                        break;
+                    // case 2:
+                    //     config.filterStatus = chkBox[i].Checked;
+                    //     break;
+                    // case 3:
+                    //     config.filterWeather = chkBox[i].Checked;
+                    //     break;
+                    // case 4:
+                    //     config.filterTelemetry = chkBox[i].Checked;
+                    //     break;
+                    // case 5:
+                    //     config.filterTracker = chkBox[i].Checked;
+                    //     break;
+                    // case 6:
+                    //     config.filterMessage = chkBox[i].Checked;
+                    //     break;
+                    // case 7:
+                    //     config.filterMove = chkBox[i].Checked;
+                    //     break;
+                    // case 8:
+                    //     config.filterPosition = chkBox[i].Checked;
+                    //     break;
                     case 9:
                         config.h_up = chkBox[i].Checked;
                         break;
@@ -6835,24 +6835,24 @@ void dispWindow(String line, uint8_t mode, bool filter)
         {
             if (filter == true)
             {
-                if (config.filterStatus && (aprs.packettype & T_STATUS))
+                if ((config.dispFilter&FILTER_STATUS) && (aprs.packettype & T_STATUS))
                 {
                     Monitor = true;
                 }
-                else if (config.filterMessage && (aprs.packettype & T_MESSAGE))
+                else if ((config.dispFilter&FILTER_MESSAGE) && (aprs.packettype & T_MESSAGE))
                 {
                     Monitor = true;
                 }
-                else if (config.filterTelemetry && (aprs.packettype & T_TELEMETRY))
+                else if ((config.dispFilter&FILTER_TELEMETRY) && (aprs.packettype & T_TELEMETRY))
                 {
                     Monitor = true;
                 }
-                else if (config.filterWeather && ((aprs.packettype & T_WX) || (aprs.packettype & T_WAVE)))
+                else if ((config.dispFilter&FILTER_WX) && ((aprs.packettype & T_WX) || (aprs.packettype & T_WAVE)))
                 {
                     Monitor = true;
                 }
 
-                if (config.filterPosition && (aprs.packettype & T_POSITION))
+                if ((config.dispFilter&FILTER_POSITION) && (aprs.packettype & T_POSITION))
                 {
                     double lat, lon;
                     if (gps.location.isValid())
@@ -6879,7 +6879,7 @@ void dispWindow(String line, uint8_t mode, bool filter)
                     }
                 }
 
-                if (config.filterTracker && (aprs.packettype & T_POSITION))
+                if ((config.dispFilter&FILTER_POSITION)&& (aprs.packettype & T_POSITION))
                 {
                     if (aprs.flags & F_CSRSPD)
                     {
@@ -6909,7 +6909,7 @@ void dispWindow(String line, uint8_t mode, bool filter)
                     }
                 }
 
-                if (config.filterMove && (aprs.packettype & T_POSITION))
+                if ((config.dispFilter&FILTER_POSITION)&& (aprs.packettype & T_POSITION))
                 {
                     if (aprs.flags & F_CSRSPD)
                     {
