@@ -5112,23 +5112,59 @@ void on_back_selected(MenuItem *p_menu_item)
 // DigoleSerialDisp mydisp = DigoleSerialDisp(8, 9, 10);
 // qMenuSystem menu = qMenuSystem(mydisp);
 
-void statisticsDisp()
+void iconMenuShow(int tab)
 {
-
+    if(tab<1) tab=1;
+    if(tab>MAX_MENU) tab=MAX_MENU;
+    int tabArr=tab-1;
     // uint8_twifi = 0, i;
     int x;
     String str;
-    display.fillRect(0, 16, 128, 10, WHITE);
-    display.drawLine(0, 16, 0, 63, WHITE);
-    display.drawLine(127, 16, 127, 63, WHITE);
-    display.drawLine(0, 63, 127, 63, WHITE);
-    display.fillRect(1, 25, 126, 38, BLACK);
-    display.setTextColor(BLACK);
-    display.setCursor(30, 17);
-    display.print("STATISTICS");
-    display.setCursor(108, 17);
-    display.print("1/5");
-    display.setTextColor(WHITE);
+    display.fillRect(0, 16, 128, 48, BLACK);
+    display.drawLine(0, 17, 127, 17, 1);
+
+    if(tabArr <4)
+        display.fillRoundRect((tabArr)*32, 22, 32, 32, 7, 1);
+    else
+        display.fillRoundRect(96, 22, 32, 32, 7, 1);
+
+    display.fillRect(tabArr*(128/MAX_MENU), 18, 128/MAX_MENU, 2, 1);
+
+    uint16_t c=0;
+    for(int i=0;i<4;i++){
+        if(tabArr <4){
+            if(i==tabArr)
+                c=0;
+            else
+                c=1;
+            display.drawBitmap(2+(32*i), 24, menuList[i].icon, 28, 28, c);
+        }else{
+            int idx=i+(tabArr-3);
+            if((idx+1)>MAX_MENU) break;
+            if(idx==tabArr)
+                c=0;
+            else
+                c=1;
+            display.drawBitmap(2+(32*i), 24, menuList[idx].icon, 28, 28, c);
+        }
+    }
+
+
+    str = String( menuList[tabArr].name);
+    x = str.length() * 6;
+    display.setCursor((126 - x)/2, 57);
+    display.print(str);
+
+    // display.drawLine(0, 16, 0, 63, WHITE);
+    // display.drawLine(127, 16, 127, 63, WHITE);
+    // display.drawLine(0, 63, 127, 63, WHITE);
+    // display.fillRect(1, 25, 126, 38, BLACK);
+    // display.setTextColor(BLACK);
+    // display.setCursor(30, 17);
+    // display.print("STATISTICS");
+    // display.setCursor(108, 17);
+    // display.print("1/5");
+    // display.setTextColor(WHITE);
 
     // display.setCursor(3, 26);
     // display.print("ALL DATA");
@@ -5157,6 +5193,55 @@ void statisticsDisp()
     // x = str.length() * 6;
     // display.setCursor(126 - x, 53);
     // display.print(str);
+
+    display.display();
+}
+
+void statisticsDisp()
+{
+
+    // uint8_twifi = 0, i;
+    int x;
+    String str;
+    display.fillRect(0, 16, 128, 10, WHITE);
+    display.drawLine(0, 16, 0, 63, WHITE);
+    display.drawLine(127, 16, 127, 63, WHITE);
+    display.drawLine(0, 63, 127, 63, WHITE);
+    display.fillRect(1, 25, 126, 38, BLACK);
+    display.setTextColor(BLACK);
+    display.setCursor(30, 17);
+    display.print("STATISTICS");
+    display.setCursor(108, 17);
+    display.print("1/5");
+    display.setTextColor(WHITE);
+
+    display.setCursor(3, 26);
+    display.print("ALL DATA");
+    str = String(status.allCount, DEC);
+    x = str.length() * 6;
+    display.setCursor(126 - x, 26);
+    display.print(str);
+
+    display.setCursor(3, 35);
+    display.print("RF2INET");
+    str = String(status.rf2inet, DEC);
+    x = str.length() * 6;
+    display.setCursor(126 - x, 35);
+    display.print(str);
+
+    display.setCursor(3, 44);
+    display.print("INET2RF");
+    str = String(status.inet2rf, DEC);
+    x = str.length() * 6;
+    display.setCursor(126 - x, 44);
+    display.print(str);
+
+    display.setCursor(3, 53);
+    display.print("ERROR/DROP");
+    str = String(status.errorCount + status.dropCount, DEC);
+    x = str.length() * 6;
+    display.setCursor(126 - x, 53);
+    display.print(str);
 
     display.display();
 }
@@ -5533,6 +5618,7 @@ void topBar(int ws)
         wifiSignal = -30;
     // display.setTextColor(WHITE);
     display.fillRect(0, 0, 128, 16, BLACK);
+    display.drawRoundRect(40, 0, 60, 16, 3, 1);
     // Draw Attena Signal
     display.drawTriangle(0, 0, 6, 0, 3, 3, WHITE);
     display.drawLine(3, 0, 3, 7, WHITE);
@@ -5565,6 +5651,7 @@ void topBar(int ws)
     // vbat = (float)ang / 241;
     // vbat = (float)readADC_Cal(ang) / 411.5565F;
     vbat = (float)PMU.getBattVoltage() / 1000;
+    //vbatScal=PMU.getBatteryPercent()/20; //100% -> 5 state
 
     x = 109;
     display.drawLine(0 + x, 1, 2 + x, 1, WHITE);
@@ -5577,9 +5664,9 @@ void topBar(int ws)
         vbatScal = 0;
     else
         vbatScal = (uint8_t)ceil((vbat - 3.3) * 6);
-    // vbatScal += 1;
-    if (vbatScal > 4)
-        vbatScal = 5;
+    vbatScal += 1;
+    // if (vbatScal > 5)
+    //     vbatScal = 5;
     x = 16 + 109;
     for (i = 0; i < vbatScal; i++)
     {
@@ -5634,10 +5721,14 @@ void topBar(int ws)
             display.setCursor(15, 0);
             display.print("WiFi");
         }
+    }else if (config.wifi_mode & WIFI_AP_FIX)
+    {
+        display.setCursor(15, 0);
+        display.print(" AP");
     }
 
     if(config.bt_master){
-        display.drawBitmap(40, 0, bluetooth_icon, 7, 7, 1);
+        display.drawBitmap(42, 2, iconBluetooth, 11, 11, 1);
     }
     // DCS Status
     // display.setCursor(50,0);
@@ -5645,15 +5736,21 @@ void topBar(int ws)
 
     if (aprsClient.connected())
     {
-        display.setCursor(50, 0);
-        display.print("INET");
+        display.drawBitmap(54, 2, iconClound, 12, 12, 1);
+        //display.setCursor(50, 0);
+        //display.print("INET");
         // display.drawLine(50,0,65,8,WHITE);
     }
 
     if (gps.location.isValid())
     {
-        display.setCursor(85, 0);
-        display.print("GPS");
+        display.drawBitmap(70, 2, iconLocation, 12, 12, 1);
+        //display.setCursor(85, 0);
+        //display.print("GPS");
+    }
+
+    if(wireguard_active()){
+        display.drawBitmap(85, 2, iconLink, 12, 12, 1);
     }
 
     display.setCursor(110, 0);
@@ -5673,15 +5770,15 @@ void topBar(int ws)
     // {
     //     display.print("DIS");
     // }
-    char strTime[10];
-    struct tm tmstruct;
-    tmstruct.tm_year = 0;
-    getLocalTime(&tmstruct, 100);
-    sprintf(strTime, "%02d:%02d:%02d", tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
-    // sprintf(strTime, "%d-%02d-%02d %02d:%02d:%02d", (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
+    // char strTime[10];
+    // struct tm tmstruct;
+    // tmstruct.tm_year = 0;
+    // getLocalTime(&tmstruct, 100);
+    // sprintf(strTime, "%02d:%02d:%02d", tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
+    // // sprintf(strTime, "%d-%02d-%02d %02d:%02d:%02d", (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
 
-    display.setCursor(50, 8);
-    display.print(strTime);
+    // display.setCursor(50, 8);
+    // display.print(strTime);
     // display.print(hour());
     // display.print(":");
     // display.print(minute());
@@ -5903,7 +6000,6 @@ void mainDisp(void *pvParameters)
     // pinMode(keyA, INPUT_PULLUP);
     // pinMode(keyB, INPUT_PULLUP);
 
-    // topBar(-100);
     conStatNetwork = CON_WIFI;
     conStat = CON_NORMAL;
 
@@ -6023,23 +6119,25 @@ void mainDisp(void *pvParameters)
     unsigned long timeGuiOld = millis();
     timeGui = 0;
     saveTimeout = millis();
+    char curTabOld=0;
     for (;;)
     {
         unsigned long now = millis();
         timeGui = now - timeGuiOld;
         timeGuiOld = now;
         vTaskDelay(10 / portTICK_PERIOD_MS);
+        //Prevent RF interference with OLED
+        if (getTransmit()){
+            delay(500);
+            continue;
+        }
 
         if (millis() > (saveTimeout + 300000))
         {
             powerSave();
         }
 
-        //Prevent RF interference with OLED
-        if (getTransmit()){
-            delay(100);
-            continue;
-        }
+
 
         if (conStat == CON_NORMAL)
         {
@@ -6083,26 +6181,31 @@ void mainDisp(void *pvParameters)
                 // dispFlagTX=0;
                 if (powerStatus() && (raw_count == 0))
                 {
-                    if (!(curTab == 5 && gps_mode == 1))
+                    //if (!(curTab == 5 && gps_mode == 1))
+                        //topBar(WiFi.RSSI());
+                    if(curTab!=curTabOld){
+                        iconMenuShow(curTab);
                         topBar(WiFi.RSSI());
-                    switch (curTab)
-                    {
-                    case 1:
-                        statisticsDisp();
-                        break;
-                    case 2:
-                        pkgLastDisp();
-                        break;
-                    case 3:
-                        pkgCountDisp();
-                        break;
-                    case 4:
-                        systemDisp();
-                        break;
-                    case 5:
-                        gpsDisp();
-                        break;
+                        curTabOld=curTab;
                     }
+                    // switch (curTab)
+                    // {
+                    // case 1:
+                    //     statisticsDisp();
+                    //     break;
+                    // case 2:
+                    //     pkgLastDisp();
+                    //     break;
+                    // case 3:
+                    //     pkgCountDisp();
+                    //     break;
+                    // case 4:
+                    //     systemDisp();
+                    //     break;
+                    // case 5:
+                    //     gpsDisp();
+                    //     break;
+                    // }
                 }
             }
             else if (disp_delay > 0)
@@ -6172,14 +6275,14 @@ void mainDisp(void *pvParameters)
                     if (encoder0Pos > posNow)
                     {
                         curTab++;
-                        if (curTab > 5)
-                            curTab = 1;
+                        if (curTab > MAX_MENU)
+                            curTab = MAX_MENU;
                     }
                     else
                     {
                         curTab--;
                         if (curTab < 1)
-                            curTab = 5;
+                            curTab = 1;
                     }
                     posNow = encoder0Pos;
                 }
@@ -6211,7 +6314,7 @@ void mainDisp(void *pvParameters)
                 }
                 else
                 {
-                    if (curTab == 2 || curTab == 3)
+                    if (curTab == 3)
                     { // To Display mode.
                         dispMode = 0;
                         selTab = 0;
@@ -6220,10 +6323,11 @@ void mainDisp(void *pvParameters)
                         dispWindow(rawDisp, dispMode, false);
                         posNow = encoder0Pos;
                     }
-                    else if (curTab == 1)
+                    else if (curTab == 2)
                     {
+                        gpsDisp();
                         // EVENT_TX_POSITION = 1;
-                        tx_counter = 10;
+                        //tx_counter = 10;
                     }
                     else if (curTab == 5)
                     {
@@ -6335,7 +6439,6 @@ void mainDisp(void *pvParameters)
                 }
             }
             // ms.display();
-            // topBar(WiFi.RSSI());
         }
 
         //	else if (conStat == CON_WIFI) {
@@ -6684,10 +6787,11 @@ void compass_arrow(signed int startx, signed int starty, unsigned int length, do
 
 void dispTX(bool port)
 {
+    if(config.tx_display==false) return;
     //display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false);
     display.clearDisplay();
     // display.fillRect(0, 0, 128, 64, BLACK);
-    disp_delay = 2000;
+    disp_delay = config.dispDelay*1000;
     timeHalfSec = millis() + disp_delay;
     // display.fillRect(0, 0, 128, 16, WHITE);
     const uint8_t *ptrSymbol;
@@ -6795,6 +6899,8 @@ const char *directions[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
 
 void dispWindow(String line, uint8_t mode, bool filter)
 {
+    if(config.rx_display==false) return;
+
     struct pbuf_t aprs;
     uint16_t bgcolor, txtcolor;
     bool Monitor = false;

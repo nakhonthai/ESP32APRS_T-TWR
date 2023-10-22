@@ -189,6 +189,14 @@ bool getTransmit()
   return ret;
 }
 
+bool getReceive()
+{
+  bool ret=false;
+  if (digitalRead(PTT_PIN) == 0) return true; //PTT Protection receive
+  if(AFSK_modem->hdlc.receiving==true) ret=true;
+  return ret;
+}
+
 void afskSetHPF(bool val)
 {
   input_HPF=val;

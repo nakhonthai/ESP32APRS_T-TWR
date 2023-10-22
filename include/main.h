@@ -10,7 +10,7 @@
 #define MAIN_H
 
 #define VERSION "0.1"
-#define VERSION_BUILD 'b'
+#define VERSION_BUILD 'c'
 
 // #define DEBUG
 // #define DEBUG_IS
@@ -318,6 +318,7 @@ typedef struct
 	time_t time;
 	char calsign[11];
 	char ssid[5];
+	bool channel;
 	unsigned int pkg;
 	uint16_t type;
 	uint8_t symbol;

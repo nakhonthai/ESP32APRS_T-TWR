@@ -286,6 +286,7 @@ void AFSK_transmit(char *buffer, size_t size);
 void AFSK_poll(Afsk *afsk);
 
 bool getTransmit();
+bool getReceive();
 void afsk_putchar(char c);
 int afsk_getchar(void);
 void AFSK_Poll(bool SA818, bool RFPower);
