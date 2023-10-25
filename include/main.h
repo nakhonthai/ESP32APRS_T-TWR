@@ -2,6 +2,8 @@
  Name:		ESP32APRS T-TWR Plus
  Created:	13-10-2023 14:27:23
  Author:	HS5TQA/Atten
+ Github:	https://github.com/nakhonthai
+ Facebook:	https://www.facebook.com/atten
  Support IS: host:aprs.dprns.com port:14580 or aprs.hs5tqa.ampr.org:14580
  Support IS monitor: http://aprs.dprns.com:14501 or http://aprs.hs5tqa.ampr.org:14501
 */
@@ -10,7 +12,7 @@
 #define MAIN_H
 
 #define VERSION "0.1"
-#define VERSION_BUILD 'c'
+#define VERSION_BUILD 'd'
 
 // #define DEBUG
 // #define DEBUG_IS
@@ -95,8 +97,6 @@
 #define FILTER_MICE (1 << 9)		// packet is MIC-E
 #define FILTER_THIRDPARTY (1 << 10) // packet is 3rd-party packet from INET2RF
 
-// const int timeZone = 7; // Bangkok
-
 #define RF_NONE 0
 #define RF_SA868_VHF 1 // G-NiceRF SA818,SA868 VHF band 134~174 MHz
 #define RF_SA868_UHF 2 // G-NiceRF SA818,SA868 UHF band 400~470 MHz
@@ -111,7 +111,6 @@
 #include <FS.h>
 #include <SD.h>
 #include <SPIFFS.h>
-// #include "soc/rtc_wdt.h"
 #include <AX25.h>
 
 #include "HardwareSerial.h"
@@ -396,7 +395,6 @@ void taskTNC(void *pvParameters);
 void sort(pkgListType a[], int size);
 void sortPkgDesc(pkgListType a[], int size);
 int processPacket(String &tnc2);
-// String send_fix_location();
 int digiProcess(AX25Msg &Packet);
 void printTime();
 bool pkgTxPush(const char *info, size_t len, int dly);

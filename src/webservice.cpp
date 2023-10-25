@@ -2,6 +2,8 @@
  Name:		ESP32APRS T-TWR Plus
  Created:	13-10-2023 14:27:23
  Author:	HS5TQA/Atten
+ Github:	https://github.com/nakhonthai
+ Facebook:	https://www.facebook.com/atten
  Support IS: host:aprs.dprns.com port:14580 or aprs.hs5tqa.ampr.org:14580
  Support IS monitor: http://aprs.dprns.com:14501 or http://aprs.hs5tqa.ampr.org:14501
 */
@@ -424,8 +426,7 @@ void handle_sysinfo()
 {
 	String html = "<table style=\"table-layout: fixed;border-collapse: unset;border-radius: 10px;border-color: #ee800a;border-style: ridge;border-spacing: 1px;border-width: 4px;background: #ee800a;\">\n";
 	html += "<tr>\n";
-	html += "<th><span><b>Up Time</b></span>\n";
-	html += "</th>\n";
+	html += "<th><span><b>Up Time</b></span></th>\n";
 	html += "<th><span>Free RAM(KByte)</span></th>\n";
 	html += "<th><span>Free PSRAM(KByte)</span></th>\n";
 	html += "<th><span>SD CARD(MByte)</span></th>\n";

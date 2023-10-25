@@ -110,13 +110,6 @@ static bool check_valid_data(const adc_digi_output_data_t *data)
 }
 #endif
 
-void adcActive(bool sts)
-{
-  if (sts)
-    adc_digi_start();
-  else
-    adc_digi_stop();
-}
 
 esp_err_t adc_init()
 {
@@ -134,6 +127,18 @@ esp_err_t adc_init()
   adc_digi_start();
 
   return ESP_OK;
+}
+
+void adcActive(bool sts)
+{
+  if (sts){
+    //adc_init();
+    adc_digi_start();
+    hw_afsk_dac_isr=0;
+  }else{
+    adc_digi_stop();
+    //adc_digi_deinitialize();
+  }
 }
 
 int IRAM_ATTR read_adc_dma(uint32_t *ret_num, uint8_t *result)
@@ -181,11 +186,10 @@ void LED_Color(uint8_t r, uint8_t g, uint8_t b)
 
 bool getTransmit()
 {
-  bool ret;
+  bool ret=false;
   if (digitalRead(PTT_PIN) == 0)
     ret = true;
-  else
-    ret = false;
+  if(hw_afsk_dac_isr) ret=true;
   return ret;
 }
 

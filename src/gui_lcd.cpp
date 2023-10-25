@@ -1,6 +1,17 @@
+/*
+ Name:		ESP32APRS T-TWR Plus
+ Created:	13-10-2023 14:27:23
+ Author:	HS5TQA/Atten
+ Github:	https://github.com/nakhonthai
+ Facebook:	https://www.facebook.com/atten
+ Support IS: host:aprs.dprns.com port:14580 or aprs.hs5tqa.ampr.org:14580
+ Support IS monitor: http://aprs.dprns.com:14501 or http://aprs.hs5tqa.ampr.org:14501
+*/
+
 #include "gui_lcd.h"
 #include "esp_adc_cal.h"
 #include "AFSK.h"
+#include "qrcode.h"
 
 #include <HTTPClient.h>
 #include <ESP32httpUpdate.h>
@@ -333,7 +344,7 @@ void MyComboBox::SelectValue(long val_min, long val_max, long step)
 
 void MyComboBox::AddItem(int index, char *str)
 {
-    strcpy(&item[index][0], (const char*)str);
+    strcpy(&item[index][0], (const char *)str);
 }
 
 void MyComboBox::AddItem(int index, const char *str)
@@ -1931,7 +1942,7 @@ void on_aprsserver_selected(MenuItem *p_menu_item)
             for (i = 0; i < 3; i++)
                 txtBox[i].isSelect = false;
             cbBox.isSelect = false;
-            chkBox.isSelect=false;
+            chkBox.isSelect = false;
             if (encoder0Pos < 3)
                 txtBox[encoder0Pos].isSelect = true;
             else if (encoder0Pos == 3)
@@ -2001,7 +2012,9 @@ void on_aprsserver_selected(MenuItem *p_menu_item)
                         break;
                     }
                     strcpy(config.aprs_filter, txtBox[2].text);
-                }else if (encoder0Pos == 4){
+                }
+                else if (encoder0Pos == 4)
+                {
                     chkBox.Toggle();
                     config.igate_en = chkBox.Checked;
                     encoder0Pos = keyPrev;
@@ -2355,7 +2368,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
                 else if (i == 3)
                 {
                     cbBox[0].SelectValue(0, 1800, 60);
-                    //config.igate_tlm_interval = cbBox[0].GetValue();
+                    // config.igate_tlm_interval = cbBox[0].GetValue();
                     encoder0Pos = keyPrev;
                     cbBox[0].Show();
                 }
@@ -2371,7 +2384,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
                         config.inet2rf = chkBox[i].Checked;
                         break;
                     case 2:
-                        //config.igate_tlm = chkBox[i].Checked;
+                        // config.igate_tlm = chkBox[i].Checked;
                         break;
                     }
                     encoder0Pos = keyPrev;
@@ -2896,7 +2909,7 @@ void on_tracker_function_selected(MenuItem *p_menu_item)
                     encoder0Pos = keyPrev;
                     cbBox[1].Show();
                 }
-                else if (i == 6) 
+                else if (i == 6)
                 {
                     cbBox[0].SelectValue(0, 1800, 60);
                     config.trk_interval = cbBox[0].GetValue();
@@ -2984,7 +2997,7 @@ void on_tracker_option_selected(MenuItem *p_menu_item)
     txtBox[0].y = 28;
     txtBox[0].length = 11;
     txtBox[0].type = 0;
-    //strcpy(txtBox[0].text, config.trk_object);
+    // strcpy(txtBox[0].text, config.trk_object);
 
     display.setCursor(0, 42);
     display.print("ITEM");
@@ -3050,7 +3063,7 @@ void on_tracker_option_selected(MenuItem *p_menu_item)
                     {
                     case 3:
                         txtBox[0].TextBox();
-                        //strcpy(config.trk_object, txtBox[0].text);
+                        // strcpy(config.trk_object, txtBox[0].text);
                         break;
                     case 4:
                         txtBox[1].TextBox();
@@ -3403,7 +3416,7 @@ void on_digi_function_selected(MenuItem *p_menu_item)
                     encoder0Pos = keyPrev;
                     cbBox[1].Show();
                 }
-                else if (i == 4) 
+                else if (i == 4)
                 {
                     cbBox[0].SelectValue(0, 1800, 60);
                     config.digi_interval = cbBox[0].GetValue();
@@ -3426,7 +3439,7 @@ void on_digi_function_selected(MenuItem *p_menu_item)
                         break;
                     case 3:
                         config.digi_loc2inet = chkBox[i].Checked;
-                        break;                    
+                        break;
                     }
                     encoder0Pos = keyPrev;
                     chkBox[i].CheckBoxShow();
@@ -3552,7 +3565,7 @@ void on_digi_option_selected(MenuItem *p_menu_item)
                 else if (i == 0)
                 {
                     chkBox.Toggle();
-                    //config.digi_tlm = chkBox.Checked;
+                    // config.digi_tlm = chkBox.Checked;
                     encoder0Pos = keyPrev;
                     chkBox.CheckBoxShow();
                 }
@@ -3563,12 +3576,12 @@ void on_digi_option_selected(MenuItem *p_menu_item)
                     {
                     case 0:
                         cbBox[i].SelectValue(0, 1800, 60);
-                        //config.digi_tlm_interval = cbBox[i].GetValue();
+                        // config.digi_tlm_interval = cbBox[i].GetValue();
                         break;
                     case 1:
                         cbBox[i].SelectValue(0, 9999, 10);
                         config.digi_delay = cbBox[i].GetValue();
-                        break;                    
+                        break;
                     }
                     encoder0Pos = keyPrev;
                     cbBox[i].Show();
@@ -3977,37 +3990,37 @@ void on_filter_selected(MenuItem *p_menu_item)
     chkBox[1].y = 16;
     sprintf(chkBox[1].text, "INET");
 
-    chkBox[2].Checked = (config.dispFilter&FILTER_STATUS)?1:0;
+    chkBox[2].Checked = (config.dispFilter & FILTER_STATUS) ? 1 : 0;
     chkBox[2].x = 75;
     chkBox[2].y = 16;
     sprintf(chkBox[2].text, "STATUS");
 
-    chkBox[3].Checked = (config.dispFilter&FILTER_WX)?1:0;
+    chkBox[3].Checked = (config.dispFilter & FILTER_WX) ? 1 : 0;
     chkBox[3].x = 0;
     chkBox[3].y = 25;
     sprintf(chkBox[3].text, "WX");
 
-    chkBox[4].Checked = (config.dispFilter&FILTER_TELEMETRY)?1:0;
+    chkBox[4].Checked = (config.dispFilter & FILTER_TELEMETRY) ? 1 : 0;
     chkBox[4].x = 35;
     chkBox[4].y = 25;
     sprintf(chkBox[4].text, "TLM");
 
-    chkBox[5].Checked = (config.dispFilter&FILTER_ITEM)?1:0;
+    chkBox[5].Checked = (config.dispFilter & FILTER_ITEM) ? 1 : 0;
     chkBox[5].x = 75;
     chkBox[5].y = 25;
     sprintf(chkBox[5].text, "ITEM");
 
-    chkBox[6].Checked = (config.dispFilter&FILTER_MESSAGE)?1:0;
+    chkBox[6].Checked = (config.dispFilter & FILTER_MESSAGE) ? 1 : 0;
     chkBox[6].x = 0;
     chkBox[6].y = 34;
     sprintf(chkBox[6].text, "MSG");
 
-    chkBox[7].Checked = (config.dispFilter&FILTER_POSITION)?1:0;
+    chkBox[7].Checked = (config.dispFilter & FILTER_POSITION) ? 1 : 0;
     chkBox[7].x = 35;
     chkBox[7].y = 34;
     sprintf(chkBox[7].text, "POS");
 
-    chkBox[8].Checked = (config.dispFilter&FILTER_BUOY)?1:0;
+    chkBox[8].Checked = (config.dispFilter & FILTER_BUOY) ? 1 : 0;
     chkBox[8].x = 75;
     chkBox[8].y = 34;
     sprintf(chkBox[8].text, "BUOY");
@@ -5114,45 +5127,51 @@ void on_back_selected(MenuItem *p_menu_item)
 
 void iconMenuShow(int tab)
 {
-    if(tab<1) tab=1;
-    if(tab>MAX_MENU) tab=MAX_MENU;
-    int tabArr=tab-1;
+    if (tab < 1)
+        tab = 1;
+    if (tab > MAX_MENU)
+        tab = MAX_MENU;
+    int tabArr = tab - 1;
     // uint8_twifi = 0, i;
     int x;
     String str;
     display.fillRect(0, 16, 128, 48, BLACK);
     display.drawLine(0, 17, 127, 17, 1);
 
-    if(tabArr <4)
-        display.fillRoundRect((tabArr)*32, 22, 32, 32, 7, 1);
+    if (tabArr < 4)
+        display.fillRoundRect((tabArr) * 32, 22, 32, 32, 7, 1);
     else
         display.fillRoundRect(96, 22, 32, 32, 7, 1);
 
-    display.fillRect(tabArr*(128/MAX_MENU), 18, 128/MAX_MENU, 2, 1);
+    display.fillRect(tabArr * (128 / MAX_MENU), 18, 128 / MAX_MENU, 2, 1);
 
-    uint16_t c=0;
-    for(int i=0;i<4;i++){
-        if(tabArr <4){
-            if(i==tabArr)
-                c=0;
+    uint16_t c = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        if (tabArr < 4)
+        {
+            if (i == tabArr)
+                c = 0;
             else
-                c=1;
-            display.drawBitmap(2+(32*i), 24, menuList[i].icon, 28, 28, c);
-        }else{
-            int idx=i+(tabArr-3);
-            if((idx+1)>MAX_MENU) break;
-            if(idx==tabArr)
-                c=0;
+                c = 1;
+            display.drawBitmap(2 + (32 * i), 24, menuList[i].icon, 28, 28, c);
+        }
+        else
+        {
+            int idx = i + (tabArr - 3);
+            if ((idx + 1) > MAX_MENU)
+                break;
+            if (idx == tabArr)
+                c = 0;
             else
-                c=1;
-            display.drawBitmap(2+(32*i), 24, menuList[idx].icon, 28, 28, c);
+                c = 1;
+            display.drawBitmap(2 + (32 * i), 24, menuList[idx].icon, 28, 28, c);
         }
     }
 
-
-    str = String( menuList[tabArr].name);
+    str = String(menuList[tabArr].name);
     x = str.length() * 6;
-    display.setCursor((126 - x)/2, 57);
+    display.setCursor((126 - x) / 2, 57);
     display.print(str);
 
     // display.drawLine(0, 16, 0, 63, WHITE);
@@ -5197,6 +5216,75 @@ void iconMenuShow(int tab)
     display.display();
 }
 
+QRCode qrcode;
+
+void drawQrCode(const char *qrStr, const char *lines[])
+{
+    uint8_t qrcodeData[qrcode_getBufferSize(3)];
+    qrcode_initText(&qrcode, qrcodeData, 3, ECC_LOW, qrStr);
+
+    // Text starting point
+    int cursor_start_y = 10;
+    int cursor_start_x = 4;
+    int font_height = 12;
+
+    // QR Code Starting Point
+    int offset_x = 62;
+    int offset_y = 3;
+
+    display.clearDisplay();
+
+    for (int y = 0; y < qrcode.size; y++)
+    {
+        for (int x = 0; x < qrcode.size; x++)
+        {
+            int newX = offset_x + (x * 2);
+            int newY = offset_y + (y * 2);
+
+            if (qrcode_getModule(&qrcode, x, y))
+            {
+                display.fillRect(newX, newY, 2, 2, 0);
+            }
+            else
+            {
+                display.fillRect(newX, newY, 2, 2, 1);
+            }
+        }
+    }
+    display.setTextColor(1, 0);
+    for (int i = 0; i < 4; i++)
+    {
+        display.setCursor(cursor_start_x, cursor_start_y + font_height * i);
+        display.println(lines[i]);
+    }
+    display.display();
+}
+
+const char *MESSAGE_OPEN_WEB_WIFIAP[4] = {"Scan QR", "to open", "browser", "client"};
+const char *MESSAGE_OPEN_WEB_WIFICLIENT[4] = {"Scan QR", "to open", "browser", "client"};
+const char *MESSAGE_CONFIGURE_WIFI[4] = {"Scan QR", "to setup", "WiFi AP", "connect"};
+bool qrcodeActive = false;
+bool qrcodeSelect = 0;
+void qrcodeDisp()
+{
+    // Create the QR code
+    if (qrcodeActive == true)
+        return;
+    qrcodeActive = true;
+    char link[100];
+    if (qrcodeSelect == 0)
+    {
+        String ip = WiFi.localIP().toString();
+        sprintf(link, "http://%s", ip.c_str());
+        drawQrCode(link, MESSAGE_OPEN_WEB_WIFICLIENT);
+    }
+    else
+    {
+        sprintf(link, "WIFI:S:%s;T:WPA;P:%s;;", config.wifi_ap_ssid, config.wifi_ap_pass);
+        drawQrCode(link, MESSAGE_CONFIGURE_WIFI);
+    }
+}
+
 void statisticsDisp()
 {
 
@@ -5211,34 +5299,34 @@ void statisticsDisp()
     display.setTextColor(BLACK);
     display.setCursor(30, 17);
     display.print("STATISTICS");
-    display.setCursor(108, 17);
-    display.print("1/5");
+    // display.setCursor(108, 17);
+    // display.print("1/5");
     display.setTextColor(WHITE);
 
     display.setCursor(3, 26);
-    display.print("ALL DATA");
-    str = String(status.allCount, DEC);
+    display.print("ALL TX/RX");
+    str = String(status.txCount, DEC) + "/" + String(status.rxCount, DEC);
     x = str.length() * 6;
     display.setCursor(126 - x, 26);
     display.print(str);
 
     display.setCursor(3, 35);
-    display.print("RF2INET");
-    str = String(status.rf2inet, DEC);
+    display.print("2RF/2INET");
+    str = String(status.inet2rf, DEC) + "/" + String(status.rf2inet, DEC);
     x = str.length() * 6;
     display.setCursor(126 - x, 35);
     display.print(str);
 
     display.setCursor(3, 44);
-    display.print("INET2RF");
-    str = String(status.inet2rf, DEC);
+    display.print("RPT DIGI");
+    str = String(status.digiCount, DEC);
     x = str.length() * 6;
     display.setCursor(126 - x, 44);
     display.print(str);
 
     display.setCursor(3, 53);
-    display.print("ERROR/DROP");
-    str = String(status.errorCount + status.dropCount, DEC);
+    display.print("DROP/ERR");
+    str = String(status.dropCount, DEC) + "/" + String(status.errorCount, DEC);
     x = str.length() * 6;
     display.setCursor(126 - x, 53);
     display.print(str);
@@ -5273,7 +5361,7 @@ void pkgLastDisp()
     k = 0;
     for (i = 0; i < PKGLISTSIZE; i++)
     {
-        pkgListType pkg=getPkgList(i);
+        pkgListType pkg = getPkgList(i);
         if (pkg.time > 0)
         {
             y = 26 + (k * 9);
@@ -5348,7 +5436,7 @@ void pkgCountDisp()
     k = 0;
     for (i = 0; i < PKGLISTSIZE; i++)
     {
-        pkgListType pkg=getPkgList(i);
+        pkgListType pkg = getPkgList(i);
         if (pkg.time > 0)
         {
             y = 26 + (k * 9);
@@ -5402,13 +5490,9 @@ void pkgCountDisp()
 
 void systemDisp()
 {
-
-    // uint8_twifi = 0, k = 0, l;
-    // char i;
-    // char list[4];
     int x;
     String str;
-    time_t upTime = now(); // - startTime;
+    time_t upTime = now() - systemUptime; // - startTime;
 
     display.fillRect(0, 16, 128, 10, WHITE);
     display.drawLine(0, 16, 0, 63, WHITE);
@@ -5418,35 +5502,34 @@ void systemDisp()
     display.setTextColor(BLACK);
     display.setCursor(30, 17);
     display.print("SYSTEM INFO");
-    display.setCursor(108, 17);
-    display.print("4/5");
     display.setTextColor(WHITE);
 
     display.setCursor(3, 26);
-    display.print("HMEM:");
-    str = String(ESP.getFreeHeap(), DEC) + "Byte";
+    display.print("UpTIME:");
+    str = String(day(upTime) - 1, DEC) + "D " + String(hour(upTime), DEC) + ":" + String(minute(upTime), DEC) + ":" + String(second(upTime), DEC);
     x = str.length() * 6;
     display.setCursor(126 - x, 26);
     display.print(str);
 
     display.setCursor(3, 35);
-    display.print("UPTIME:");
-    str = String(day(upTime) - 1, DEC) + "D " + String(hour(upTime), DEC) + ":" + String(minute(upTime), DEC) + ":" + String(second(upTime), DEC);
+    display.print("RAM:");
+    str = String((float)ESP.getFreeHeap() / 1000, 1) + " KByte";
     x = str.length() * 6;
     display.setCursor(126 - x, 35);
     display.print(str);
 
     display.setCursor(3, 44);
-    display.print("WIFI:");
-    // str = String(str_status[WiFi.status()]);
-    str = String(WiFi.status());
+    display.print("PSRAM:");
+    str = String((float)ESP.getFreePsram() / 1000, 1) + " KByte";
     x = str.length() * 6;
     display.setCursor(126 - x, 44);
     display.print(str);
 
     display.setCursor(3, 53);
-    display.print("VERSION:");
-    str = String(VERSION) + String(VERSION_BUILD);
+    display.print("VBAT:");
+    float vbat = (float)PMU.getBattVoltage() / 1000;
+    str = String(vbat, 2) + " V.";
+    // str = String(VERSION) + String(VERSION_BUILD);
     x = str.length() * 6;
     display.setCursor(126 - x, 53);
     display.print(str);
@@ -5456,11 +5539,6 @@ void systemDisp()
 
 void gpsDisp()
 {
-    //	compass_label(25, 37, 15, 0.0F, WHITE);
-    // compass_arrow(25, 37, 12, dtmp, WHITE);
-    // uint8_twifi = 0, k = 0, l;
-    // char i;
-    // char list[4];
     int x;
     String str;
 
@@ -5474,8 +5552,8 @@ void gpsDisp()
         display.setTextColor(BLACK);
         display.setCursor(35, 17);
         display.print("GPS INFO");
-        display.setCursor(108, 17);
-        display.print("5/5");
+        // display.setCursor(108, 17);
+        // display.print("5/5");
         display.setTextColor(WHITE);
 
         display.setCursor(3, 26);
@@ -5505,7 +5583,7 @@ void gpsDisp()
 
         display.setCursor(80, 44);
         display.print("ALT:");
-        str = String(gps.altitude.meters(), 0) + "M";
+        str = String(gps.altitude.meters(), 0) + "m";
         x = str.length() * 6;
         display.setCursor(126 - x, 44);
         display.print(str);
@@ -5515,7 +5593,7 @@ void gpsDisp()
         str = String(gps.date.day(), DEC) + "/" + String(gps.date.month(), DEC) + "/" + String(gps.date.year(), DEC);
         display.setCursor(3, 53);
         display.print(str);
-        str = String(gps.time.hour(), DEC) + ":" + String(gps.time.minute(), DEC) + ":" + String(gps.time.second(), DEC) + "Z";
+        str = String(gps.time.hour(), DEC) + ":" + String(gps.time.minute(), DEC) + ":" + String(gps.time.second(), DEC) + "z";
         x = str.length() * 6;
         display.setCursor(126 - x, 53);
         display.print(str);
@@ -5530,12 +5608,13 @@ void gpsDisp()
         display.setFont(&FreeSansBold9pt7b);
         display.print(gps.satellites.value());
 
+        struct tm tmstruct;
+        char strTime[10];
+        tmstruct.tm_year = 0;
+        getLocalTime(&tmstruct, 100);
+        sprintf(strTime, "%02d:%02d:%02d", tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
         display.setCursor(0, 14);
-        display.print(hour());
-        display.print(":");
-        display.print(minute());
-        display.print(":");
-        display.print(second());
+        display.print(strTime);
 
         if (config.dim == 2)
         { // Auto dim timeout
@@ -5566,15 +5645,7 @@ void gpsDisp()
 
         display.setFont(&Seven_Segment24pt7b);
         display.setCursor(70, 63);
-        // display.print("188");
         display.print(SB_SPEED, DEC);
-        // display.printf("ALT: %0.1fM.", gps.altitude.meters());
-        // display.setFont();
-        // display.setTextColor(WHITE);
-        // display.setCursor(0, 0);
-        // display.print(gps.satellites.value());
-        ////splay.fillRect(0, 0, 128, 10, WHITE);
-        // display.drawLine(0, 16, 0, 63, WHITE);
 
         compass_label(25, 42, 19, 0.0F, WHITE);
         compass_arrow(25, 42, 16, SB_HEADING, WHITE);
@@ -5635,7 +5706,7 @@ void topBar(int ws)
         x += 2;
         y++;
     }
-    // yield();
+
     display.setCursor(0, 8);
     if (config.wifi_mode & WIFI_STA_FIX)
     {
@@ -5647,11 +5718,8 @@ void topBar(int ws)
         display.print("DIS");
     }
 
-    // vbat = (ang * 2.427)/1000.0F;
-    // vbat = (float)ang / 241;
-    // vbat = (float)readADC_Cal(ang) / 411.5565F;
     vbat = (float)PMU.getBattVoltage() / 1000;
-    //vbatScal=PMU.getBatteryPercent()/20; //100% -> 5 state
+    // vbatScal=PMU.getBatteryPercent()/20; //100% -> 5 state
 
     x = 109;
     display.drawLine(0 + x, 1, 2 + x, 1, WHITE);
@@ -5685,49 +5753,22 @@ void topBar(int ws)
     {
         if (WiFi.status() != WL_CONNECTED)
         {
-            // display.drawLine(15,0,35,8,WHITE);
-            // display.setCursor(0,45);
-            ////display.setTextSize(2);
-            // switch(WiFi.status()){
-            // case WL_IDLE_STATUS:
-            //	display.println("IDLE");
-            //	break;
-            // case WL_NO_SSID_AVAIL:
-            //	display.println("NO SSID");
-            //	break;
-            // case WL_SCAN_COMPLETED:
-            //	display.println("SCAN COMPLETE");
-            //	break;
-            // case WL_CONNECTED:
-            //	display.println("CONNECTED");
-            //	break;
-            // case WL_CONNECT_FAILED:
-            //	display.println("CONNECT FAILED");
-            //	break;
-            // case WL_CONNECTION_LOST:
-            //	display.println("CONNECTION LOST");
-            //	break;
-            // case WL_DISCONNECTED:
-            //	display.println("DISCONNECTED");
-            //	break;
-            // }
-            // display.setTextSize(1);
-            // display.display();
-            // delay(1000);
-            display.fillRect(15, 0, 35, 8, BLACK);
+            display.fillRect(15, 0, 24, 8, BLACK);
         }
         else
         {
             display.setCursor(15, 0);
             display.print("WiFi");
         }
-    }else if (config.wifi_mode & WIFI_AP_FIX)
+    }
+    else if (config.wifi_mode & WIFI_AP_FIX)
     {
         display.setCursor(15, 0);
         display.print(" AP");
     }
 
-    if(config.bt_master){
+    if (config.bt_master)
+    {
         display.drawBitmap(42, 2, iconBluetooth, 11, 11, 1);
     }
     // DCS Status
@@ -5737,56 +5778,20 @@ void topBar(int ws)
     if (aprsClient.connected())
     {
         display.drawBitmap(54, 2, iconClound, 12, 12, 1);
-        //display.setCursor(50, 0);
-        //display.print("INET");
-        // display.drawLine(50,0,65,8,WHITE);
     }
 
     if (gps.location.isValid())
     {
         display.drawBitmap(70, 2, iconLocation, 12, 12, 1);
-        //display.setCursor(85, 0);
-        //display.print("GPS");
     }
 
-    if(wireguard_active()){
+    if (wireguard_active())
+    {
         display.drawBitmap(85, 2, iconLink, 12, 12, 1);
     }
 
     display.setCursor(110, 0);
-    // if (config.tnc)
-    // {
-    //     if (nTNC)
-    //     {
-    //         display.print("TNC");
-    //         // display.drawLine(50,0,65,8,WHITE);
-    //     }
-    //     else
-    //     {
-    //         display.print("NOT");
-    //     }
-    // }
-    // else
-    // {
-    //     display.print("DIS");
-    // }
-    // char strTime[10];
-    // struct tm tmstruct;
-    // tmstruct.tm_year = 0;
-    // getLocalTime(&tmstruct, 100);
-    // sprintf(strTime, "%02d:%02d:%02d", tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
-    // // sprintf(strTime, "%d-%02d-%02d %02d:%02d:%02d", (tmstruct.tm_year) + 1900, (tmstruct.tm_mon) + 1, tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
 
-    // display.setCursor(50, 8);
-    // display.print(strTime);
-    // display.print(hour());
-    // display.print(":");
-    // display.print(minute());
-    // display.print(":");
-    // display.print(second());
-
-    // display.setCursor(115, 8);
-    // display.print(raw_count);
     if (config.dim == 2)
     { // Auto dim timeout
         if (millis() > (dimTimeout + 60000))
@@ -5813,34 +5818,6 @@ void topBar(int ws)
     display.display();
 }
 
-// void doEncoder() {
-//	encoder_A = digitalRead(keyA);
-//	if (encoder_A != (encoder_A_prev)) {
-//		if (digitalRead(keyA) == HIGH) {   // found a low-to-high on channel A
-//										   //delay(1);
-//			if (digitalRead(keyB) == LOW) {  // check channel B to see which way
-//											 // encoder is turning
-//				encoder0Pos = encoder0Pos - 1;         // CCW
-//			}
-//			else {
-//				encoder0Pos = encoder0Pos + 1;         // CW
-//			}
-//		}
-//		else                                        // found a high-to-low on channel A
-//		{
-//			if (digitalRead(keyB) == LOW) {   // check channel B to see which way
-//											  // encoder is turning
-//				encoder0Pos = encoder0Pos + 1;          // CW
-//			}
-//			else {
-//				encoder0Pos = encoder0Pos - 1;          // CCW
-//			}
-//
-//		}
-//		encoder_A_prev = encoder_A;     // Store value of A for next time
-//										//SerialLOG.println(encoder0Pos, DEC);
-//	}
-// }
 uint8_t KeyDelay(uint8_t pin)
 {
     int8_t Key = 0;
@@ -5904,16 +5881,6 @@ void IRAM_ATTR doEncoder()
     }
     portEXIT_CRITICAL_ISR(&muxKey);
 }
-
-// boolean dataAct = false;
-// uint8_t x = 0, y = 0;
-// char str[300];
-// String callSign;
-// char callDest[8];
-// char path[64];
-// char raw[128];
-// int posNow = 0;
-// int timeHalfSec = 0;
 
 void displayInfo()
 {
@@ -5980,6 +5947,13 @@ String rawDisp;
 int selTab = 0;
 bool dispPush = 0;
 
+bool oledLock = 0;
+
+void setOLEDLock(bool lck)
+{
+    oledLock = lck;
+}
+
 extern unsigned long timeGui;
 
 void mainDisp(void *pvParameters)
@@ -5987,18 +5961,6 @@ void mainDisp(void *pvParameters)
     pinMode(keyA, INPUT_PULLUP);
     pinMode(keyB, INPUT_PULLUP);
     pinMode(keyPush, INPUT_PULLUP);
-    // digitalWrite(keyA, LOW);
-    // digitalWrite(keyB, LOW);
-    // digitalWrite(keyPush, HIGH);
-
-    // rotaryEncoder.areEncoderPinsPulldownforEsp32 = false;
-    // rotaryEncoder.begin();
-    // rotaryEncoder.setup(readEncoderISR);
-    // rotaryEncoder.setBoundaries(1, 5, true); // minValue, maxValue, circleValues true|false (when max go to min and vice versa)
-    // rotaryEncoder.setAcceleration(250);
-
-    // pinMode(keyA, INPUT_PULLUP);
-    // pinMode(keyB, INPUT_PULLUP);
 
     conStatNetwork = CON_WIFI;
     conStat = CON_NORMAL;
@@ -6011,7 +5973,6 @@ void mainDisp(void *pvParameters)
     mnuAbout.add_item(&mnuAbout_mi2);
     mnuAbout.add_item(&mnuAbout_mi3);
     mnuAbout.add_item(&mnuAbout_mi4);
-    // ms.get_root_menu().add_menu(&mnuConfig); //Wiress
     mnuConfig.add_item(&mnuConfig_mi1);
     mnuConfig.add_item(&mnuConfig_mi2);
     mnuConfig.add_item(&mnuConfig_mi3);
@@ -6025,73 +5986,28 @@ void mainDisp(void *pvParameters)
 
     ms.get_root_menu().add_menu(&mnuAPRS); // APRS
 
-    // ms.get_root_menu().add_menu(&mnu2); // IGATE
     mnuAPRS.add_menu(&mnu2);
     mnu2.add_item(&mnu2_mi1);
     mnu2.add_item(&mnu2_mi2);
     mnu2.add_item(&mnu2_mi3);
     mnu2.add_item(&mnu2_mi4);
 
-    // ms.get_root_menu().add_menu(&mnu3); // TRACKER
     mnuAPRS.add_menu(&mnu3);
     mnu3.add_item(&mnu3_mi1);
     mnu3.add_item(&mnu3_mi2);
     mnu3.add_item(&mnu3_mi3);
     mnu3.add_item(&mnu3_mi4);
 
-    // ms.get_root_menu().add_menu(&mnu4); // DIGI
     mnuAPRS.add_menu(&mnu4);
     mnu4.add_item(&mnu4_mi1);
     mnu4.add_item(&mnu4_mi2);
     mnu4.add_item(&mnu4_mi3);
-    // mnu4.add_item(&mnu4_mi4);
 
     ms.get_root_menu().add_menu(&mnu5); // SYSTEM
     mnu5.add_menu(&mnuConfig);
     mnu5.add_item(&mnu5_mi2);
     mnu5.add_item(&mnu5_mi3);
     mnu5.add_menu(&mnuAbout);
-
-    // ms.get_root_menu().add_menu(&mu1);
-    // mu1.add_item(&mu1_mi1);
-    // mu1.add_item(&mu1_mi2);
-    // mu1.add_item(&mu1_mi3);
-    // mu1.add_item(&mu1_mi4);
-    // ms.get_root_menu().add_menu(&mu2);
-    // mu2.add_item(&mu2_mi1);
-    // mu2.add_item(&mu2_mi2);
-    // mu2.add_item(&mu2_mi3);
-    // mu2.add_item(&mu2_mi4);
-    // mu2.add_item(&mu2_mi5);
-
-    // ms.get_root_menu().add_menu(&mu6);
-    // mu6.add_item(&mu6_mi0);
-    // mu6.add_item(&mu6_mi1);
-    // mu6.add_item(&mu6_mi2);
-    // // mu6.add_item(&mu6_mi3);
-
-    // ms.get_root_menu().add_menu(&mu5);
-    // mu5.add_item(&mu5_mi1);
-    // mu5.add_item(&mu5_mi2);
-    // mu5.add_item(&mu5_mi3);
-
-    // ms.get_root_menu().add_menu(&mu4);
-    // mu4.add_item(&mu4_mi1);
-    // mu4.add_item(&mu4_mi2);
-    // mu4.add_item(&mu4_mi3);
-    // mu4.add_item(&mu4_mi4);
-    // //mu4.add_item(&mu4_mi5);
-    // mu4.add_menu(&mu3);
-
-    // // mu4.add_item(&mu4_mi6);
-    // ms.get_root_menu().add_menu(&mu3);
-    // mu3.add_item(&mu3_mi1);
-    // mu3.add_item(&mu3_mi2);
-    // mu3.add_item(&mu3_mi3);
-    // mu3.add_item(&mu3_mi4);
-    // // ms.display();
-
-    // rotaryEncoder.enable();
 
     attachInterrupt(keyA, doEncoder, CHANGE);
     attachInterrupt(keyB, doEncoder, CHANGE);
@@ -6119,16 +6035,20 @@ void mainDisp(void *pvParameters)
     unsigned long timeGuiOld = millis();
     timeGui = 0;
     saveTimeout = millis();
-    char curTabOld=0;
+    char curTabOld = 0;
+    uint8_t menuSel = 0;
     for (;;)
     {
         unsigned long now = millis();
         timeGui = now - timeGuiOld;
         timeGuiOld = now;
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        //Prevent RF interference with OLED
-        if (getTransmit()){
-            delay(500);
+        // Prevent RF interference with OLED
+        if (oledLock == true)
+            continue;
+        if (getTransmit())
+        {
+            delay(1000);
             continue;
         }
 
@@ -6137,39 +6057,37 @@ void mainDisp(void *pvParameters)
             powerSave();
         }
 
-
-
         if (conStat == CON_NORMAL)
         {
             menuTimeout = millis();
-            //continue;
-            // readSerialGPS();
             if ((raw_count > 0) && (disp_delay == 0))
             {
                 saveTimeout = millis();
                 dispPush = false;
-                int idx=0;                
-                if(popTNC2Raw(idx)>-1){
-                    pkgListType pkg=getPkgList(idx);
+                int idx = 0;
+                if (popTNC2Raw(idx) > -1)
+                {
+                    pkgListType pkg = getPkgList(idx);
                     rawDisp = String(pkg.raw);
                     dispWindow(rawDisp, dispMode, true);
-                    selTab=idx;
+                    selTab = idx;
+                    if (menuSel == 0) curTabOld = curTab+1;
                 }
                 // selTab = 1;
             }
 
             // if (!getTransmit())
             // {
-                if (dispFlagTX == 1)
-                {
-                    dispTX(1);
-                    dispFlagTX = 0;
-                }
-                else if (dispFlagTX == 2)
-                {
-                    dispTX(0);
-                    dispFlagTX = 0;
-                }
+            if (dispFlagTX == 1)
+            {
+                dispTX(1);
+                dispFlagTX = 0;
+            }
+            else if (dispFlagTX == 2)
+            {
+                dispTX(0);
+                dispFlagTX = 0;
+            }
             //}
 
             if (millis() > (unsigned long)timeHalfSec)
@@ -6181,40 +6099,54 @@ void mainDisp(void *pvParameters)
                 // dispFlagTX=0;
                 if (powerStatus() && (raw_count == 0))
                 {
-                    //if (!(curTab == 5 && gps_mode == 1))
-                        //topBar(WiFi.RSSI());
-                    if(curTab!=curTabOld){
-                        iconMenuShow(curTab);
+                    // if (!(menuSel == 2 && gps_mode == 1))
+                    if (menuSel == 0 || menuSel == 1 || menuSel == 4)
                         topBar(WiFi.RSSI());
-                        curTabOld=curTab;
+                    if (menuSel == 0)
+                    {
+                        if (curTab != curTabOld)
+                        {
+                            iconMenuShow(curTab);
+                            curTabOld = curTab;
+                        }
                     }
-                    // switch (curTab)
-                    // {
-                    // case 1:
-                    //     statisticsDisp();
-                    //     break;
-                    // case 2:
-                    //     pkgLastDisp();
-                    //     break;
-                    // case 3:
-                    //     pkgCountDisp();
-                    //     break;
-                    // case 4:
-                    //     systemDisp();
-                    //     break;
-                    // case 5:
-                    //     gpsDisp();
-                    //     break;
-                    // }
+                    else if (menuSel == 1)
+                    {
+                        statisticsDisp();
+                    }
+                    else if (menuSel == 2)
+                    {
+                        if (!gps_mode == 1)
+                            topBar(WiFi.RSSI());
+                        gpsDisp();
+                    }
+                    else if (menuSel == 4)
+                    {
+                        systemDisp();
+                    }
+                    else if (menuSel == 5)
+                    {
+                        conStat = CON_MENU;
+                        ms.reset();
+                        ms.display();
+                    }
+                    else if (menuSel == 6)
+                    {
+                        qrcodeDisp();
+                    }
+                    else
+                    {
+                        menuSel = 0;
+                    }
                 }
             }
             else if (disp_delay > 0)
             {
                 if (encoder0Pos != posNow)
                 {
-                    
+
                     saveTimeout = millis();
-                    pkgListType pkg=getPkgList(selTab);
+                    pkgListType pkg = getPkgList(selTab);
                     if (config.dim == 2)
                         dimTimeout = millis();
                     if (encoder0Pos > posNow)
@@ -6240,7 +6172,7 @@ void mainDisp(void *pvParameters)
                             selTab = PKGLISTSIZE - 1;
                     }
                     posNow = encoder0Pos;
-                    
+
                     if (pkg.time > 0)
                     {
                         rawDisp = String(pkg.raw);
@@ -6251,20 +6183,6 @@ void mainDisp(void *pvParameters)
 
             if (raw_count == 0)
             {
-                // lets see if anything changed
-                // if (rotaryEncoder.encoderChanged() != 0)
-                // {
-                //     timeHalfSec = 0;
-                //     powerWakeup();
-                //     saveTimeout = millis();
-                //     if (config.dim == 2)
-                //         dimTimeout = millis();
-                //     // now we need current value
-                //     curTab = (char)rotaryEncoder.readEncoder();
-                //     // process new value. Here is simple output.
-                //     //  Serial.print("Value: ");
-                //     //  Serial.println(curTab,DEC);
-                // }
                 if (encoder0Pos != posNow)
                 {
                     timeHalfSec = 0;
@@ -6314,27 +6232,15 @@ void mainDisp(void *pvParameters)
                 }
                 else
                 {
-                    if (curTab == 3)
-                    { // To Display mode.
-                        dispMode = 0;
-                        selTab = 0;
-                        pkgListType pkg=getPkgList(selTab);
-                        rawDisp = String(pkg.raw);
-                        dispWindow(rawDisp, dispMode, false);
-                        posNow = encoder0Pos;
-                    }
-                    else if (curTab == 2)
+                    if (menuSel == 0)
                     {
-                        gpsDisp();
-                        // EVENT_TX_POSITION = 1;
-                        //tx_counter = 10;
+                        menuSel = curTab;
                     }
-                    else if (curTab == 5)
+                    else
                     {
-                        if (gps_mode == 0)
-                            gps_mode = 1;
-                        else
-                            gps_mode = 0;
+                        menuSel = 0;
+                        curTabOld = curTab + 1; // Refresh windows first
+                        qrcodeActive = false;
                     }
                 }
             }
@@ -6345,6 +6251,21 @@ void mainDisp(void *pvParameters)
                 delay(10);
                 if ((millis() - currentTime) > 2000)
                 {
+                    if (menuSel == 2) // GPS switch info/speed
+                    {
+                        if (gps_mode == 0)
+                            gps_mode = 1;
+                        else
+                            gps_mode = 0;
+                    }
+                    else if (menuSel == 6) // qrcode switch web/wifi
+                    {
+                        if (qrcodeSelect == 0)
+                            qrcodeSelect = 1;
+                        else
+                            qrcodeSelect = 0;
+                        qrcodeActive = false;
+                    }
                     // if ((curTab == 2 || curTab == 3)&& disp_delay>0) {
                     if (disp_delay > 0)
                     {
@@ -6354,11 +6275,11 @@ void mainDisp(void *pvParameters)
                     }
                     else
                     {
-                        conStat = CON_MENU;
-                        // TaskGPS.Enable(false);
+                        // conStat = CON_MENU;
+                        // // TaskGPS.Enable(false);
 
-                        ms.reset();
-                        ms.display();
+                        // ms.reset();
+                        // ms.display();
 
                         // TaskGPS.Enable(true);
                     }
@@ -6376,17 +6297,6 @@ void mainDisp(void *pvParameters)
             {
                 menuTimeout = millis();
                 conStat = CON_NORMAL;
-                /*if (WiFi.status() == WL_CONNECTED) {
-                    conStat = CON_SERVER;
-                    topBar(WiFi.RSSI());
-                }
-                else {
-                    conStat = CON_WIFI;
-                }*/
-                // ESP.restart();
-                // display.clearDisplay();
-                // display.display();
-                // if (config.tnc_init) tncInit();
                 powerSave();
             }
 
@@ -6424,7 +6334,12 @@ void mainDisp(void *pvParameters)
                     };
                     if ((millis() - currentTime) > 1000)
                     {
-                        ms.back();
+                        if (!ms.back())
+                        {
+                            conStat = CON_NORMAL;
+                            menuSel = 0;
+                            curTabOld = curTab + 1; // Refresh windows first
+                        }
                     }
                     else
                     {
@@ -6440,270 +6355,6 @@ void mainDisp(void *pvParameters)
             }
             // ms.display();
         }
-
-        //	else if (conStat == CON_WIFI) {
-        //		topBar(WiFi.RSSI());
-        // #ifdef DEBUG
-        //		SerialLOG.println("WiFi Connecting");
-        // #endif
-        //		WiFi.disconnect(false);
-        //		delay(500);
-        //		WiFi.mode(WIFI_STA);
-        //		WiFi.begin(config.wifi_ssid, config.wifi_password);
-        //		display.fillRect(0, 16, 128, 48, BLACK);
-        //		display.setCursor(0, 16);
-        //		display.println("WiFi Connecting...");
-        //		display.print("SSID: ");
-        //		display.println((char*)& config.wifi_ssid);
-        //		//display.display();
-        //		//display.println("");
-        //		display.display();
-        //		//WiFi.disconnect();
-        //		//WiFi.begin((char*)&ssid[current_wifi], (char*)&password[current_wifi]);         //�������͡Ѻ AP
-        //		//topbar_timeout = 0;
-        //		conStat = CON_SERVER;
-        //		//aprsWdt = 0;
-        //		aprsWdt = millis() + 20000;
-        //		aprsRetry = 3;
-        //		firstWiFiConnect = false;
-        //		client.flush();
-        //		Udp.flush();
-        //		//yield();
-        //		//showCallTimeout = millis() + 10000;
-        //	}
-        //	else if (conStat == CON_SERVER) {
-        //		if (WiFi.status() == WL_CONNECTED) {
-        //			topBar(WiFi.RSSI());
-        // #ifdef DEBUG
-        //			SerialLOG.println("WiFi Connected");
-        // #endif
-        //			display.println("APRS-IS Connecting..");
-        //			display.display();
-        //			//firstWiFiConnect = true;
-        //			SerialLOG.print("IP number assigned by DHCP is ");
-        //			SerialLOG.println(WiFi.localIP());
-        //			if (firstWiFiConnect == 0) {
-        //				firstWiFiConnect = true;
-        //				SerialLOG.println("Starting UDP");
-        //				Udp.flush();
-        //				Udp.stopAll();
-        //				delay(500);
-        //				Udp.begin(localPort);
-        //				SerialLOG.print("UDP Local port: ");
-        //				SerialLOG.println(Udp.localPort());
-        //				SerialLOG.println("waiting for sync");
-        //				setSyncProvider(getNtpTime);
-        //				setSyncInterval(300);
-        //			}
-        //			if (Client_Connect()) {
-        // #ifdef DEBUG
-        //				//SerialLOG.print(client.status());
-        //				SerialLOG.println("APRS-IS Connected");
-        // #endif
-        //				conStat = CON_NORMAL;
-        //				curTab = 1;
-        //				TaskGPS.Enable(true);
-        //				//timerBeacon = millis();
-        //			}
-        //			else {
-        // #ifdef DEBUG
-        //				//SerialLOG.println(str_status[client.status()]);
-        //				SerialLOG.println("APRS-IS Connect Fail!");
-        // #endif
-        //				display.println("APRS-IS Fail!");
-        //				display.display();
-        //				//client.flush();
-        //				//client.clearWriteError();
-        //				//
-        //				//client.stop();
-        //				//if (aprsRetry-- == 0) {
-        //				//	conStat = CON_WIFI;
-        //				//	WiFi.disconnect(true);
-        //				//	client.stopAll();
-        //				//	Udp.stopAll();
-        //				//	delay(500);
-        //				//}
-        //			}
-        //		}
-        //	}
-        //	else {
-        //
-        //		if (WiFi.status() == WL_CONNECTED) {
-        //			if (Client_Connect()) {
-        //				if (client.available())              //ตรวจเช็คว่ามีการส่งค่ากลับมาจาก Server หรือไม่
-        //				{
-        //					aprsWdt = millis() + 30000;
-        //					do {
-        //						String line = client.readStringUntil('\n');       //อ่านค่าที่ Server ตอบหลับมาทีละบรรทัด
-        // #ifdef DEBUG
-        //						printTime();
-        //						SerialLOG.print("APRS-IS ");
-        //						SerialLOG.println(line);
-        // #endif
-        //						status.isCount++;
-        //						int start_val = line.indexOf(">", 0); // หาตำแหน่งแรกของ >
-        //						if (start_val > 3) {
-        //							String src_call = line.substring(0, start_val);
-        //							String msg_call = "::" + src_call;
-        //							status.allCount++;
-        //							digiTLM.RX++;
-        //							if (config.inet2rf) {
-        //								if (line.indexOf(msg_call) <= 0) {
-        //									raw[0] = '}';
-        //									line.toCharArray(&raw[1], line.length());
-        //									SerialTNC.println(raw);
-        //									status.inet2rf++;
-        //									digiTLM.INET2RF++;
-        //									printTime();
-        //									SerialLOG.print("INET2RF ");
-        //									SerialLOG.println(raw);
-        //								}
-        //								else {
-        //									digiTLM.DROP++;
-        //									SerialLOG.print("INET2RF IS Message TELEMETRY from ");
-        //									SerialLOG.println(src_call);
-        //								}
-        //							}
-        //
-        //							memset(&raw[0], 0, sizeof(raw));
-        //							line.toCharArray(&raw[0], start_val + 1);
-        //							raw[start_val + 1] = 0;
-        //							pkgListUpdate(&raw[0], 0);
-        //						}
-        //						//else {
-        //						//	status.errorCount++;
-        //						//}
-        //					} while (client.available());
-        //
-        //					if (config.mylocat) {
-        //						if (timerBeacon < millis()) {
-        //							timerBeacon = millis() + 600000; //10Min
-        //							if ((config.mygps == true && gps.location.isValid() == true)||config.mygps==false) {
-        //								status.isCount++;
-        //								digiTLM.TX++;
-        //								String raw = myBeacon();
-        //								client.println(raw);
-        // #ifdef DEBUG
-        //								printTime();
-        //								SerialLOG.print("BEACON ");
-        //								SerialLOG.println(raw);
-        // #endif
-        //							}else {
-        //								timerBeacon = millis() + 60000; //1Min
-        //							}
-        //						}
-        //					}
-        //					if (config.mytelemetry) {
-        //						if (digiTLM.TeleTimeout < millis()) {
-        //							digiTLM.TeleTimeout = millis() + 600000; //10Min
-        //							if ((digiTLM.Sequence % 6) == 0) {
-        //								sendIsPkgMsg((char*)& PARM[0]);
-        //								sendIsPkgMsg((char*)& UNIT[0]);
-        //								sendIsPkgMsg((char*)& EQNS[0]);
-        //							}
-        //							sprintf(raw, "T#%03d,%d,%d,%d,%d,%d,00000000", digiTLM.Sequence, digiTLM.RF2INET, digiTLM.INET2RF, digiTLM.RX, digiTLM.TX, digiTLM.DROP);
-        //							sendIsPkg(raw);
-        //							digiTLM.Sequence++;
-        //							if (digiTLM.Sequence > 999) digiTLM.Sequence = 0;
-        //							digiTLM.DROP = 0;
-        //							digiTLM.INET2RF = 0;
-        //							digiTLM.RF2INET = 0;
-        //							digiTLM.RX = 0;
-        //							digiTLM.TX = 0;
-        //							//client.println(raw);
-        //						}
-        //					}
-        //					client.flush();
-        //				}
-        //
-        //				if (config.rf2inet) {
-        //					if (SerialTNC.available() > 0) {
-        //						status.allCount++;
-        //						String tnc2 = SerialTNC.readStringUntil('\n');
-        //						int start_val = tnc2.indexOf(">", 0); // หาตำแหน่งแรกของ >
-        //						if (start_val > 3) {
-        //							status.tncCount++;
-        //							if (tnc2.indexOf("RFONLY", 10) > 0) {
-        //								status.dropCount++;
-        //								digiTLM.DROP++;
-        //							}
-        //							else {
-        //								tnc2.toCharArray(&str[0], tnc2.length());
-        //								int i = tnc2.indexOf(":");
-        //								if (i > 10) {
-        //									str[i] = 0;
-        //									sprintf(raw, "%s,qAR,%s-%d:%s", &str[0], config.mycallsign, config.myssid, &str[i + 1]);
-        //									tnc2 = String(raw);
-        //									client.println(tnc2);
-        //									status.rf2inet++;
-        //									digiTLM.RF2INET++;
-        //									digiTLM.TX++;
-        //									printTime();
-        //									SerialLOG.print("RF2INET ");
-        //									SerialLOG.println(raw);
-        //								}
-        //								else {
-        //									status.errorCount++;
-        //									digiTLM.DROP++;
-        //								}
-        //							}
-        //							memset(&raw[0], 0, sizeof(raw));
-        //							tnc2.toCharArray(&raw[0], start_val + 1);
-        //							raw[start_val + 1] = 0;
-        //							pkgListUpdate(&raw[0], 1);
-        // #ifdef DEBUG
-        //							printTime();
-        //							SerialLOG.print("TNC ");
-        //							SerialLOG.println(tnc2);
-        // #endif
-        //						}
-        //						else { status.errorCount++; }
-        //
-        //					}
-        //				}
-        //			}
-        //			else {
-        // #ifdef DEBUG
-        //				//SerialLOG.print(client.status());
-        //				SerialLOG.println("APRS-IS Disconnected");
-        // #endif
-        //				display.fillRect(0, 16, 128, 48, BLACK);
-        //				display.setCursor(0, 16);
-        //				display.println("APRS-IS");
-        //				display.println("DISCONNECT");
-        //				display.display();
-        //				client.stop();
-        //				//yield();
-        //				delay(500);
-        //			}
-        //			if (millis() > aprsWdt) {
-        // #ifdef DEBUG
-        //				//SerialLOG.print(client.status());
-        //				SerialLOG.println("APRS-IS Timeout!");
-        // #endif
-        //				client.flush();
-        //				client.clearWriteError();
-        //				delay(500);
-        //				client.stop();
-        //				conStat = CON_SERVER;
-        //				aprsRetry = 3;
-        //				delay(500);
-        //			}
-        //		}
-        //		else {
-        // #ifdef DEBUG
-        //			SerialLOG.print(client.status());
-        //			SerialLOG.println(":WiFi Disconnected");
-        // #endif
-        //			//WiFi Connected
-        //			conStat = CON_WIFI;
-        //			client.stopAll();
-        //			Udp.stopAll();
-        //			WiFi.disconnect(false);
-        //			//yield();
-        //			delay(500);
-        //		}
-        //	}
     }
 }
 
@@ -6787,11 +6438,12 @@ void compass_arrow(signed int startx, signed int starty, unsigned int length, do
 
 void dispTX(bool port)
 {
-    if(config.tx_display==false) return;
-    //display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false);
+    if (config.tx_display == false)
+        return;
+    // display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false);
     display.clearDisplay();
     // display.fillRect(0, 0, 128, 64, BLACK);
-    disp_delay = config.dispDelay*1000;
+    disp_delay = config.dispDelay * 1000;
     timeHalfSec = millis() + disp_delay;
     // display.fillRect(0, 0, 128, 16, WHITE);
     const uint8_t *ptrSymbol;
@@ -6858,9 +6510,6 @@ void dispTX(bool port)
 
     display.setFont();
     display.setTextColor(WHITE);
-    // if (selTab < 10)
-    //	display.setCursor(121, 0);
-    // else
     display.setCursor(115, 0);
     display.print("TX");
 
@@ -6875,8 +6524,6 @@ void dispTX(bool port)
     if (config.igate_gps)
     {
         display.printf("POSITION GPS");
-        // display.setCursor(48, 39);
-        // display.printf("HEADING %d", SB_HEADING);
         display.setCursor(50, 48);
         display.printf("SPD %dkPh/%d", SB_SPEED, SB_HEADING);
     }
@@ -6886,10 +6533,6 @@ void dispTX(bool port)
     }
     display.setCursor(50, 39);
     display.printf("INTERVAL %dS", tx_interval);
-    // display.setCursor(48, 39);
-    // display.printf("HEADING %d", SB_HEADING);
-    // display.setCursor(48, 48);
-    // display.printf("SPEED %dkm/h", SB_SPEED);
 
     display.display();
 }
@@ -6899,7 +6542,8 @@ const char *directions[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
 
 void dispWindow(String line, uint8_t mode, bool filter)
 {
-    if(config.rx_display==false) return;
+    if (config.rx_display == false)
+        return;
 
     struct pbuf_t aprs;
     uint16_t bgcolor, txtcolor;
@@ -6941,24 +6585,24 @@ void dispWindow(String line, uint8_t mode, bool filter)
         {
             if (filter == true)
             {
-                if ((config.dispFilter&FILTER_STATUS) && (aprs.packettype & T_STATUS))
+                if ((config.dispFilter & FILTER_STATUS) && (aprs.packettype & T_STATUS))
                 {
                     Monitor = true;
                 }
-                else if ((config.dispFilter&FILTER_MESSAGE) && (aprs.packettype & T_MESSAGE))
+                else if ((config.dispFilter & FILTER_MESSAGE) && (aprs.packettype & T_MESSAGE))
                 {
                     Monitor = true;
                 }
-                else if ((config.dispFilter&FILTER_TELEMETRY) && (aprs.packettype & T_TELEMETRY))
+                else if ((config.dispFilter & FILTER_TELEMETRY) && (aprs.packettype & T_TELEMETRY))
                 {
                     Monitor = true;
                 }
-                else if ((config.dispFilter&FILTER_WX) && ((aprs.packettype & T_WX) || (aprs.packettype & T_WAVE)))
+                else if ((config.dispFilter & FILTER_WX) && ((aprs.packettype & T_WX) || (aprs.packettype & T_WAVE)))
                 {
                     Monitor = true;
                 }
 
-                if ((config.dispFilter&FILTER_POSITION) && (aprs.packettype & T_POSITION))
+                if ((config.dispFilter & FILTER_POSITION) && (aprs.packettype & T_POSITION))
                 {
                     double lat, lon;
                     if (gps.location.isValid())
@@ -6985,7 +6629,7 @@ void dispWindow(String line, uint8_t mode, bool filter)
                     }
                 }
 
-                if ((config.dispFilter&FILTER_POSITION)&& (aprs.packettype & T_POSITION))
+                if ((config.dispFilter & FILTER_POSITION) && (aprs.packettype & T_POSITION))
                 {
                     if (aprs.flags & F_CSRSPD)
                     {
@@ -7015,7 +6659,7 @@ void dispWindow(String line, uint8_t mode, bool filter)
                     }
                 }
 
-                if ((config.dispFilter&FILTER_POSITION)&& (aprs.packettype & T_POSITION))
+                if ((config.dispFilter & FILTER_POSITION) && (aprs.packettype & T_POSITION))
                 {
                     if (aprs.flags & F_CSRSPD)
                     {
@@ -7059,7 +6703,7 @@ void dispWindow(String line, uint8_t mode, bool filter)
         }
 
         if (Monitor)
-        {            
+        {
             display.ssd1306_command(0xE4);
             delay(10);
             display.clearDisplay();
@@ -7384,7 +7028,6 @@ void dispWindow(String line, uint8_t mode, bool filter)
                 display.setCursor(53, x);
                 display.print("By " + src_call);
                 display.setTextColor(WHITE);
-                // x += 9;
             }
 
             if (aprs.packettype & T_WAVE)

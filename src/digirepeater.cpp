@@ -1,3 +1,13 @@
+/*
+ Name:		ESP32APRS T-TWR Plus
+ Created:	13-10-2023 14:27:23
+ Author:	HS5TQA/Atten
+ Github:	https://github.com/nakhonthai
+ Facebook:	https://www.facebook.com/atten
+ Support IS: host:aprs.dprns.com port:14580 or aprs.hs5tqa.ampr.org:14580
+ Support IS monitor: http://aprs.dprns.com:14501 or http://aprs.hs5tqa.ampr.org:14501
+*/
+
 #include "digirepeater.h"
 #include "main.h"
 

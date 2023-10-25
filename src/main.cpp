@@ -2,6 +2,8 @@
  Name:		ESP32APRS T-TWR Plus
  Created:	13-10-2023 14:27:23
  Author:	HS5TQA/Atten
+ Github:	https://github.com/nakhonthai
+ Facebook:	https://www.facebook.com/atten
  Support IS: host:aprs.dprns.com port:14580 or aprs.hs5tqa.ampr.org:14580
  Support IS monitor: http://aprs.dprns.com:14501 or http://aprs.hs5tqa.ampr.org:14501
 */
@@ -50,17 +52,6 @@
 
 #define EEPROM_SIZE 2048
 
-// #ifdef SDCARD
-// #include <SPI.h> //SPI.h must be included as DMD is written by SPI (the IDE complains otherwise)
-// #include "FS.h"
-// #include "SPIFFS.h"
-// #define SDCARD_CS 10
-// #define SDCARD_CLK 12
-// #define SDCARD_MOSI 11
-// #define SDCARD_MISO 13
-// #endif
-
-#ifdef OLED
 #include <Wire.h>
 #include "Adafruit_SSD1306.h"
 #include <Adafruit_GFX.h>
@@ -68,16 +59,10 @@
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-// The pins for I2C are defined by the Wire-library.
-// On an arduino UNO:       A4(SDA), A5(SCL)
-// On an arduino MEGA 2560: 20(SDA), 21(SCL)
-// On an arduino LEONARDO:   2(SDA),  3(SCL), ...
 #define OLED_RESET -1       // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-#endif
 
 struct pbuf_t aprs;
 ParseAPRS aprsParse;
@@ -132,7 +117,6 @@ int conStat = 0;
 int conStatNetwork = 0;
 
 cppQueue PacketBuffer(sizeof(AX25Msg), 10, IMPLEMENTATION); // Instantiate queue
-// cppQueue dispBuffer(300, 100, IMPLEMENTATION);
 
 statusType status;
 RTC_DATA_ATTR igateTLMType igateTLM;
@@ -1072,6 +1056,7 @@ bool pkgTxSend()
   while (psramBusy)
     delay(1);
   psramBusy = true;
+  char info[500];
   for (int i = 0; i < PKGTXSIZE; i++)
   {
     if (txQueue[i].Active)
@@ -1079,8 +1064,7 @@ bool pkgTxSend()
       int decTime = millis() - txQueue[i].timeStamp;
       if (decTime > txQueue[i].Delay)
       {
-        txQueue[i].Active = false;
-        char info[500];
+        txQueue[i].Active = false;        
         memset(info, 0, sizeof(info));
         strcpy(info, txQueue[i].Info);
         psramBusy = false;
@@ -1088,10 +1072,10 @@ bool pkgTxSend()
         status.txCount++;
         LED_Color(255, 0, 0);
         adcActive(false);
+        setOLEDLock(true);
 
         APRS_setPreamble(config.preamble * 100);
         APRS_sendTNC2Pkt(String(info)); // Send packet to RF
-        // printTime();
         log_d("TX->RF: %s\n", info);
 
         for (int i = 0; i < 100; i++)
@@ -1100,9 +1084,12 @@ bool pkgTxSend()
             break;
           delay(50); // TOT 5sec
         }
+
+        //delay(2000);
         LED_Color(0, 0, 0);
         digitalWrite(POWER_PIN, 0); // set RF Power Low
         adcActive(true);
+        setOLEDLock(false);
         dispFlagTX = 1;
         return true;
       }
@@ -1187,6 +1174,7 @@ void setupPowerRF()
 bool SA868_waitResponse(String &data, String rsp, uint32_t timeout)
 {
   uint32_t startMillis = millis();
+  data.clear();
   do
   {
     while (SerialRF.available() > 0)
@@ -1198,7 +1186,7 @@ bool SA868_waitResponse(String &data, String rsp, uint32_t timeout)
         return true;
       }
     }
-  } while (millis() - startMillis < 1000);
+  } while (millis() - startMillis < timeout);
   return false;
 }
 
@@ -1298,6 +1286,7 @@ void RF_MODULE(bool boot)
   log_d("RF Module Version %s", RF_VERSION);
 
   char str[200];
+  String rsp="\r\n";
   if (config.sql_level > 8)
     config.sql_level = 8;
   if ((config.rf_type == RF_SR_1WV) || (config.rf_type == RF_SR_1WU) || (config.rf_type == RF_SR_1W350))
@@ -1305,40 +1294,40 @@ void RF_MODULE(bool boot)
     sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%d,%01d,%d,0", config.band, config.freq_tx + ((float)config.offset_tx / 1000000), config.freq_rx + ((float)config.offset_rx / 1000000), config.tone_rx, config.sql_level, config.tone_tx);
     SerialRF.println(str);
     log_d("Write to SR_FRS: %s", str);
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     // Module auto power save setting
-    SerialRF.println("AT+DMOAUTOPOWCONTR=1");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    SerialRF.printf("AT+DMOAUTOPOWCONTR=1\r\n");
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
-    SerialRF.println("AT+DMOSETVOX=0");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    SerialRF.printf("AT+DMOSETVOX=0\r\n");
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
-    SerialRF.println("AT+DMOSETMIC=6,0");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    SerialRF.printf("AT+DMOSETMIC=6,0\r\n");
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
   }
   else if ((config.rf_type == RF_SA868_VHF) || (config.rf_type == RF_SA868_UHF) || (config.rf_type == RF_SA868_350))
   {
-    SerialRF.println("AT+DMOCONNECT");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    SerialRF.printf("AT+DMOCONNECT\r\n");
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%04d,%01d,%04d\r\n", config.band, config.freq_tx, config.freq_rx, config.tone_tx, config.sql_level, config.tone_rx);
     SerialRF.print(str);
     log_d("Write to SA868: %s", str);
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    if (SA868_waitResponse(data, rsp, 2000))
       log_d("%s", data.c_str());
-    SerialRF.println("AT+SETTAIL=0");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    SerialRF.printf("AT+SETTAIL=0\r\n");
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
-    SerialRF.println("AT+SETFILTER=1,1,1");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    SerialRF.printf("AT+SETFILTER=1,1,1\r\n");
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
   }
   else if ((config.rf_type == RF_SR_2WVS) || (config.rf_type == RF_SR_2WUS))
@@ -1351,16 +1340,16 @@ void RF_MODULE(bool boot)
       flag1 |= 0x02;
 
     SerialRF.printf("AT+DMOGRP=%0.5f,%0.5f,%04d,%04d,%d,%d\r\n", config.freq_rx, config.freq_tx, config.tone_rx, config.tone_tx, flag, flag1);
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     SerialRF.printf("AT+DMOSAV=1\r\n");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     SerialRF.printf("AT+DMOVOL=%d\r\n", config.volume);
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     SerialRF.printf("AT+DMOVOX=0\r\n");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+    if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     SerialRF.printf("AT+DMOFUN=%01d,2,1,0,0\r\n", config.sql_level);
   }
@@ -1754,12 +1743,10 @@ void setupSDCard()
 
 long oledSleepTimeout = 0;
 bool showDisp = false;
-// uint8_t curTab=0;
 
 char *htmlBuffer;
 void setup()
 {
-  // htmlBuffer = (char*)ps_malloc(1000000);
   byte *ptr;
 #ifdef BOARD_HAS_PSRAM
   pkgList = (pkgListType *)ps_malloc(sizeof(pkgListType) * PKGLISTSIZE);
@@ -1818,10 +1805,6 @@ void setup()
   display.print("Version " + String(VERSION));
   display.setCursor(60, 55);
   display.print("Copy@2023");
-  // display.drawLine(10, 30, 110, 30, WHITE);
-  // display.setCursor(1, 40);
-  // display.print("Push B Factory reset");
-  // topBar(-100);
   display.display();
 
   if (!EEPROM.begin(EEPROM_SIZE))
@@ -1829,53 +1812,16 @@ void setup()
     log_d("failed to initialise EEPROM"); // delay(100000);
   }
 
-#ifdef OLED
   delay(1000);
-  // digitalWrite(LED_TX, HIGH);
-  // display.setCursor(50, 50);
-  // display.print("3 Sec");
-  // display.display();
-  // delay(1000);
-  // digitalWrite(LED_RX, HIGH);
-  // display.setCursor(40, 50);
-  // display.print("        ");
-  // display.display();
-  // display.setCursor(50, 50);
-  // display.print("2 Sec");
-  // display.display();
-  // delay(1000);
-  // display.setCursor(40, 50);
-  // display.print("        ");
-  // display.display();
-  // display.setCursor(50, 50);
-  // display.print("1 Sec");
-  // display.display();
-#else
-  delay(1000);
-  digitalWrite(LED_TX, HIGH);
-  delay(1000);
-  digitalWrite(LED_RX, HIGH);
-  delay(1000);
-#endif
+
   if (digitalRead(ENCODER_OK_PIN) == LOW)
   {
     defaultConfig();
     log_d("Manual Default configure!");
-#ifdef OLED
     display.clearDisplay();
     display.setCursor(10, 22);
     display.print("Factory Reset!");
     display.display();
-#endif
-    //   while (digitalRead(0) == LOW)
-    //   {
-    //     delay(500);
-    //     digitalWrite(LED_TX, LOW);
-    //     digitalWrite(LED_RX, LOW);
-    //     delay(500);
-    //     digitalWrite(LED_TX, HIGH);
-    //     digitalWrite(LED_RX, HIGH);
-    //   }
   }
 
   // ตรวจสอบคอนฟิกซ์ผิดพลาด
@@ -1927,14 +1873,9 @@ void setup()
 
   RF_MODULE(true);
 
-#ifdef OLED
   display.clearDisplay();
   display.setTextSize(1);
   display.display();
-#endif
-
-  // pkgListType pkgList[PKGLISTSIZE];
-  // pkgList = (pkgListType*)ps_malloc(sizeof(pkgListType)*PKGLISTSIZE);
 
   log_d("Free heap: %d", ESP.getFreeHeap());
   log_d("Total PSRAM: %d", ESP.getPsramSize());
@@ -2108,9 +2049,6 @@ String trk_gps_postion(String comment)
 
   memset(rawTNC, 0, sizeof(rawTNC));
   getLocalTime(&tmstruct, 5000);
-  // if (config.mygps==true) {
-  // if (gps.location.isValid())
-  // {
   sprintf(timestamp, "%02d%02d%02d%02d", (tmstruct.tm_mon + 1), tmstruct.tm_mday, tmstruct.tm_hour, tmstruct.tm_min);
   time(&nowTime);
   // nowTime = gps.time.value();
@@ -2178,9 +2116,6 @@ String trk_gps_postion(String comment)
         spdKnot = 0;
     }
 
-    // lat = deg2lat(nowLat);
-    // lon = deg2lon(nowLng);
-
     LastLat = nowLat;
     LastLng = nowLng;
     lastTimeStamp = nowTime;
@@ -2245,8 +2180,6 @@ String trk_gps_postion(String comment)
   else
   {
     sprintf(rawTNC, ">%s ", object);
-    // sprintf(rawTNC, "%s-%d>APDRH1,%s:)%s_%s", config.aprs_mycall, config.aprs_ssid, Path.c_str(), object, timestamp);
-    //  sprintf(rawTNC, "%s-%d>APBT01-1%s:>%s_%s", config.aprs_mycall, config.aprs_ssid, config.aprs_path, object, timestamp);
   }
 
   String tnc2Raw = "";
@@ -2280,7 +2213,6 @@ String trk_fix_position(String comment)
     // ESP_LOGE("GPS", "Compress=%s", aprs_position);
     if (strlen(config.trk_item) >= 3)
     {
-      // sprintf(rawTNC, "%s-%d>APTWR1,%s:)%s!%c%s", config.aprs_mycall, config.aprs_ssid, Path.c_str(), object, aprs_table, aprs_position);
       sprintf(loc, ")%s!%s", config.trk_item, compPosition.c_str());
     }
     else
@@ -2336,20 +2268,6 @@ String trk_fix_position(String comment)
   }
   tnc2Raw += ":";
   tnc2Raw += String(loc);
-
-  // if (config.trk_ssid == 0)
-  //   sprintf(strtmp, "%s>APTWR", config.trk_mycall);
-  // else
-  //   sprintf(strtmp, "%s-%d>APTWR", config.trk_mycall, config.trk_ssid);
-  // tnc2Raw = String(strtmp);
-  // if (config.trk_path[0] != 0)
-  // {
-  //   tnc2Raw += ",";
-  //   tnc2Raw += String(config.trk_path);
-  // }
-  // tnc2Raw += ":";
-  // tnc2Raw += String(loc);
-  // tnc2Raw += String(strAltitude);
   tnc2Raw += comment + " " + String(config.trk_comment);
   return tnc2Raw;
 }
@@ -2474,12 +2392,7 @@ int packet2Raw(String &tnc2, AX25Msg &Packet)
   }
   tnc2 += String(F(":"));
   tnc2 += String((const char *)Packet.info);
-  // tnc2 += String("\n");
 
-  // #ifdef DEBUG_TNC
-  //     Serial.printf("[%d] ", ++pkgTNC_count);
-  //     Serial.print(tnc2);
-  // #endif
   return tnc2.length();
 }
 
@@ -2497,13 +2410,6 @@ void loop()
 
   if (config.bt_master)
   {
-    //   if (BTdeviceConnected) {
-    //       pTxCharacteristic->setValue(&BTtxValue, 1);
-    //       pTxCharacteristic->notify();
-    //       BTtxValue++;
-    // 	delay(10); // bluetooth stack will go into congestion, if too many packets are sent
-    // }
-
     // disconnecting
     if (!BTdeviceConnected && BToldDeviceConnected)
     {
@@ -2545,12 +2451,6 @@ void loop()
       else
       {
         EVENT_TX_POSITION = 1;
-        //     showDisp=true;
-        //     if( oledSleepTimeout>0){
-        //     curTab++;
-        //     if(curTab>3) curTab=0;
-        //     }
-        //     log_d("curTab: %d",curTab);
       }
       btn_count = 0;
     }
@@ -2610,14 +2510,14 @@ String sendIsAckMsg(String toCallSign, int msgId)
     call[i] = 0x20;
   memset(&str[0], 0, 300);
 
-  sprintf(str, "%s-%d>APE32I%s::%s:ack%d", config.aprs_mycall, config.aprs_ssid, VERSION, call, msgId);
+  sprintf(str, "%s-%d>APTWR%s::%s:ack%d", config.aprs_mycall, config.aprs_ssid, VERSION, call, msgId);
   return String(str);
 }
 
 void sendIsPkg(char *raw)
 {
   char str[500];
-  sprintf(str, "%s-%d>APE32I%s:%s", config.aprs_mycall, config.aprs_ssid, VERSION, raw);
+  sprintf(str, "%s-%d>APTWR%s:%s", config.aprs_mycall, config.aprs_ssid, VERSION, raw);
   String tnc2Raw = String(str);
   if (aprsClient.connected())
     aprsClient.println(tnc2Raw); // Send packet to Inet
@@ -2640,9 +2540,9 @@ void sendIsPkgMsg(char *raw)
     call[i] = 0x20;
 
   if (config.aprs_ssid == 0)
-    sprintf(str, "%s>APE32I::%s:%s", config.aprs_mycall, call, raw);
+    sprintf(str, "%s>APTWR::%s:%s", config.aprs_mycall, call, raw);
   else
-    sprintf(str, "%s-%d>APE32I::%s:%s", config.aprs_mycall, config.aprs_ssid, call, raw);
+    sprintf(str, "%s-%d>APTWR::%s:%s", config.aprs_mycall, config.aprs_ssid, call, raw);
 
   String tnc2Raw = String(str);
   if (aprsClient.connected())
@@ -2849,7 +2749,6 @@ void taskAPRS(void *pvParameters)
 
       if (EVENT_TX_POSITION > 0)
       {
-        powerWakeup();
         String rawData;
         String cmn = "";
         if (config.trk_sat)
@@ -2907,9 +2806,9 @@ void taskAPRS(void *pvParameters)
     //         }
     //         char rawTlm[100];
     //         if (config.aprs_ssid == 0)
-    //             sprintf(rawTlm, "%s>APE32I:T#%03d,%d,%d,%d,%d,%d,00000000", config.aprs_mycall, igateTLM.Sequence, igateTLM.RF2INET, igateTLM.INET2RF, igateTLM.RX, igateTLM.TX, igateTLM.DROP);
+    //             sprintf(rawTlm, "%s>APTWR:T#%03d,%d,%d,%d,%d,%d,00000000", config.aprs_mycall, igateTLM.Sequence, igateTLM.RF2INET, igateTLM.INET2RF, igateTLM.RX, igateTLM.TX, igateTLM.DROP);
     //         else
-    //             sprintf(rawTlm, "%s-%d>APE32I:T#%03d,%d,%d,%d,%d,%d,00000000", config.aprs_mycall, config.aprs_ssid, igateTLM.Sequence, igateTLM.RF2INET, igateTLM.INET2RF, igateTLM.RX, igateTLM.TX, igateTLM.DROP);
+    //             sprintf(rawTlm, "%s-%d>APTWR:T#%03d,%d,%d,%d,%d,%d,00000000", config.aprs_mycall, config.aprs_ssid, igateTLM.Sequence, igateTLM.RF2INET, igateTLM.INET2RF, igateTLM.RX, igateTLM.TX, igateTLM.DROP);
 
     //         if (aprsClient.connected())
     //             aprsClient.println(String(rawTlm)); // Send packet to Inet
@@ -3278,39 +3177,6 @@ void taskNetwork(void *pvParameters)
               status.allCount++;
               status.rxCount++;
               igateTLM.RX++;
-              //               if (config.rf_en && config.inet2rf)
-              //               {
-              //                 if (line.indexOf(msg_call) <= 0) // src callsign = msg callsign ไม่ใช่หัวข้อโทรมาตร
-              //                 {
-              //                   if (line.indexOf(":T#") < 0) // ไม่ใช่ข้อความโทรมาตร
-              //                   {
-              //                     if (line.indexOf("::") > 0) // ข้อความเท่านั้น
-              //                     {                           // message only
-              //                       char *rawP = (char *)malloc(line.length());
-              //                       // line.toCharArray(rawP, line.length());
-              //                       memcpy(rawP, line.c_str(), line.length());
-              //                       pkgTxPush(rawP, line.length(), 0);
-              //                       free(rawP);
-              //                       // APRS_sendTNC2Pkt(line); // Send out RF by TNC build in
-              //                       //  tncTxEnable = true;
-              //                       status.inet2rf++;
-              //                       igateTLM.INET2RF++;
-              // #ifdef DEBUG
-              //                       // printTime();
-              //                       log_d("INET->RF ");
-              //                       log_d("%s\n", line.c_str());
-              // #endif
-              //                     }
-              //                   }
-              //                 }
-              //                 else
-              //                 {
-              //                   igateTLM.DROP++;
-              //                   log_d("INET Message TELEMETRY from ");
-              //                   log_d("%s\n", src_call.c_str());
-              //                   ;
-              //                 }
-              //               }
 
               log_d("INET: %s\n", line.c_str());
               char raw[500];
@@ -3330,7 +3196,6 @@ void taskNetwork(void *pvParameters)
                 if (start_dstssid > 0)
                   ssid = line.charAt(start_dstssid + 1);
 
-                // if ((type != PKG_TELEMETRY) && (type != PKG_QUERY) && (type != PKG_STATUS) && (type != PKG_MESSAGE) && (ssid > 47 && ssid < 58))
                 if (ssid > 47 && ssid < 58)
                 {
                   size_t len = src_call.length();
