@@ -60,7 +60,54 @@ int igateProcess(AX25Msg &Packet)
             status.dropCount++;
             return 0;
         }
-    }    
+    }
+
+    //NONE Repeat from sattelite repeater
+    for (idx = 0; idx < Packet.rpt_count; idx++)
+    {
+        if (!strncmp(&Packet.rpt_list[idx].call[0], "RS0ISS", 6)) //Repeat from ISS
+        {
+            if(strchr(&Packet.rpt_list[idx].call[5],'*')==NULL){
+                status.dropCount++;
+                return 0;
+            }
+        }
+        if (!strncmp(&Packet.rpt_list[idx].call[0], "YBOX", 4)) //Repeat from LAPAN-A2
+        {
+            if(strchr(&Packet.rpt_list[idx].call[3],'*')==NULL){
+                status.dropCount++;
+                return 0;
+            }
+        }
+        if (!strncmp(&Packet.rpt_list[idx].call[0], "YBSAT", 5)) //Repeat from LAPAN-A2
+        {
+            if(strchr(&Packet.rpt_list[idx].call[4],'*')==NULL){
+                status.dropCount++;
+                return 0;
+            }
+        }
+        if (!strncmp(&Packet.rpt_list[idx].call[0], "PSAT", 4)) //Repeat from PSAT2-1
+        {
+            if(strchr(&Packet.rpt_list[idx].call[3],'*')==NULL){
+                status.dropCount++;
+                return 0;
+            }
+        }
+        if (!strncmp(&Packet.rpt_list[idx].call[0], "W3ADO", 5)) //Repeat from PCSAT-1
+        {
+            if(strchr(&Packet.rpt_list[idx].call[4],'*')==NULL){
+                status.dropCount++;
+                return 0;
+            }
+        }
+        if (!strncmp(&Packet.rpt_list[idx].call[0], "BJ1SI", 5)) //Repeat from LilacSat-2
+        {
+            if(strchr(&Packet.rpt_list[idx].call[4],'*')==NULL){
+                status.dropCount++;
+                return 0;
+            }
+        }
+    }   
 
 
     header = String(Packet.src.call);
@@ -133,8 +180,10 @@ int igateProcess(AX25Msg &Packet)
             Raw[i]=*ptr++;
         }
     }
+    Raw[i]=0;
+    log_d("RF2INET: %s", Raw);
     aprsClient.write(&Raw[0], i);    // Send binary frame packet to APRS-IS (aprsc)
     aprsClient.write("\r\n");   // Send CR LF the end frame packet
-    log_d("RF2INET: %s", Raw);
+
     return 1;
 }

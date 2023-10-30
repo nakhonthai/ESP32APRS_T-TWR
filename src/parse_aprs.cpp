@@ -1954,6 +1954,14 @@ int ParseAPRS::parse_aprs_message(struct pbuf_t *pb)
 	{
 		am->msgid = p + 1;
 		am->msgid_len = pb->packet_len - 2 - (am->msgid - pb->data);
+		int i;
+		for(i=0;i<4;i++){
+			if(am->msgid[i]<'0' || am->msgid[i]>'9') break;
+		}
+		if(i>3)
+		 am->msgid_len=3;
+		else
+		am->msgid_len=i;
 		am->body_len = p - am->body;
 	}
 	// p[am->body_len] = 0;

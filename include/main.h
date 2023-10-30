@@ -11,11 +11,10 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#define VERSION "0.1"
-#define VERSION_BUILD 'd'
+#define VERSION "0.2"
+#define VERSION_BUILD ' '
 
 // #define DEBUG
-// #define DEBUG_IS
 
 #define SA868_TX_PIN (39)
 #define SA868_RX_PIN (48)
@@ -127,6 +126,13 @@ enum M17Flags
 	CONNECTED_RO = 1 << 6
 };
 
+typedef struct wifi_struct
+{
+	bool enable;
+	char wifi_ssid[32];
+	char wifi_pass[63];
+} wifiSTA;
+
 typedef struct Config_Struct
 {
 	float timeZone;
@@ -137,9 +143,10 @@ typedef struct Config_Struct
 	char wifi_mode; // WIFI_AP,WIFI_STA,WIFI_AP_STA,WIFI_OFF
 	char wifi_power;
 	//--WiFi Client
+	wifiSTA wifi_sta[5];
 	// bool wifi_client;
-	char wifi_ssid[32];
-	char wifi_pass[63];
+	// char wifi_ssid[32];
+	// char wifi_pass[63];
 	//--WiFi AP
 	// bool wifi_ap;
 	char wifi_ap_ch;
@@ -154,7 +161,7 @@ typedef struct Config_Struct
 	char bt_uuid_rx[37];
 	char bt_uuid_tx[37];
 	char bt_name[20];
-	char bt_pin[5];
+	uint32_t bt_pin;
 	char bt_power;
 
 	//--RF Module
@@ -294,6 +301,9 @@ typedef struct Config_Struct
 	char wg_public_key[45];
 	char wg_private_key[45];
 
+	char http_username[32];
+	char http_password[64];
+
 	char path[4][15];
 
 	uint8_t gpio_sql_pin = -1;
@@ -411,4 +421,5 @@ void powerWakeup();
 bool powerStatus();
 int packet2Raw(String &tnc2, AX25Msg &Packet);
 bool waitResponse(String &data, String rsp = "\r\n", uint32_t timeout = 1000);
+String sendIsAckMsg(String toCallSign, char *msgId);
 #endif

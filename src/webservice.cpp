@@ -22,13 +22,22 @@ String webString;
 bool defaultSetting = false;
 
 void serviceHandle()
-{
+{	
 	server.handleClient();
+}
+
+void handle_logout()
+{
+	webString = "Log out";
+	server.send(401, "text/html", webString);
 }
 
 void setMainPage()
 {
-	webString = "<head>\n";
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
+	webString = "<html><head>\n";
 	webString += "<meta name=\"robots\" content=\"index\" />\n";
 	webString += "<meta name=\"robots\" content=\"follow\" />\n";
 	webString += "<meta name=\"language\" content=\"English\" />\n";
@@ -80,12 +89,14 @@ void setMainPage()
 	webString += "</script>\n";
 	webString += "</head>\n";
 	webString += "\n";
-	webString += "<body>\n";
+	webString += "<body onload=\"selectTab(event, 'DashBoard')\">\n";
 	webString += "\n";
 	webString += "<div class=\"container\">\n";
 	webString += "<div class=\"header\">\n";
 	// webString += "<div style=\"font-size: 8px; text-align: right; padding-right: 8px;\">ESP32APRS T-TWR Plus Firmware V" + String(VERSION) + "</div>\n";
+	//webString += "<div style=\"font-size: 8px; text-align: right; padding-right: 8px;\"><a href=\"/logout\">[LOG OUT]</a></div>\n";
 	webString += "<h1>ESP32APRS T-TWR Plus</h1>\n";
+	webString += "<div style=\"font-size: 8px; text-align: right; padding-right: 8px;\"><a href=\"/logout\">[LOG OUT]</a></div>\n";
 	webString += "<div class=\"row\">\n";
 	webString += "<ul class=\"nav nav-tabs\" style=\"margin: 5px;\">\n";
 	webString += "<button class=\"nav-tabs\" onclick=\"selectTab(event, 'DashBoard')\">DashBoard</button>\n";
@@ -128,8 +139,6 @@ void setMainPage()
 	webString += "</body>\n";
 	webString += "</html>";
 	server.send(200, "text/html", webString); // send to someones browser when asked
-	delay(100);
-	webString.clear();
 }
 
 ////////////////////////////////////////////////////////////
@@ -144,6 +153,9 @@ void handle_css()
 
 void handle_dashboard()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	webString = "<script type=\"text/javascript\">\n";
 	webString += "function reloadSysInfo() {\n";
 	webString += "$(\"#sysInfo\").load(\"/sysinfo\", function () { setTimeout(reloadSysInfo, 60000) });\n";
@@ -193,7 +205,7 @@ void handle_dashboard()
 	webString += "<br />\n";
 	webString += "<table>\n";
 	webString += "<tr>\n";
-	webString += "<th colspan=\"2\">APRS IS</th>\n";
+	webString += "<th colspan=\"2\">APRS SERVER</th>\n";
 	webString += "</tr>\n";
 	webString += "<tr>\n";
 	webString += "<td>HOST</td>\n";
@@ -228,7 +240,7 @@ void handle_dashboard()
 	webString += "</tr>\n";
 	webString += "<tr>\n";
 	webString += "<td>SSID</td>\n";
-	webString += "<td style=\"background: #ffffff;\">" + String(config.wifi_ssid) + "</td>\n";
+	webString += "<td style=\"background: #ffffff;\">" + String(WiFi.SSID()) + "</td>\n";
 	webString += "</tr>\n";
 	webString += "<tr>\n";
 	webString += "<td>RSSI</td>\n";
@@ -279,7 +291,7 @@ void handle_dashboard()
 	webString += "</div>\n";
 	webString += "\n";
 	webString += "<div class=\"content\">\n";
-	//webString += "<b>LAST HEARD</b>\n";
+	// webString += "<b>LAST HEARD</b>\n";
 	webString += "<div id=\"lastHeard\">\n";
 	webString += "</div>\n";
 
@@ -290,6 +302,9 @@ void handle_dashboard()
 
 void handle_sidebar()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	String html = "<table style=\"background:white;border-collapse: unset;\">\n";
 	html += "<tr>\n";
 	html += "<th colspan=\"2\">Modes Enabled</th>\n";
@@ -622,6 +637,9 @@ void handle_lastHeard()
 #ifdef SDCARD
 void handle_storage()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	String dirname = "/";
 	char strTime[100];
 
@@ -739,6 +757,9 @@ void handle_storage()
 
 void handle_radio()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	// bool noiseEn=false;
 	bool radioEnable = false;
 	if (server.hasArg("commitRadio"))
@@ -1005,46 +1026,46 @@ void handle_radio()
 		}
 		html += "</select>\n";
 		html += "</td>\n";
-		float freqMin=0;
-		float freqMax=0;
+		float freqMin = 0;
+		float freqMax = 0;
 		switch (config.rf_type)
 		{
 		case RF_SA868_VHF:
-			freqMin=134.0F;
-			freqMax=174.0F;
+			freqMin = 134.0F;
+			freqMax = 174.0F;
 			break;
 		case RF_SR_1WV:
 		case RF_SR_2WVS:
-			freqMin=136.0F;
-			freqMax=174.0F;
+			freqMin = 136.0F;
+			freqMax = 174.0F;
 			break;
 		case RF_SA868_350:
-			freqMin=320.0F;
-			freqMax=400.0F;
+			freqMin = 320.0F;
+			freqMax = 400.0F;
 			break;
 		case RF_SR_1W350:
-			freqMin=350.0F;
-			freqMax=390.0F;
+			freqMin = 350.0F;
+			freqMax = 390.0F;
 			break;
 		case RF_SA868_UHF:
 		case RF_SR_1WU:
 		case RF_SR_2WUS:
-			freqMin=400.0F;
-			freqMax=470.0F;
+			freqMin = 400.0F;
+			freqMax = 470.0F;
 			break;
 		default:
-			freqMin=134.0F;
-			freqMax=500.0F;
+			freqMin = 134.0F;
+			freqMax = 500.0F;
 			break;
 		}
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>TX Frequency:</b></td>\n";
-		html += "<td style=\"text-align: left;\"><input type=\"number\" id=\"tx_freq\" name=\"tx_freq\" min=\""+String(freqMin,4)+"\" max=\""+String(freqMax,4)+"\"\n";
+		html += "<td style=\"text-align: left;\"><input type=\"number\" id=\"tx_freq\" name=\"tx_freq\" min=\"" + String(freqMin, 4) + "\" max=\"" + String(freqMax, 4) + "\"\n";
 		html += "step=\"0.0001\" value=\"" + String(config.freq_tx, 4) + "\" /> MHz</td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>RX Frequency:</b></td>\n";
-		html += "<td style=\"text-align: left;\"><input type=\"number\" id=\"rx_freq\" name=\"rx_freq\" min=\""+String(freqMin,4)+"\" max=\""+String(freqMax,4)+"\"\n";
+		html += "<td style=\"text-align: left;\"><input type=\"number\" id=\"rx_freq\" name=\"rx_freq\" min=\"" + String(freqMin, 4) + "\" max=\"" + String(freqMax, 4) + "\"\n";
 		html += "step=\"0.0001\" value=\"" + String(config.freq_rx, 4) + "\" /> Mhz</td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
@@ -1181,6 +1202,9 @@ void handle_radio()
 
 void handle_vpn()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	if (server.hasArg("commitVPN"))
 	{
 		bool vpnEn = false;
@@ -1357,6 +1381,9 @@ void handle_vpn()
 
 void handle_system()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	if (server.hasArg("updateTimeZone"))
 	{
 		for (uint8_t i = 0; i < server.args(); i++)
@@ -1465,15 +1492,37 @@ void handle_system()
 	{
 		esp_restart();
 	}
+	else if (server.hasArg("commitWebAuth"))
+	{
+		for (uint8_t i = 0; i < server.args(); i++)
+		{
+			// Serial.print("SERVER ARGS ");
+			// Serial.print(server.argName(i));
+			// Serial.print("=");
+			// Serial.println(server.arg(i));
+			if (server.argName(i) == "webauth_user")
+			{
+				if (server.arg(i) != "")
+				{
+					strcpy(config.http_username, server.arg(i).c_str());
+				}
+				break;
+			}
+			if (server.argName(i) == "webauth_pass")
+			{
+				if (server.arg(i) != "")
+				{
+					strcpy(config.http_password, server.arg(i).c_str());
+				}
+				break;
+			}
+		}
+		saveEEPROM();
+		String html = "OK";
+		server.send(200, "text/html", html);
+	}
 	else if (server.hasArg("commitDISP"))
 	{
-		// bool filterMessage = false;
-		// bool filterStatus = false;
-		// bool filterTelemetry = false;
-		// bool filterWeather = false;
-		// bool filterTracker = false;
-		// bool filterMove = false;
-		// bool filterPosition = false;
 		bool dispRX = false;
 		bool dispTX = false;
 		bool dispRF = false;
@@ -1682,6 +1731,7 @@ void handle_system()
 		html += "if(e.currentTarget.id===\"formTimeZone\") document.getElementById(\"updateTimeZone\").disabled=true;\n";
 		html += "if(e.currentTarget.id===\"formReboot\") document.getElementById(\"REBOOT\").disabled=true;\n";
 		html += "if(e.currentTarget.id===\"formDisp\") document.getElementById(\"submitDISP\").disabled=true;\n";
+		html += "if(e.currentTarget.id===\"formWebAuth\") document.getElementById(\"submitWebAuth\").disabled=true;\n";
 		html += "$.ajax({\n";
 		html += "url: '/system',\n";
 		html += "type: 'POST',\n";
@@ -1739,10 +1789,27 @@ void handle_system()
 
 		html += "<tr>\n";
 		html += "<td style=\"text-align: right;\">SYSTEM REBOOT </td>\n";
-		html += "<td style=\"text-align: left;\"><br /><form accept-charset=\"UTF-8\" action=\"#\" enctype='multipart/form-data' id=\"formReboot\" method=\"post\"><button type='submit' id='REBOOT'  name=\"commit\"> REBOOT </button>\n";
-		html += "<input type=\"hidden\" name=\"REBOOT\"/></form>\n</td>\n";
+		html += "<td style=\"text-align: left;\"><br /><form accept-charset=\"UTF-8\" action=\"#\" enctype='multipart/form-data' id=\"formReboot\" method=\"post\"> <button type='submit' id='REBOOT'  name=\"commit\" style=\"background-color:red;color:white\"> REBOOT </button>\n";
+		html += " <input type=\"hidden\" name=\"REBOOT\"/></form>\n</td>\n";
 		// html += "<td style=\"text-align: left;\"><input type='submit' class=\"btn btn-danger\" id=\"REBOOT\" name=\"REBOOT\" value='REBOOT'></td>\n";
 		html += "</tr></table><br /><br />\n";
+
+		/************************ WEB AUTH **************************/
+		html += "<form id='formWebAuth' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
+		html += "<table>\n";
+		html += "<th colspan=\"2\"><span><b>Web Authentication</b></span></th>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Web USER:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input size=\"32\" maxlength=\"32\" class=\"form-control\" name=\"webauth_user\" type=\"text\" value=\"" + String(config.http_username) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Web PASSWORD:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input size=\"63\" maxlength=\"63\" class=\"form-control\" name=\"webauth_pass\" type=\"password\" value=\"" + String(config.http_password) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "</table><br />\n";
+		html += "<div><button type='submit' id='submitWebAuth'  name=\"commit\"> Apply Change </button></div>\n";
+		html += "<input type=\"hidden\" name=\"commitWebAuth\"/>\n";
+		html += "</form><br /><br />";
 
 		html += "<form id='formDisp' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
 		// html += "<h2>Display Setting</h2>\n";
@@ -1886,6 +1953,9 @@ void handle_system()
 
 void handle_igate()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	bool aprsEn = false;
 	bool rf2inetEn = false;
 	bool inet2rfEn = false;
@@ -2650,6 +2720,9 @@ void handle_igate()
 
 void handle_digi()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	bool digiEn = false;
 	bool posGPS = false;
 	bool bcnEN = false;
@@ -3009,7 +3082,7 @@ void handle_digi()
 	html += "<td style=\"text-align: left;\"><input maxlength=\"50\" size=\"50\" id=\"digiComment\" name=\"digiComment\" type=\"text\" value=\"" + String(config.digi_comment) + "\" /></td>\n";
 	html += "</tr>\n";
 
-	html += "<tr><td style=\"text-align: right;\"><b>Repeat Delay:</b></td><td style=\"text-align: left;\"><input min=\"0\" max=\"3000\" step=\"100\" id=\"digiDelay\" name=\"digiDelay\" type=\"number\" value=\"" + String(config.digi_delay) + "\" /> mSec. <i>*0 is auto,Other random of delay time</i></td></tr>";
+	html += "<tr><td style=\"text-align: right;\"><b>Repeat Delay:</b></td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"100\" id=\"digiDelay\" name=\"digiDelay\" type=\"number\" value=\"" + String(config.digi_delay) + "\" /> mSec. <i>*0 is auto,Other random of delay time</i></td></tr>";
 
 	html += "<tr><td align=\"right\"><b>POSITION:</b></td>\n";
 	html += "<td align=\"center\">\n";
@@ -3154,6 +3227,9 @@ void handle_digi()
 
 void handle_tracker()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	bool trakerEn = false;
 	bool smartEn = false;
 	bool compEn = false;
@@ -3681,7 +3757,10 @@ void handle_tracker()
 }
 
 void handle_wireless()
-{
+{	
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	if (server.hasArg("commitWiFiAP"))
 	{
 		bool wifiAP = false;
@@ -3728,6 +3807,8 @@ void handle_wireless()
 	else if (server.hasArg("commitWiFiClient"))
 	{
 		bool wifiSTA = false;
+		String nameSSID,namePASS;
+		for(int n=0;n<5;n++) config.wifi_sta[n].enable=false;
 		for (uint8_t i = 0; i < server.args(); i++)
 		{
 			if (server.argName(i) == "wificlient")
@@ -3741,20 +3822,36 @@ void handle_wireless()
 				}
 			}
 
-			if (server.argName(i) == "wifi_ssid")
-			{
-				if (server.arg(i) != "")
+			for(int n=0;n<5;n++){
+				nameSSID="wifiStation"+String(n);
+				if (server.argName(i) == nameSSID)
 				{
-					strcpy(config.wifi_ssid, server.arg(i).c_str());
+					if (server.arg(i) != "")
+					{
+						if (String(server.arg(i)) == "OK")
+						{
+							config.wifi_sta[n].enable = true;
+						}
+					}
+				}
+				nameSSID="wifi_ssid"+String(n);
+				if (server.argName(i) == nameSSID)
+				{
+					if (server.arg(i) != "")
+					{
+						strcpy(config.wifi_sta[n].wifi_ssid, server.arg(i).c_str());
+					}
+				}
+				namePASS="wifi_pass"+String(n);
+				if (server.argName(i) == namePASS)
+				{
+					if (server.arg(i) != "")
+					{
+						strcpy(config.wifi_sta[n].wifi_pass, server.arg(i).c_str());
+					}
 				}
 			}
-			if (server.argName(i) == "wifi_pass")
-			{
-				if (server.arg(i) != "")
-				{
-					strcpy(config.wifi_pass, server.arg(i).c_str());
-				}
-			}
+
 			if (server.argName(i) == "wifi_pwr")
 			{
 				if (server.arg(i) != "")
@@ -3868,7 +3965,7 @@ void handle_wireless()
 		// html += "</tr>\n";
 		html += "<th colspan=\"2\"><span><b>WiFi Access Point</b></span></th>\n";
 		html += "<tr>\n";
-		html += "<td align=\"right\"><b>Enable:</b></td>\n";
+		html += "<td align=\"right\" width=\"120\"><b>Enable:</b></td>\n";
 		String wifiAPEnFlag = "";
 		if (config.wifi_mode & WIFI_AP_FIX)
 			wifiAPEnFlag = "checked";
@@ -3876,11 +3973,11 @@ void handle_wireless()
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>WiFi AP SSID:</b></td>\n";
-		html += "<td style=\"text-align: left;\"><input maxlength=\"32\" class=\"form-control\" id=\"wifi_ssidAP\" name=\"wifi_ssidAP\" type=\"text\" value=\"" + String(config.wifi_ap_ssid) + "\" /></td>\n";
+		html += "<td style=\"text-align: left;\"><input size=\"32\" maxlength=\"32\" class=\"form-control\" id=\"wifi_ssidAP\" name=\"wifi_ssidAP\" type=\"text\" value=\"" + String(config.wifi_ap_ssid) + "\" /></td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>WiFi AP PASSWORD:</b></td>\n";
-		html += "<td style=\"text-align: left;\"><input maxlength=\"63\" class=\"form-control\" id=\"wifi_passAP\" name=\"wifi_passAP\" type=\"password\" value=\"" + String(config.wifi_ap_pass) + "\" /></td>\n";
+		html += "<td style=\"text-align: left;\"><input size=\"63\" maxlength=\"63\" class=\"form-control\" id=\"wifi_passAP\" name=\"wifi_passAP\" type=\"password\" value=\"" + String(config.wifi_ap_pass) + "\" /></td>\n";
 		html += "</tr>\n";
 		html += "</table><br />\n";
 		html += "<div><button type='submit' id='submitWiFiAP'  name=\"commit\"> Apply Change </button></div>\n";
@@ -3889,30 +3986,17 @@ void handle_wireless()
 		/************************ WiFi Client **************************/
 		html += "<br />\n";
 		html += "<form id='formWiFiClient' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
-		// html += "<h2>WiFi Client</h2>\n";
 		html += "<table>\n";
-		// html += "<tr>\n";
-		// html += "<th width=\"200\"><span><b>Setting</b></span></th>\n";
-		// html += "<th><span><b>Value</b></span></th>\n";
-		// html += "</tr>\n";
-		html += "<th colspan=\"2\"><span><b>WiFi Client</b></span></th>\n";
+		html += "<th colspan=\"2\"><span><b>WiFi Multi Station</b></span></th>\n";
 		html += "<tr>\n";
-		html += "<td align=\"right\"><b>Enable:</b></td>\n";
+		html += "<td align=\"right\"><b>WiFi STA Enable:</b></td>\n";
 		String wifiClientEnFlag = "";
 		if (config.wifi_mode & WIFI_STA_FIX)
 			wifiClientEnFlag = "checked";
 		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"wificlient\" value=\"OK\" " + wifiClientEnFlag + "><span class=\"slider round\"></span></label></td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
-		html += "<td align=\"right\"><b>WiFi SSID:</b></td>\n";
-		html += "<td style=\"text-align: left;\"><input maxlength=\"32\" id=\"wifi_ssid\" name=\"wifi_ssid\" type=\"text\" value=\"" + String(config.wifi_ssid) + "\" /></td>\n";
-		html += "</tr>\n";
-		html += "<tr>\n";
-		html += "<td align=\"right\"><b>WiFi PASSWORD:</b></td>\n";
-		html += "<td style=\"text-align: left;\"><input maxlength=\"63\" id=\"wifi_pass\" name=\"wifi_pass\" type=\"password\" value=\"" + String(config.wifi_pass) + "\" /></td>\n";
-		html += "</tr>\n";
-		html += "<tr>\n";
-		html += "<td align=\"right\"><b>WiFi Power:</b></td>\n";
+		html += "<td align=\"right\"><b>WiFi RF Power:</b></td>\n";
 		html += "<td style=\"text-align: left;\">\n";
 		html += "<select name=\"wifi_pwr\" id=\"wifi_pwr\">\n";
 		for (int i = 0; i < 12; i++)
@@ -3925,6 +4009,34 @@ void handle_wireless()
 		html += "</select>\n";
 		html += "</td>\n";
 		html += "</tr>\n";
+		for (int n = 0; n < 5; n++)
+		{
+			html += "<tr>\n";
+			html += "<td align=\"right\"><b>Station #" + String(n+1) + ":</b></td>\n";
+			html += "<td align=\"center\">\n";
+			html += "<fieldset id=\"filterDispGrp" + String(n+1) + "\">\n";
+			html += "<legend>WiFi Station #" + String(n+1) + "</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
+			html += "<tr style=\"background:unset;\">";
+			// html += "<tr>\n";
+			html += "<td align=\"right\" width=\"120\"><b>Enable:</b></td>\n";
+			String wifiClientEnFlag = "";
+			if (config.wifi_sta[n].enable)
+				wifiClientEnFlag = "checked";
+			html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"wifiStation" + String(n) + "\" value=\"OK\" " + wifiClientEnFlag + "><span class=\"slider round\"></span></label></td>\n";
+			html += "</tr>\n";
+			html += "<tr>\n";
+			html += "<td align=\"right\"><b>WiFi SSID:</b></td>\n";
+			html += "<td style=\"text-align: left;\"><input size=\"32\" maxlength=\"32\" name=\"wifi_ssid" + String(n) + "\" type=\"text\" value=\"" + String(config.wifi_sta[n].wifi_ssid) + "\" /></td>\n";
+			html += "</tr>\n";
+			html += "<tr>\n";
+			html += "<td align=\"right\"><b>WiFi PASSWORD:</b></td>\n";
+			html += "<td style=\"text-align: left;\"><input size=\"63\" maxlength=\"63\" name=\"wifi_pass" + String(n) + "\" type=\"password\" value=\"" + String(config.wifi_sta[n].wifi_pass) + "\" /></td>\n";
+			html += "</tr>\n";
+			html += "</tr></table></fieldset>\n";
+			html += "</td></tr>\n";
+		}
+
+		
 		html += "</table><br />\n";
 		html += "<div><button type='submit' id='submitWiFiClient'  name=\"commit\"> Apply Change </button></div>\n";
 		html += "<input type=\"hidden\" name=\"commitWiFiClient\"/>\n";
@@ -4096,6 +4208,9 @@ void handle_realtime()
 
 void handle_about()
 {
+	if (!server.authenticate(config.http_username, config.http_password)) {
+      return server.requestAuthentication();
+    }
 	char strCID[50];
 	uint64_t chipid = ESP.getEfuseMac();
 	sprintf(strCID, "%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
@@ -4107,8 +4222,8 @@ void handle_about()
 	webString += "<th colspan=\"2\"><span><b>System Infomation</b></span></th>\n";
 	// webString += "<tr><th width=\"200\"><span><b>Name</b></span></th><th><span><b>Infomation</b></span></th></tr>";
 	webString += "<tr><td align=\"right\"><b>Hardware Version: </b></td><td align=\"left\"> LILYGO T-TWR Plus </td></tr>";
-	webString += "<tr><td align=\"right\"><b>Firmware Version: </b></td><td align=\"left\"> V" + String(VERSION) + "</td></tr>\n";
-	webString += "<tr><td align=\"right\"><b>RF Version: </b></td><td align=\"left\"> MODEL: "+String(RF_TYPE[config.rf_type])+"</td></tr>\n";
+	webString += "<tr><td align=\"right\"><b>Firmware Version: </b></td><td align=\"left\"> V" + String(VERSION) + String(VERSION_BUILD) + "</td></tr>\n";
+	webString += "<tr><td align=\"right\"><b>RF Module: </b></td><td align=\"left\"> MODEL: " + String(RF_TYPE[config.rf_type]) + "</td></tr>\n";
 	webString += "<tr><td align=\"right\"><b>ESP32 Model: </b></td><td align=\"left\"> " + String(ESP.getChipModel()) + "</td></tr>";
 	webString += "<tr><td align=\"right\"><b>ESP32 Chip ID: </b></td><td align=\"left\"> " + String(strCID) + "</td></tr>";
 	webString += "<tr><td align=\"right\"><b>ESP32 Revision: </b></td><td align=\"left\"> " + String(ESP.getChipRevision()) + "</td></tr>";
@@ -4427,11 +4542,14 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 }
 #endif
 
+
+
 void webService()
 {
 	server.close();
 	// web client handlers
 	server.on("/", setMainPage);
+	server.on("/logout",handle_logout);
 #ifdef SDCARD
 	server.on("/file", handle_storage);
 	server.on("/download", handle_download);
@@ -4447,7 +4565,7 @@ void webService()
 	server.on("/system", handle_system);
 	server.on("/symbol", handle_symbol);
 	server.on("/wireless", handle_wireless);
-	//server.on("/test", handle_test);
+	// server.on("/test", handle_test);
 	server.on("/realtime", handle_realtime);
 	server.on("/about", handle_about);
 	server.on("/dashboard", handle_dashboard);

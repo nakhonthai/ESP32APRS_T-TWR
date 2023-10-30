@@ -33,6 +33,20 @@ int line = 16;
 
 uint8_t gps_mode = 0;
 
+cppQueue queTxDisp(sizeof(txDisp), 10, IMPLEMENTATION); // Instantiate queue
+
+void pushTxDisp(uint8_t ch, const char *name, char *info)
+{
+    if(!config.tx_display) return;
+
+    txDisp pkg;
+
+    pkg.tx_ch = ch;
+    strcpy(pkg.name, name);
+    strcpy(pkg.info, info);
+    queTxDisp.push(&pkg); // ใส่แพ็จเก็จจาก TNC ลงคิวบัพเฟอร์
+}
+
 #define ROTARY_ENCODER_A_PIN 47
 #define ROTARY_ENCODER_B_PIN 46
 #define ROTARY_ENCODER_BUTTON_PIN 21
@@ -1328,7 +1342,7 @@ void on_wifi_Client_selected(MenuItem *p_menu_item)
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
-    str = String("WIFI CLIENT CFG");
+    str = String("WIFI STATION");
     x = str.length() * 6;
     display.setCursor(64 - (x / 2), 4);
     display.print(str);
@@ -1340,7 +1354,7 @@ void on_wifi_Client_selected(MenuItem *p_menu_item)
     txtBox[0].y = 27;
     txtBox[0].length = 17;
     txtBox[0].type = 0;
-    strcpy(txtBox[0].text, config.wifi_ssid);
+    strcpy(txtBox[0].text, config.wifi_sta[0].wifi_ssid);
 
     if (config.wifi_mode & WIFI_STA_FIX)
     {
@@ -1361,7 +1375,7 @@ void on_wifi_Client_selected(MenuItem *p_menu_item)
     txtBox[1].y = 53;
     txtBox[1].length = 14;
     txtBox[1].type = 0;
-    strcpy(txtBox[1].text, config.wifi_pass);
+    strcpy(txtBox[1].text, config.wifi_sta[0].wifi_pass);
 
     display.setCursor(55, 42);
     display.print("PWR:");
@@ -1426,10 +1440,10 @@ void on_wifi_Client_selected(MenuItem *p_menu_item)
                     switch (i)
                     {
                     case 0:
-                        strcpy(config.wifi_ssid, txtBox[0].text);
+                        strcpy(config.wifi_sta[0].wifi_ssid, txtBox[0].text);
                         break;
                     case 1:
-                        strcpy(config.wifi_pass, txtBox[1].text);
+                        strcpy(config.wifi_sta[0].wifi_pass, txtBox[1].text);
                         break;
                     }
                     encoder0Pos = keyPrev + 1;
@@ -1516,9 +1530,9 @@ void on_bluetooth_selected(MenuItem *p_menu_item)
     display.print("PIN:");
     txtBox[1].x = 0;
     txtBox[1].y = 53;
-    txtBox[1].length = 4;
+    txtBox[1].length = 6;
     txtBox[1].type = 0;
-    strcpy(txtBox[1].text, config.bt_pin);
+    strcpy(txtBox[1].text, String(config.bt_pin).c_str());
 
     display.setCursor(55, 42);
     display.print("PWR:");
@@ -1586,7 +1600,7 @@ void on_bluetooth_selected(MenuItem *p_menu_item)
                         strcpy(config.bt_name, txtBox[0].text);
                         break;
                     case 1:
-                        strcpy(config.bt_pin, txtBox[1].text);
+                        config.bt_pin = String(txtBox[1].text).toInt();
                         break;
                     }
                     encoder0Pos = keyPrev + 1;
@@ -1617,252 +1631,9 @@ void on_bluetooth_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    // if (config.wifi_enable)
-    // {
-    //     WiFi.disconnect(false);
-    //     conStatNetwork = CON_WIFI;
-    // }
-    // else
-    // {
-    //     WiFi.disconnect(true);
-    //     conStatNetwork = CON_WIFI;
-    // }
 }
 
-// void on_stationconfig_selected(MenuItem *p_menu_item)
-// {
-//     int max_sel = 7;
-//     MyTextBox txtBox[3];
-//     MySymbolBox symBox;
-//     MyCheckBox chkGPS, chkSMBeacon;
-//     MyComboBox cbBox;
-//     String str;
-//     char ch[10];
-//     int x, i;
-//     int keyPrev = -1;
-//     display.clearDisplay();
-//     display.fillRect(0, 0, 128, 16, WHITE);
-//     display.setTextColor(BLACK);
-//     str = String("MY IGATE/STATION");
-//     x = str.length() * 6;
-//     display.setCursor(64 - (x / 2), 4);
-//     display.print(str);
-//     display.setTextColor(WHITE);
 
-//     // str = String(mycallsign);
-//     // str.toUpperCase();
-//     // str.toCharArray(&ch[0],10);
-//     display.setCursor(0, 18);
-//     display.print("MyCall:");
-//     txtBox[0].x = 41;
-//     txtBox[0].y = 16;
-//     txtBox[0].length = 7;
-//     txtBox[0].type = 0;
-//     str = String(config.aprs_mycall);
-//     str.toUpperCase();
-//     str.toCharArray(&ch[0], 10);
-//     strcpy(txtBox[0].text, ch);
-//     // TextBoxShow(&ch[0], 44, 16, 7);
-//     // strcpy(mycallsign, ch);
-
-//     // sprintf(ch, "%d", myssid);
-//     display.setCursor(95, 18);
-//     display.print("-");
-//     cbBox.isValue = true;
-//     cbBox.x = 101;
-//     cbBox.y = 16;
-//     cbBox.length = 2;
-//     cbBox.maxItem(15);
-//     cbBox.char_max = 15;
-//     cbBox.SetIndex(config.aprs_ssid);
-//     // txtBox[1].x = 106;
-//     // txtBox[1].y = 16;
-//     // txtBox[1].length = 2;
-//     // txtBox[1].type = 1;
-//     // sprintf(txtBox[1].text, "%d", config.myssid);
-//     // TextBoxShow(&ch[0], 106, 16, 2);
-//     // TextBoxArrayShow(&txtBox[0]);
-//     // myssid = atol(ch);
-
-//     display.setCursor(0, 30);
-//     display.print("LAT:");
-//     // TextBoxShow(&mylat[0], 26, 28, 8);
-//     txtBox[1].x = 26;
-//     txtBox[1].y = 28;
-//     txtBox[1].length = 8;
-//     txtBox[1].type = 1;
-//     sprintf(txtBox[1].text, "%.5f", config.gps_lat);
-
-//     display.setCursor(0, 42);
-//     display.print("LON:");
-//     // TextBoxShow(&mylon[0], 26, 40,9);
-//     txtBox[2].x = 26;
-//     txtBox[2].y = 40;
-//     txtBox[2].length = 9;
-//     txtBox[2].type = 1;
-//     sprintf(txtBox[2].text, "%.5f", config.gps_lon);
-
-//     chkGPS.Checked = config.mygps;
-//     chkGPS.isSelect = false;
-//     chkGPS.x = 0;
-//     chkGPS.y = 54;
-//     sprintf(chkGPS.text, "GPS");
-//     // chkGPS.CheckBoxShow();
-
-//     chkSMBeacon.Checked = config.trk_smartbeacon;
-//     chkSMBeacon.isSelect = false;
-//     chkSMBeacon.x = 35;
-//     chkSMBeacon.y = 54;
-//     sprintf(chkSMBeacon.text, "SmartBCN");
-
-//     display.fillRect(98, 31, 30, 11, WHITE);
-//     display.setTextColor(BLACK);
-//     display.setCursor(100, 33);
-//     display.print("ICON");
-//     display.setTextColor(WHITE);
-//     symBox.x = 98;
-//     symBox.y = 43;
-//     symBox.table = config.mysymbol[0];
-//     symBox.symbol = config.mysymbol[1];
-//     symBox.SetIndex(config.mysymbol[1]);
-
-//     // txtBox[4].x = 44;
-//     // txtBox[4].y = 52;
-//     // txtBox[4].length = 2;
-//     // strcpy(txtBox[4].text, config.mysymbol);
-
-//     display.display();
-//     encoder0Pos = 0;
-//     delay(100);
-//     do
-//     {
-//         if (encoder0Pos >= max_sel)
-//             encoder0Pos = 0;
-//         if (encoder0Pos < 0)
-//             encoder0Pos = max_sel - 1;
-//         if (keyPrev != encoder0Pos)
-//         {
-//             keyPrev = encoder0Pos;
-//             for (i = 0; i < max_sel; i++)
-//             {
-//                 if (i < 3)
-//                     txtBox[i].isSelect = false;
-//                 if (i == 3)
-//                     cbBox.isSelect = false;
-//                 if (i == 6)
-//                     symBox.isSelect = false;
-//                 if (i == 5)
-//                     chkSMBeacon.isSelect = false;
-//                 if (i == 4)
-//                     chkGPS.isSelect = false;
-//             }
-//             if (encoder0Pos < 3)
-//                 txtBox[encoder0Pos].isSelect = true;
-//             if (encoder0Pos == 6)
-//                 symBox.isSelect = true;
-//             if (encoder0Pos == 5)
-//                 chkSMBeacon.isSelect = true;
-//             if (encoder0Pos == 4)
-//                 chkGPS.isSelect = true;
-//             if (encoder0Pos == 3)
-//                 cbBox.isSelect = true;
-//             for (i = 0; i < 3; i++)
-//                 txtBox[i].TextBoxShow();
-//             symBox.Show();
-//             chkGPS.CheckBoxShow();
-//             chkSMBeacon.CheckBoxShow();
-//             cbBox.Show();
-//         }
-//         else
-//         {
-//             delay(50);
-//         }
-//         if (digitalRead(keyPush) == LOW)
-//         {
-//             currentTime = millis();
-//             while (digitalRead(keyPush) == LOW)
-//             {
-//                 if ((millis() - currentTime) > 2000)
-//                 {
-//                     break; // OK Timeout
-//                 }
-//             };
-//             if ((millis() - currentTime) < 1500)
-//             {
-//                 i = encoder0Pos;
-//                 if (i == 6)
-//                 {
-//                     symBox.SelectItem();
-//                     config.mysymbol[0] = symBox.table;
-//                     config.mysymbol[1] = symBox.symbol;
-//                     encoder0Pos = keyPrev;
-//                 }
-//                 else if (i == 4)
-//                 {
-//                     chkGPS.Toggle();
-//                     config.mygps = chkGPS.Checked;
-//                     if (config.mygps == false)
-//                     {
-//                         chkSMBeacon.Checked = false;
-//                         chkSMBeacon.CheckBoxShow();
-//                     }
-//                     encoder0Pos = keyPrev;
-//                     chkGPS.CheckBoxShow();
-//                 }
-//                 else if (i == 5)
-//                 {
-//                     chkSMBeacon.Toggle();
-//                     config.trk_smartbeacon = chkSMBeacon.Checked;
-//                     encoder0Pos = keyPrev;
-//                     chkSMBeacon.CheckBoxShow();
-//                 }
-//                 else if (i == 3)
-//                 {
-//                     cbBox.SelectValue(0, 15, 1);
-//                     config.aprs_ssid = cbBox.GetValue();
-//                     encoder0Pos = keyPrev;
-//                     cbBox.Show();
-//                 }
-//                 else
-//                 {
-//                     txtBox[i].TextBox();
-//                     switch (i)
-//                     {
-//                     case 0:
-//                         strncpy(config.aprs_mycall, txtBox[i].text, 7);
-//                         config.aprs_mycall[7] = 0;
-//                         break;
-//                     // case 1: config.myssid = atol(txtBox[i].text);
-//                     //	break;
-//                     case 1:
-//                         config.gps_lat = atof(txtBox[i].text); // strcpy(config.mylat, txtBox[i].text);
-//                         break;
-//                     case 2:
-//                         config.gps_lon = atof(txtBox[i].text); // strcpy(config.mylon, txtBox[i].text);
-//                         break;
-//                         // case 4: strcpy(config.mysymbol, txtBox[i].text);
-//                         //	break;
-//                     }
-//                     encoder0Pos = keyPrev + 1;
-//                 }
-//                 while (digitalRead(keyPush) == LOW)
-//                     ;
-//             }
-//             else
-//             {
-//                 break;
-//             }
-//         }
-//     } while (1);
-//     /*display.clearDisplay();
-//     display.setCursor(30, 4);
-//     display.print("SAVE & EXIT");
-//     display.display();*/
-//     msgBox("KEY EXIT");
-//     while (digitalRead(keyPush) == LOW)
-//         ;
-//     saveEEPROM();
-// }
 
 void on_aprsserver_selected(MenuItem *p_menu_item)
 {
@@ -2261,19 +2032,19 @@ void on_igate_function_selected(MenuItem *p_menu_item)
     chkBox[1].y = 18;
     sprintf(chkBox[1].text, "INET2RF");
 
-    chkBox[2].Checked = false;
-    chkBox[2].x = 0;
-    chkBox[2].y = 29;
-    sprintf(chkBox[2].text, "TLM");
+    // chkBox[2].Checked = false;
+    // chkBox[2].x = 0;
+    // chkBox[2].y = 29;
+    // sprintf(chkBox[2].text, "TLM");
 
-    display.setCursor(35, 30);
-    display.print("INTERVAL");
-    cbBox[0].isValue = true;
-    cbBox[0].x = 85;
-    cbBox[0].y = 28;
-    cbBox[0].length = 4;
-    cbBox[0].char_max = 1800;
-    cbBox[0].SetIndex(0);
+    // display.setCursor(35, 30);
+    // display.print("INTERVAL");
+    // cbBox[0].isValue = true;
+    // cbBox[0].x = 85;
+    // cbBox[0].y = 28;
+    // cbBox[0].length = 4;
+    // cbBox[0].char_max = 1800;
+    // cbBox[0].SetIndex(0);
 
     display.setCursor(0, 42);
     display.print("PTH:");
@@ -2312,7 +2083,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
         {
             keyPrev = encoder0Pos;
 
-            for (i = 0; i < 3; i++)
+            for (i = 0; i < 2; i++)
                 chkBox[i].isSelect = false;
             cbBox[0].isSelect = false;
             cbBox[1].isSelect = false;
@@ -2326,7 +2097,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
                 cbBox[1].isSelect = true;
             if (encoder0Pos == 5)
                 txtBox.isSelect = true;
-            for (i = 0; i < 3; i++)
+            for (i = 0; i < 2; i++)
                 chkBox[i].CheckBoxShow();
             cbBox[0].Show();
             cbBox[1].Show();
@@ -2460,7 +2231,7 @@ void on_igate_beacon_selected(MenuItem *p_menu_item)
     display.print("PHG");
     txtBox[1].x = 20;
     txtBox[1].y = 52;
-    txtBox[1].length = 6;
+    txtBox[1].length = 8;
     txtBox[1].type = 0;
     strcpy(txtBox[1].text, config.igate_phg);
 
@@ -2993,10 +2764,10 @@ void on_tracker_option_selected(MenuItem *p_menu_item)
 
     // display.setCursor(0, 30);
     // display.print("OBJ:");
-    txtBox[0].x = 30;
-    txtBox[0].y = 28;
-    txtBox[0].length = 11;
-    txtBox[0].type = 0;
+    // txtBox[0].x = 30;
+    // txtBox[0].y = 28;
+    // txtBox[0].length = 11;
+    // txtBox[0].type = 0;
     // strcpy(txtBox[0].text, config.trk_object);
 
     display.setCursor(0, 42);
@@ -4179,6 +3950,771 @@ void on_filter_selected(MenuItem *p_menu_item)
     saveEEPROM();
 }
 
+void on_filter_display_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 10;
+    MyCheckBox chkBox[10];
+    MyComboBox cbBox;
+    String str;
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("Display Filter");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox[0].Checked = (config.dispFilter & FILTER_OBJECT) ? 1 : 0;
+    chkBox[0].x = 0;
+    chkBox[0].y = 16;
+    sprintf(chkBox[0].text, "OBJ");
+
+    chkBox[1].Checked = (config.dispFilter & FILTER_QUERY) ? 1 : 0;
+    chkBox[1].x = 35;
+    chkBox[1].y = 16;
+    sprintf(chkBox[1].text, "QRY");
+
+    chkBox[2].Checked = (config.dispFilter & FILTER_STATUS) ? 1 : 0;
+    chkBox[2].x = 75;
+    chkBox[2].y = 16;
+    sprintf(chkBox[2].text, "STATUS");
+
+    chkBox[3].Checked = (config.dispFilter & FILTER_WX) ? 1 : 0;
+    chkBox[3].x = 0;
+    chkBox[3].y = 25;
+    sprintf(chkBox[3].text, "WX");
+
+    chkBox[4].Checked = (config.dispFilter & FILTER_TELEMETRY) ? 1 : 0;
+    chkBox[4].x = 35;
+    chkBox[4].y = 25;
+    sprintf(chkBox[4].text, "TLM");
+
+    chkBox[5].Checked = (config.dispFilter & FILTER_ITEM) ? 1 : 0;
+    chkBox[5].x = 75;
+    chkBox[5].y = 25;
+    sprintf(chkBox[5].text, "ITEM");
+
+    chkBox[6].Checked = (config.dispFilter & FILTER_MESSAGE) ? 1 : 0;
+    chkBox[6].x = 0;
+    chkBox[6].y = 34;
+    sprintf(chkBox[6].text, "MSG");
+
+    chkBox[7].Checked = (config.dispFilter & FILTER_POSITION) ? 1 : 0;
+    chkBox[7].x = 35;
+    chkBox[7].y = 34;
+    sprintf(chkBox[7].text, "POS");
+
+    chkBox[8].Checked = (config.dispFilter & FILTER_BUOY) ? 1 : 0;
+    chkBox[8].x = 75;
+    chkBox[8].y = 34;
+    sprintf(chkBox[8].text, "BUOY");
+
+    chkBox[9].Checked = (config.dispFilter & FILTER_MICE) ? 1 : 0;
+    chkBox[9].x = 0;
+    chkBox[9].y = 43;
+    sprintf(chkBox[9].text, "MICE");
+
+    display.setCursor(0, 54);
+    display.print("DX <");
+    display.setCursor(75, 54);
+    display.print("km.");
+    cbBox.isValue = true;
+    cbBox.x = 33;
+    cbBox.y = 52;
+    cbBox.length = 3;
+    cbBox.char_max = 999;
+    cbBox.SetIndex(config.filterDistant);
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= 13)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = 12;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < 10; i++)
+            {
+                chkBox[i].isSelect = false;
+            }
+            cbBox.isSelect = false;
+            for (i = 0; i < 10; i++)
+                chkBox[i].isSelect = false;
+            if (encoder0Pos < 10)
+                chkBox[encoder0Pos].isSelect = true;
+            if (encoder0Pos > 10 && encoder0Pos < 13)
+                cbBox.isSelect = true;
+            for (i = 0; i < 10; i++)
+                chkBox[i].CheckBoxShow();
+            cbBox.Show();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i < 10)
+                {
+                    chkBox[i].Toggle();
+                    switch (i)
+                    {
+                    case 0:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_OBJECT;
+                        else
+                            config.dispFilter &= ~FILTER_OBJECT;
+                        break;
+                    case 1:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_QUERY;
+                        else
+                            config.dispFilter &= ~FILTER_QUERY;
+                        break;
+                    case 2:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_STATUS;
+                        else
+                            config.dispFilter &= ~FILTER_STATUS;
+                        break;
+                    case 3:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_WX;
+                        else
+                            config.dispFilter &= ~FILTER_WX;
+                        break;
+                    case 4:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_TELEMETRY;
+                        else
+                            config.dispFilter &= ~FILTER_TELEMETRY;
+                        break;
+                    case 5:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_ITEM;
+                        else
+                            config.dispFilter &= ~FILTER_ITEM;
+                        break;
+                    case 6:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_MESSAGE;
+                        else
+                            config.dispFilter &= ~FILTER_MESSAGE;
+                        break;
+                    case 7:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_BUOY;
+                        else
+                            config.dispFilter &= ~FILTER_BUOY;
+                        break;
+                    case 8:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_POSITION;
+                        else
+                            config.dispFilter &= ~FILTER_POSITION;
+                        break;
+                    case 9:
+                        if (chkBox[i].Checked)
+                            config.dispFilter |= FILTER_MICE;
+                        else
+                            config.dispFilter &= ~FILTER_MICE;
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBox[i].CheckBoxShow();
+                }
+                else if (i > 9)
+                {
+                    cbBox.SelectValue(0, 999, 1);
+                    config.filterDistant = (unsigned int)cbBox.GetValue();
+                    encoder0Pos = keyPrev;
+                    cbBox.Show();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+void on_filter_digi_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 10;
+    MyCheckBox chkBox[10];
+    String str;
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("DIGI Filter");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox[0].Checked = (config.digiFilter & FILTER_OBJECT) ? 1 : 0;
+    chkBox[0].x = 0;
+    chkBox[0].y = 16;
+    sprintf(chkBox[0].text, "OBJ");
+
+    chkBox[1].Checked = (config.digiFilter & FILTER_QUERY) ? 1 : 0;
+    chkBox[1].x = 35;
+    chkBox[1].y = 16;
+    sprintf(chkBox[1].text, "QRY");
+
+    chkBox[2].Checked = (config.digiFilter & FILTER_STATUS) ? 1 : 0;
+    chkBox[2].x = 75;
+    chkBox[2].y = 16;
+    sprintf(chkBox[2].text, "STATUS");
+
+    chkBox[3].Checked = (config.digiFilter & FILTER_WX) ? 1 : 0;
+    chkBox[3].x = 0;
+    chkBox[3].y = 25;
+    sprintf(chkBox[3].text, "WX");
+
+    chkBox[4].Checked = (config.digiFilter & FILTER_TELEMETRY) ? 1 : 0;
+    chkBox[4].x = 35;
+    chkBox[4].y = 25;
+    sprintf(chkBox[4].text, "TLM");
+
+    chkBox[5].Checked = (config.digiFilter & FILTER_ITEM) ? 1 : 0;
+    chkBox[5].x = 75;
+    chkBox[5].y = 25;
+    sprintf(chkBox[5].text, "ITEM");
+
+    chkBox[6].Checked = (config.digiFilter & FILTER_MESSAGE) ? 1 : 0;
+    chkBox[6].x = 0;
+    chkBox[6].y = 34;
+    sprintf(chkBox[6].text, "MSG");
+
+    chkBox[7].Checked = (config.digiFilter & FILTER_POSITION) ? 1 : 0;
+    chkBox[7].x = 35;
+    chkBox[7].y = 34;
+    sprintf(chkBox[7].text, "POS");
+
+    chkBox[8].Checked = (config.digiFilter & FILTER_BUOY) ? 1 : 0;
+    chkBox[8].x = 75;
+    chkBox[8].y = 34;
+    sprintf(chkBox[8].text, "BUOY");
+
+    chkBox[9].Checked = (config.digiFilter & FILTER_MICE) ? 1 : 0;
+    chkBox[9].x = 0;
+    chkBox[9].y = 43;
+    sprintf(chkBox[9].text, "MICE");
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < max_sel; i++)
+            {
+                chkBox[i].isSelect = false;
+            }
+            chkBox[encoder0Pos].isSelect = true;
+            for (i = 0; i < max_sel; i++)
+                chkBox[i].CheckBoxShow();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i < max_sel)
+                {
+                    chkBox[i].Toggle();
+                    switch (i)
+                    {
+                    case 0:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_OBJECT;
+                        else
+                            config.digiFilter &= ~FILTER_OBJECT;
+                        break;
+                    case 1:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_QUERY;
+                        else
+                            config.digiFilter &= ~FILTER_QUERY;
+                        break;
+                    case 2:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_STATUS;
+                        else
+                            config.digiFilter &= ~FILTER_STATUS;
+                        break;
+                    case 3:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_WX;
+                        else
+                            config.digiFilter &= ~FILTER_WX;
+                        break;
+                    case 4:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_TELEMETRY;
+                        else
+                            config.digiFilter &= ~FILTER_TELEMETRY;
+                        break;
+                    case 5:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_ITEM;
+                        else
+                            config.digiFilter &= ~FILTER_ITEM;
+                        break;
+                    case 6:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_MESSAGE;
+                        else
+                            config.digiFilter &= ~FILTER_MESSAGE;
+                        break;
+                    case 7:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_BUOY;
+                        else
+                            config.digiFilter &= ~FILTER_BUOY;
+                        break;
+                    case 8:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_POSITION;
+                        else
+                            config.digiFilter &= ~FILTER_POSITION;
+                        break;
+                    case 9:
+                        if (chkBox[i].Checked)
+                            config.digiFilter |= FILTER_MICE;
+                        else
+                            config.digiFilter &= ~FILTER_MICE;
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBox[i].CheckBoxShow();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+void on_filter_inet2rf_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 10;
+    MyCheckBox chkBox[10];
+    String str;
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("INET2RF Filter");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox[0].Checked = (config.inet2rfFilter & FILTER_OBJECT) ? 1 : 0;
+    chkBox[0].x = 0;
+    chkBox[0].y = 16;
+    sprintf(chkBox[0].text, "OBJ");
+
+    chkBox[1].Checked = (config.inet2rfFilter & FILTER_QUERY) ? 1 : 0;
+    chkBox[1].x = 35;
+    chkBox[1].y = 16;
+    sprintf(chkBox[1].text, "QRY");
+
+    chkBox[2].Checked = (config.inet2rfFilter & FILTER_STATUS) ? 1 : 0;
+    chkBox[2].x = 75;
+    chkBox[2].y = 16;
+    sprintf(chkBox[2].text, "STATUS");
+
+    chkBox[3].Checked = (config.inet2rfFilter & FILTER_WX) ? 1 : 0;
+    chkBox[3].x = 0;
+    chkBox[3].y = 25;
+    sprintf(chkBox[3].text, "WX");
+
+    chkBox[4].Checked = (config.inet2rfFilter & FILTER_TELEMETRY) ? 1 : 0;
+    chkBox[4].x = 35;
+    chkBox[4].y = 25;
+    sprintf(chkBox[4].text, "TLM");
+
+    chkBox[5].Checked = (config.inet2rfFilter & FILTER_ITEM) ? 1 : 0;
+    chkBox[5].x = 75;
+    chkBox[5].y = 25;
+    sprintf(chkBox[5].text, "ITEM");
+
+    chkBox[6].Checked = (config.inet2rfFilter & FILTER_MESSAGE) ? 1 : 0;
+    chkBox[6].x = 0;
+    chkBox[6].y = 34;
+    sprintf(chkBox[6].text, "MSG");
+
+    chkBox[7].Checked = (config.inet2rfFilter & FILTER_POSITION) ? 1 : 0;
+    chkBox[7].x = 35;
+    chkBox[7].y = 34;
+    sprintf(chkBox[7].text, "POS");
+
+    chkBox[8].Checked = (config.inet2rfFilter & FILTER_BUOY) ? 1 : 0;
+    chkBox[8].x = 75;
+    chkBox[8].y = 34;
+    sprintf(chkBox[8].text, "BUOY");
+
+    chkBox[9].Checked = (config.inet2rfFilter & FILTER_MICE) ? 1 : 0;
+    chkBox[9].x = 0;
+    chkBox[9].y = 43;
+    sprintf(chkBox[9].text, "MICE");
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < max_sel; i++)
+            {
+                chkBox[i].isSelect = false;
+            }
+            chkBox[encoder0Pos].isSelect = true;
+            for (i = 0; i < max_sel; i++)
+                chkBox[i].CheckBoxShow();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i < max_sel)
+                {
+                    chkBox[i].Toggle();
+                    switch (i)
+                    {
+                    case 0:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_OBJECT;
+                        else
+                            config.inet2rfFilter &= ~FILTER_OBJECT;
+                        break;
+                    case 1:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_QUERY;
+                        else
+                            config.inet2rfFilter &= ~FILTER_QUERY;
+                        break;
+                    case 2:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_STATUS;
+                        else
+                            config.inet2rfFilter &= ~FILTER_STATUS;
+                        break;
+                    case 3:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_WX;
+                        else
+                            config.inet2rfFilter &= ~FILTER_WX;
+                        break;
+                    case 4:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_TELEMETRY;
+                        else
+                            config.inet2rfFilter &= ~FILTER_TELEMETRY;
+                        break;
+                    case 5:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_ITEM;
+                        else
+                            config.inet2rfFilter &= ~FILTER_ITEM;
+                        break;
+                    case 6:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_MESSAGE;
+                        else
+                            config.inet2rfFilter &= ~FILTER_MESSAGE;
+                        break;
+                    case 7:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_BUOY;
+                        else
+                            config.inet2rfFilter &= ~FILTER_BUOY;
+                        break;
+                    case 8:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_POSITION;
+                        else
+                            config.inet2rfFilter &= ~FILTER_POSITION;
+                        break;
+                    case 9:
+                        if (chkBox[i].Checked)
+                            config.inet2rfFilter |= FILTER_MICE;
+                        else
+                            config.inet2rfFilter &= ~FILTER_MICE;
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBox[i].CheckBoxShow();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
+
+void on_filter_rf2inet_selected(MenuItem *p_menu_item)
+{
+    int max_sel = 10;
+    MyCheckBox chkBox[10];
+    String str;
+    int x, i;
+    int keyPrev = -1;
+    display.clearDisplay();
+    display.fillRect(0, 0, 128, 16, WHITE);
+    display.setTextColor(BLACK);
+    str = String("RF2INET Filter");
+    x = str.length() * 6;
+    display.setCursor(64 - (x / 2), 4);
+    display.print(str);
+    display.setTextColor(WHITE);
+
+    chkBox[0].Checked = (config.rf2inetFilter & FILTER_OBJECT) ? 1 : 0;
+    chkBox[0].x = 0;
+    chkBox[0].y = 16;
+    sprintf(chkBox[0].text, "OBJ");
+
+    chkBox[1].Checked = (config.rf2inetFilter & FILTER_QUERY) ? 1 : 0;
+    chkBox[1].x = 35;
+    chkBox[1].y = 16;
+    sprintf(chkBox[1].text, "QRY");
+
+    chkBox[2].Checked = (config.rf2inetFilter & FILTER_STATUS) ? 1 : 0;
+    chkBox[2].x = 75;
+    chkBox[2].y = 16;
+    sprintf(chkBox[2].text, "STATUS");
+
+    chkBox[3].Checked = (config.rf2inetFilter & FILTER_WX) ? 1 : 0;
+    chkBox[3].x = 0;
+    chkBox[3].y = 25;
+    sprintf(chkBox[3].text, "WX");
+
+    chkBox[4].Checked = (config.rf2inetFilter & FILTER_TELEMETRY) ? 1 : 0;
+    chkBox[4].x = 35;
+    chkBox[4].y = 25;
+    sprintf(chkBox[4].text, "TLM");
+
+    chkBox[5].Checked = (config.rf2inetFilter & FILTER_ITEM) ? 1 : 0;
+    chkBox[5].x = 75;
+    chkBox[5].y = 25;
+    sprintf(chkBox[5].text, "ITEM");
+
+    chkBox[6].Checked = (config.rf2inetFilter & FILTER_MESSAGE) ? 1 : 0;
+    chkBox[6].x = 0;
+    chkBox[6].y = 34;
+    sprintf(chkBox[6].text, "MSG");
+
+    chkBox[7].Checked = (config.rf2inetFilter & FILTER_POSITION) ? 1 : 0;
+    chkBox[7].x = 35;
+    chkBox[7].y = 34;
+    sprintf(chkBox[7].text, "POS");
+
+    chkBox[8].Checked = (config.rf2inetFilter & FILTER_BUOY) ? 1 : 0;
+    chkBox[8].x = 75;
+    chkBox[8].y = 34;
+    sprintf(chkBox[8].text, "BUOY");
+
+    chkBox[9].Checked = (config.rf2inetFilter & FILTER_MICE) ? 1 : 0;
+    chkBox[9].x = 0;
+    chkBox[9].y = 43;
+    sprintf(chkBox[9].text, "MICE");
+
+    display.display();
+    encoder0Pos = 0;
+    delay(100);
+    do
+    {
+        if (encoder0Pos >= max_sel)
+            encoder0Pos = 0;
+        if (encoder0Pos < 0)
+            encoder0Pos = max_sel - 1;
+        if (keyPrev != encoder0Pos)
+        {
+            keyPrev = encoder0Pos;
+            for (i = 0; i < max_sel; i++)
+            {
+                chkBox[i].isSelect = false;
+            }
+            chkBox[encoder0Pos].isSelect = true;
+            for (i = 0; i < max_sel; i++)
+                chkBox[i].CheckBoxShow();
+        }
+        else
+        {
+            delay(50);
+        }
+        if (digitalRead(keyPush) == LOW)
+        {
+            currentTime = millis();
+            while (digitalRead(keyPush) == LOW)
+            {
+                if ((millis() - currentTime) > 2000)
+                    break; // OK Timeout
+            };
+            if ((millis() - currentTime) < 1500)
+            {
+                i = encoder0Pos;
+                if (i < max_sel)
+                {
+                    chkBox[i].Toggle();
+                    switch (i)
+                    {
+                    case 0:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_OBJECT;
+                        else
+                            config.rf2inetFilter &= ~FILTER_OBJECT;
+                        break;
+                    case 1:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_QUERY;
+                        else
+                            config.rf2inetFilter &= ~FILTER_QUERY;
+                        break;
+                    case 2:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_STATUS;
+                        else
+                            config.rf2inetFilter &= ~FILTER_STATUS;
+                        break;
+                    case 3:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_WX;
+                        else
+                            config.rf2inetFilter &= ~FILTER_WX;
+                        break;
+                    case 4:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_TELEMETRY;
+                        else
+                            config.rf2inetFilter &= ~FILTER_TELEMETRY;
+                        break;
+                    case 5:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_ITEM;
+                        else
+                            config.rf2inetFilter &= ~FILTER_ITEM;
+                        break;
+                    case 6:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_MESSAGE;
+                        else
+                            config.rf2inetFilter &= ~FILTER_MESSAGE;
+                        break;
+                    case 7:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_BUOY;
+                        else
+                            config.rf2inetFilter &= ~FILTER_BUOY;
+                        break;
+                    case 8:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_POSITION;
+                        else
+                            config.rf2inetFilter &= ~FILTER_POSITION;
+                        break;
+                    case 9:
+                        if (chkBox[i].Checked)
+                            config.rf2inetFilter |= FILTER_MICE;
+                        else
+                            config.rf2inetFilter &= ~FILTER_MICE;
+                        break;
+                    }
+                    encoder0Pos = keyPrev;
+                    chkBox[i].CheckBoxShow();
+                }
+                while (digitalRead(keyPush) == LOW)
+                    ;
+            }
+            else
+            {
+                break;
+            }
+        }
+    } while (1);
+    msgBox("KEY EXIT");
+    while (digitalRead(keyPush) == LOW)
+        ;
+    saveEEPROM();
+}
 // void on_tncconfig_selected(MenuItem *p_menu_item)
 // {
 //     int max_sel = 6;
@@ -4734,23 +5270,23 @@ void on_update_selected(MenuItem *p_menu_item)
     // delay(1000);
     delay(10);
 
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        WiFi.disconnect(false);
-        delay(500);
-        WiFi.mode(WIFI_STA);
-        // WiFi.setTxPower(20);
-        WiFi.begin(config.wifi_ssid, config.wifi_pass);
-        while (WiFi.status() != WL_CONNECTED)
-        {
-            delay(100);
-        }
-    }
+    // if (WiFi.status() != WL_CONNECTED)
+    // {
+    //     WiFi.disconnect(false);
+    //     delay(500);
+    //     WiFi.mode(WIFI_STA);
+    //     // WiFi.setTxPower(20);
+    //     WiFi.begin(config.wifi_ssid, config.wifi_pass);
+    //     while (WiFi.status() != WL_CONNECTED)
+    //     {
+    //         delay(100);
+    //     }
+    // }
 
     // wait for WiFi connection
     if ((WiFi.status() == WL_CONNECTED))
     {
-        t_httpUpdate_return ret = ESPhttpUpdate.update(String("http://www.dprns.com/ESP32/DRHotspot.bin"), String(VERSION));
+        t_httpUpdate_return ret = ESPhttpUpdate.update(String("http://www.dprns.com/ESP32/ESP32APRS_TWR.bin"), String(VERSION));
 
         switch (ret)
         {
@@ -4799,6 +5335,10 @@ void on_infomation_selected(MenuItem *p_menu_item)
     char cstr[50];
     int x;
 
+    char strCID[50];
+    uint64_t chipid = ESP.getEfuseMac();
+    sprintf(strCID, "%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
+
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
@@ -4809,12 +5349,18 @@ void on_infomation_selected(MenuItem *p_menu_item)
     display.setTextColor(WHITE);
 
     display.setCursor(0, 18);
-    display.print("Firmware V");
+    display.print("Firmware: V");
     display.printf("%s%c\n", VERSION, VERSION_BUILD);
-    display.println("Developer: HS5TQA");
+    display.printf("ESP32 Model: %s\n", ESP.getChipModel());
+    display.printf("ESP32 ID:%s\n", strCID);
+    display.printf("ESP32 Flash: %dMB\n", ESP.getFlashChipSize() / 1000000);
+    display.printf("RF Type: %s\n", RF_TYPE[config.rf_type]);
     display.display();
-    while (digitalRead(keyPush) == HIGH)
-        delay(10);
+    if (p_menu_item != NULL)
+    {
+        while (digitalRead(keyPush) == HIGH)
+            delay(10);
+    }
 }
 
 void on_save_selected(MenuItem *p_menu_item)
@@ -4942,40 +5488,6 @@ void on_wifistatus_selected(MenuItem *p_menu_item)
     while (digitalRead(keyPush) == HIGH)
         delay(10);
 }
-// void on_back_selected(MenuItem *p_menu_item);
-
-void on_tncmonitor_selected(MenuItem *p_menu_item)
-{
-    String str;
-    // char cstr[50];
-    int x;
-
-    display.clearDisplay();
-    display.fillRect(0, 0, 128, 16, WHITE);
-    display.setTextColor(BLACK);
-    str = String("nTNC Monitor");
-    x = str.length() * 6;
-    display.setCursor(64 - (x / 2), 4);
-    display.print(str);
-    display.setTextColor(WHITE);
-    display.display();
-
-    while (digitalRead(keyPush) == HIGH)
-    {
-        delay(10);
-        // if (Serial.available() > 0)
-        // {
-        //     String tnc2 = Serial.readStringUntil('\n');
-        //     display.fillRect(0, 16, 128, 48, BLACK);
-        //     display.setCursor(1, 18);
-        //     display.print(tnc2);
-        //     display.display();
-        //     delay(2000);
-        //     display.fillRect(0, 16, 128, 48, BLACK);
-        //     display.display();
-        // }
-    }
-}
 
 void on_txbeacon_selected(MenuItem *p_menu_item)
 {
@@ -5042,7 +5554,7 @@ Menu mnuAbout("ABOUT");
 MenuItem mnuAbout_mi1("OTA Update", &on_update_selected);
 MenuItem mnuAbout_mi2("WiFi Status", &on_wifistatus_selected);
 MenuItem mnuAbout_mi3("Infomations", &on_infomation_selected);
-MenuItem mnuAbout_mi4("Dash Board", &on_dashboard_selected);
+// MenuItem mnuAbout_mi4("Dash Board", &on_dashboard_selected);
 
 Menu mnuConfig("Save/Load");
 MenuItem mnuConfig_mi1("Save Config", &on_save_selected);
@@ -5050,11 +5562,15 @@ MenuItem mnuConfig_mi2("Load Config", &on_load_selected);
 MenuItem mnuConfig_mi3("Factory Reset", &on_factory_selected);
 MenuItem mnuConfig_mi4("REBOOT", &on_reboot_selected);
 
+Menu mnuIgateFilter("Filter");
+MenuItem mnuIgateFilter_mi1("RF2INET Filter", &on_filter_rf2inet_selected);
+MenuItem mnuIgateFilter_mi2("INET2RF Filter", &on_filter_inet2rf_selected);
+
 Menu mnuAPRS("APRS");
 
 Menu mnu1("WiFi/BT/RF");
 MenuItem mnu1_mi1("WiFi AP", &on_wifi_AP_selected);
-MenuItem mnu1_mi2("WiFi Client", &on_wifi_Client_selected);
+MenuItem mnu1_mi2("WiFi Station", &on_wifi_Client_selected);
 MenuItem mnu1_mi3("Bluetooth", &on_bluetooth_selected);
 MenuItem mnu1_mi4("RF Module", &on_rfconfig_selected);
 
@@ -5063,6 +5579,7 @@ MenuItem mnu2_mi1("APRS-IS", &on_aprsserver_selected);
 MenuItem mnu2_mi2("Position", &on_igate_position_selected);
 MenuItem mnu2_mi3("Function", &on_igate_function_selected);
 MenuItem mnu2_mi4("Beacon", &on_igate_beacon_selected);
+// MenuItem mnu2_mi5("Filter", &on_filter_digi_selected);
 
 Menu mnu3("TRACKER MODE");
 MenuItem mnu3_mi1("Position", &on_tracker_position_selected);
@@ -5070,51 +5587,16 @@ MenuItem mnu3_mi2("Function", &on_tracker_function_selected);
 MenuItem mnu3_mi3("Option", &on_tracker_option_selected);
 MenuItem mnu3_mi4("SmartBeacon", &on_smartbeacon_selected);
 
-Menu mnu4("REPEATER MODE");
+Menu mnu4("DIGI MODE");
 MenuItem mnu4_mi1("Position", &on_digi_position_selected);
 MenuItem mnu4_mi2("Function", &on_digi_function_selected);
 MenuItem mnu4_mi3("Option", &on_digi_option_selected);
-// MenuItem mnu4_mi4("Filter", &on_stationbeacon_selected);
+MenuItem mnu4_mi4("Filter", &on_filter_digi_selected);
 
 Menu mnu5("SYSTEM");
 // MenuItem mnu5_mi1("Save/Load", NULL);
-MenuItem mnu5_mi2("OLED Display", &on_display_selected);
-MenuItem mnu5_mi3("Monitor", &on_filter_selected);
-
-// Menu mu2("CONFIGURATION");
-// MenuItem mu2_mi1("WiFi Config", &on_wifi_selected);
-// MenuItem mu2_mi2("Station Fix", &on_stationconfig_selected);
-// MenuItem mu2_mi3("Smart Beacon", &on_stationbeacon_selected);
-// MenuItem mu2_mi4("APRS Server", &on_aprsserver_selected);
-// MenuItem mu2_mi5("Filter Display", &on_filter_selected);
-
-// Menu mu6("TNC SETTING");
-// MenuItem mu6_mi0("TNC Config", &on_tncconfig_selected);
-// MenuItem mu6_mi1("TNC Function", &on_tncfunction_selected);
-// MenuItem mu6_mi2("TNC RF Module", &on_rfconfig_selected);
-// // MenuItem mu6_mi2("TNC Tracker", &on_tnctracker_selected);
-// // MenuItem mu6_mi3("TNC RF Module", &on_rfconfig_selected);
-// //  MenuItem mu2_mi5("<--", &on_back_selected);
-// Menu mu3("ABOUT");
-// MenuItem mu3_mi1("OTA Update", &on_update_selected);
-// MenuItem mu3_mi2("WiFi Status", &on_wifistatus_selected);
-// MenuItem mu3_mi3("Infomations", &on_infomation_selected);
-// MenuItem mu3_mi4("Dash Board", &on_dashboard_selected);
-// // MenuItem mu3_mi4("<--", &on_back_selected);
-// Menu mu4("SYSTEM");
-// MenuItem mu4_mi1("Save Config", &on_save_selected);
-// MenuItem mu4_mi2("Load Config", &on_load_selected);
-// MenuItem mu4_mi3("Factory Reset", &on_factory_selected);
-// MenuItem mu4_mi4("Display Config", &on_display_selected);
-// //MenuItem mu4_mi5("Reboot", &on_reboot_selected);
-// //MenuItem mu4_mi5()"Reboot", &on_reboot_selected);
-
-// // MenuItem mu4_mi5("Dash Board", &on_system5_selected);
-// // MenuItem mu4_mi6("<--", &on_back_selected);
-// Menu mu5("TNC CONTROL");
-// MenuItem mu5_mi1("nTNC Monitor", &on_tncmonitor_selected);
-// MenuItem mu5_mi2("nTNC TX myBeacon", &on_txbeacon_selected);
-// MenuItem mu5_mi3("nTNC TX Status", &on_txstatus_selected);
+MenuItem mnu5_mi2("OLED Setting", &on_display_selected);
+MenuItem mnu5_mi3("Display Filter", &on_filter_display_selected);
 
 void on_back_selected(MenuItem *p_menu_item)
 {
@@ -5122,8 +5604,6 @@ void on_back_selected(MenuItem *p_menu_item)
     ms.back();
     ms.display();
 }
-// DigoleSerialDisp mydisp = DigoleSerialDisp(8, 9, 10);
-// qMenuSystem menu = qMenuSystem(mydisp);
 
 void iconMenuShow(int tab)
 {
@@ -5173,52 +5653,12 @@ void iconMenuShow(int tab)
     x = str.length() * 6;
     display.setCursor((126 - x) / 2, 57);
     display.print(str);
-
-    // display.drawLine(0, 16, 0, 63, WHITE);
-    // display.drawLine(127, 16, 127, 63, WHITE);
-    // display.drawLine(0, 63, 127, 63, WHITE);
-    // display.fillRect(1, 25, 126, 38, BLACK);
-    // display.setTextColor(BLACK);
-    // display.setCursor(30, 17);
-    // display.print("STATISTICS");
-    // display.setCursor(108, 17);
-    // display.print("1/5");
-    // display.setTextColor(WHITE);
-
-    // display.setCursor(3, 26);
-    // display.print("ALL DATA");
-    // str = String(status.allCount, DEC);
-    // x = str.length() * 6;
-    // display.setCursor(126 - x, 26);
-    // display.print(str);
-
-    // display.setCursor(3, 35);
-    // display.print("RF2INET");
-    // str = String(status.rf2inet, DEC);
-    // x = str.length() * 6;
-    // display.setCursor(126 - x, 35);
-    // display.print(str);
-
-    // display.setCursor(3, 44);
-    // display.print("INET2RF");
-    // str = String(status.inet2rf, DEC);
-    // x = str.length() * 6;
-    // display.setCursor(126 - x, 44);
-    // display.print(str);
-
-    // display.setCursor(3, 53);
-    // display.print("ERROR/DROP");
-    // str = String(status.errorCount + status.dropCount, DEC);
-    // x = str.length() * 6;
-    // display.setCursor(126 - x, 53);
-    // display.print(str);
-
     display.display();
 }
 
 QRCode qrcode;
 
-void drawQrCode(const char *qrStr, const char *lines[])
+void drawQrCode(const char *qrStr, const char *lines)
 {
     uint8_t qrcodeData[qrcode_getBufferSize(3)];
     qrcode_initText(&qrcode, qrcodeData, 3, ECC_LOW, qrStr);
@@ -5229,7 +5669,7 @@ void drawQrCode(const char *qrStr, const char *lines[])
     int font_height = 12;
 
     // QR Code Starting Point
-    int offset_x = 62;
+    int offset_x = 67;
     int offset_y = 3;
 
     display.clearDisplay();
@@ -5251,22 +5691,22 @@ void drawQrCode(const char *qrStr, const char *lines[])
             }
         }
     }
+    display.drawRect(64, 0, 64, 64, 1);
+
+    display.setFont(&Picopixel);
     display.setTextColor(1, 0);
-    for (int i = 0; i < 4; i++)
-    {
-        display.setCursor(cursor_start_x, cursor_start_y + font_height * i);
-        display.println(lines[i]);
-    }
+    display.setCursor(0, 5);
+    display.print(lines);
     display.display();
+    display.setFont();
 }
 
-const char *MESSAGE_OPEN_WEB_WIFIAP[4] = {"Scan QR", "to open", "browser", "client"};
-const char *MESSAGE_OPEN_WEB_WIFICLIENT[4] = {"Scan QR", "to open", "browser", "client"};
-const char *MESSAGE_CONFIGURE_WIFI[4] = {"Scan QR", "to setup", "WiFi AP", "connect"};
+// const char *MESSAGE_CONFIGURE_WIFI = {"SCAN QR CONNECT\nTO WiFi AP"};
 bool qrcodeActive = false;
 bool qrcodeSelect = 0;
 void qrcodeDisp()
 {
+    char msg[100];
     // Create the QR code
     if (qrcodeActive == true)
         return;
@@ -5274,14 +5714,47 @@ void qrcodeDisp()
     char link[100];
     if (qrcodeSelect == 0)
     {
-        String ip = WiFi.localIP().toString();
-        sprintf(link, "http://%s", ip.c_str());
-        drawQrCode(link, MESSAGE_OPEN_WEB_WIFICLIENT);
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            String ip = WiFi.localIP().toString();
+            char wifiName[20];
+            WiFi.SSID().toCharArray(wifiName, 20, 0);
+            wifiName[19] = 0;
+            sprintf(msg, "SCAN QR TO OPEN\nWEB BROWSER\nCONFIGURATION\n\nWiFI STA SSID:\n%s", wifiName);
+            sprintf(link, "http://%s", ip.c_str());
+            drawQrCode(link, msg);
+        }
+        else
+        {
+            if (config.wifi_mode & WIFI_AP_FIX)
+            { // WiFi AP active
+                String ip = WiFi.softAPIP().toString();
+                char wifiName[20];
+                wifiName, WiFi.softAPSSID().toCharArray(wifiName, 20, 0);
+                wifiName[19] = 0;
+                sprintf(msg, "SCAN QR TO OPEN\nWEB BROWSER\nCONFIGURATION\n\nWiFI AP SSID:\n%s", wifiName);
+                sprintf(link, "http://%s", ip.c_str());
+                drawQrCode(link, msg);
+            }
+            else
+            {
+                display.clearDisplay();
+                display.setTextWrap(1);
+                display.setCursor(0, 30);
+                display.printf("WiFi STA disconnect\nand\nWiFi AP not enable");
+                display.display();
+            }
+        }
     }
     else
     {
+        // QR Connect to wifi AP
+        char wifiName[20];
+        wifiName, WiFi.softAPSSID().toCharArray(wifiName, 20, 0);
+        wifiName[19] = 0;
+        sprintf(msg, "SCAN QR CONNECT\nTO WiFi AP\n\nWiFI AP SSID:\n%s", wifiName);
         sprintf(link, "WIFI:S:%s;T:WPA;P:%s;;", config.wifi_ap_ssid, config.wifi_ap_pass);
-        drawQrCode(link, MESSAGE_CONFIGURE_WIFI);
+        drawQrCode(link, msg);
     }
 }
 
@@ -5353,8 +5826,8 @@ void pkgLastDisp()
     display.setTextColor(BLACK);
     display.setCursor(27, 17);
     display.print("LAST STATIONS");
-    display.setCursor(108, 17);
-    display.print("2/5");
+    // display.setCursor(108, 17);
+    // display.print("2/5");
     display.setTextColor(WHITE);
 
     sort(pkgList, PKGLISTSIZE);
@@ -5401,7 +5874,11 @@ void pkgLastDisp()
             display.setCursor(10, y);
             display.print(pkg.calsign);
             display.setCursor(126 - 48, y);
-            display.printf("%02d:%02d:%02d", hour(pkg.time), minute(pkg.time), second(pkg.time));
+            time_t tm = pkg.time;
+            struct tm tmstruct;
+            localtime_r(&pkg.time, &tmstruct);
+            display.printf("%02d:%02d:%02d", tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
+            // display.printf("%02d:%02d:%02d", hour(pkg.time), minute(pkg.time), second(pkg.time));
             k++;
             if (k >= 4)
                 break;
@@ -5428,8 +5905,8 @@ void pkgCountDisp()
     display.setTextColor(BLACK);
     display.setCursor(30, 17);
     display.print("TOP PACKAGE");
-    display.setCursor(108, 17);
-    display.print("3/5");
+    // display.setCursor(108, 17);
+    // display.print("3/5");
     display.setTextColor(WHITE);
 
     sortPkgDesc(pkgList, PKGLISTSIZE);
@@ -5629,7 +6106,7 @@ void gpsDisp()
         }
         else if (config.dim == 3)
         { // Dim for time
-            if (hour() > 5 && hour() < 17)
+            if (tmstruct.tm_hour > 5 && tmstruct.tm_hour < 19)
             {
                 display.dim(false);
             }
@@ -5660,11 +6137,14 @@ void gpsDisp()
 
 void msgBox(String msg)
 {
-    display.fillRect(30, 26, 68, 28, BLACK);
-    display.drawRect(32, 28, 64, 24, WHITE);
-    display.drawLine(34, 53, 97, 53, WHITE);
-    display.drawLine(97, 30, 97, 53, WHITE);
-    display.setCursor(40, 37);
+    int x = msg.length() * 6;
+    int x1 = 64 - (x / 2);
+
+    display.fillRect(x1 - 7, 26, x + 14, 28, BLACK);
+    display.drawRect(x1 - 5, 28, x + 10, 24, WHITE);
+    display.drawLine(x1 - 3, 53, x1 + (x + 10) - 4, 53, WHITE);
+    display.drawLine(x1 + (x + 10) - 4, 30, x1 + (x + 10) - 4, 53, WHITE);
+    display.setCursor(x1, 37);
     display.print(msg);
     display.display();
 }
@@ -5732,9 +6212,9 @@ void topBar(int ws)
         vbatScal = 0;
     else
         vbatScal = (uint8_t)ceil((vbat - 3.3) * 6);
-    vbatScal += 1;
-    // if (vbatScal > 5)
-    //     vbatScal = 5;
+    //vbatScal += 1;
+    if (vbatScal > 5)
+        vbatScal = 5;
     x = 16 + 109;
     for (i = 0; i < vbatScal; i++)
     {
@@ -5972,11 +6452,13 @@ void mainDisp(void *pvParameters)
     mnuAbout.add_item(&mnuAbout_mi1);
     mnuAbout.add_item(&mnuAbout_mi2);
     mnuAbout.add_item(&mnuAbout_mi3);
-    mnuAbout.add_item(&mnuAbout_mi4);
+    // mnuAbout.add_item(&mnuAbout_mi4);
     mnuConfig.add_item(&mnuConfig_mi1);
     mnuConfig.add_item(&mnuConfig_mi2);
     mnuConfig.add_item(&mnuConfig_mi3);
     mnuConfig.add_item(&mnuConfig_mi4);
+    mnuIgateFilter.add_item(&mnuIgateFilter_mi1);
+    mnuIgateFilter.add_item(&mnuIgateFilter_mi2);
 
     ms.get_root_menu().add_menu(&mnu1); // Wiress
     mnu1.add_item(&mnu1_mi1);
@@ -5986,22 +6468,24 @@ void mainDisp(void *pvParameters)
 
     ms.get_root_menu().add_menu(&mnuAPRS); // APRS
 
-    mnuAPRS.add_menu(&mnu2);
+    mnuAPRS.add_menu(&mnu2); // IGATE
     mnu2.add_item(&mnu2_mi1);
     mnu2.add_item(&mnu2_mi2);
     mnu2.add_item(&mnu2_mi3);
     mnu2.add_item(&mnu2_mi4);
+    mnu2.add_menu(&mnuIgateFilter);
 
-    mnuAPRS.add_menu(&mnu3);
+    mnuAPRS.add_menu(&mnu3); // TRACKET
     mnu3.add_item(&mnu3_mi1);
     mnu3.add_item(&mnu3_mi2);
     mnu3.add_item(&mnu3_mi3);
     mnu3.add_item(&mnu3_mi4);
 
-    mnuAPRS.add_menu(&mnu4);
+    mnuAPRS.add_menu(&mnu4); // DIGI
     mnu4.add_item(&mnu4_mi1);
     mnu4.add_item(&mnu4_mi2);
     mnu4.add_item(&mnu4_mi3);
+    mnu4.add_item(&mnu4_mi4);
 
     ms.get_root_menu().add_menu(&mnu5); // SYSTEM
     mnu5.add_menu(&mnuConfig);
@@ -6071,27 +6555,30 @@ void mainDisp(void *pvParameters)
                     rawDisp = String(pkg.raw);
                     dispWindow(rawDisp, dispMode, true);
                     selTab = idx;
-                    if (menuSel == 0) curTabOld = curTab+1;
+                    if (menuSel == 0)
+                        curTabOld = curTab + 1;
                 }
                 // selTab = 1;
             }
 
-            // if (!getTransmit())
-            // {
-            if (dispFlagTX == 1)
+            if (!getTransmit())
             {
-                dispTX(1);
-                dispFlagTX = 0;
+                if (queTxDisp.getCount() > 0)
+                { // have tx info display
+                    txDisp txs;
+                    if (queTxDisp.pop(&txs))
+                    {
+                        dispTxWindow(txs);
+                        delay(1000);
+                        if (menuSel == 0)
+                            curTabOld = curTab + 1;
+                    }
+                }
             }
-            else if (dispFlagTX == 2)
-            {
-                dispTX(0);
-                dispFlagTX = 0;
-            }
-            //}
 
             if (millis() > (unsigned long)timeHalfSec)
             {
+
                 timeHalfSec = millis() + 500 + disp_delay;
                 // powerWakeup();
                 disp_delay = 0;
@@ -6099,8 +6586,7 @@ void mainDisp(void *pvParameters)
                 // dispFlagTX=0;
                 if (powerStatus() && (raw_count == 0))
                 {
-                    // if (!(menuSel == 2 && gps_mode == 1))
-                    if (menuSel == 0 || menuSel == 1 || menuSel == 4)
+                    if (menuSel == 0 || menuSel == 1 || menuSel == 2 || menuSel == 4)
                         topBar(WiFi.RSSI());
                     if (menuSel == 0)
                     {
@@ -6115,6 +6601,11 @@ void mainDisp(void *pvParameters)
                         statisticsDisp();
                     }
                     else if (menuSel == 2)
+                    {
+                        if (disp_delay <= 0)
+                            pkgLastDisp();
+                    }
+                    else if (menuSel == 3)
                     {
                         if (!gps_mode == 1)
                             topBar(WiFi.RSSI());
@@ -6134,6 +6625,10 @@ void mainDisp(void *pvParameters)
                     {
                         qrcodeDisp();
                     }
+                    else if (menuSel == 7) // ABout
+                    {
+                        on_infomation_selected(NULL);
+                    }
                     else
                     {
                         menuSel = 0;
@@ -6144,7 +6639,7 @@ void mainDisp(void *pvParameters)
             {
                 if (encoder0Pos != posNow)
                 {
-
+                    timeHalfSec = millis() + 2000 + disp_delay;
                     saveTimeout = millis();
                     pkgListType pkg = getPkgList(selTab);
                     if (config.dim == 2)
@@ -6244,14 +6739,16 @@ void mainDisp(void *pvParameters)
                     }
                 }
             }
-            // ms.reset();
-            // ms.display();
+
             while (digitalRead(keyPush) == LOW)
             {
                 delay(10);
                 if ((millis() - currentTime) > 2000)
                 {
-                    if (menuSel == 2) // GPS switch info/speed
+                    msgBox("ENTER");
+                    while (digitalRead(keyPush) == LOW)
+                        ;
+                    if (menuSel == 3) // GPS switch info/speed
                     {
                         if (gps_mode == 0)
                             gps_mode = 1;
@@ -6266,22 +6763,11 @@ void mainDisp(void *pvParameters)
                             qrcodeSelect = 0;
                         qrcodeActive = false;
                     }
-                    // if ((curTab == 2 || curTab == 3)&& disp_delay>0) {
-                    if (disp_delay > 0)
+                    else if (menuSel == 2)
                     {
                         dispPush = true;
                         disp_delay = 600 * 1000;
                         dispWindow(rawDisp, dispMode, false);
-                    }
-                    else
-                    {
-                        // conStat = CON_MENU;
-                        // // TaskGPS.Enable(false);
-
-                        // ms.reset();
-                        // ms.display();
-
-                        // TaskGPS.Enable(true);
                     }
                     break;
                 }
@@ -6339,17 +6825,23 @@ void mainDisp(void *pvParameters)
                             conStat = CON_NORMAL;
                             menuSel = 0;
                             curTabOld = curTab + 1; // Refresh windows first
+                            msgBox("BACK TO MENU");
+                        }
+                        else
+                        {
+                            msgBox("BACK");
                         }
                     }
                     else
                     {
                         ms.select();
                     }
-                    ms.display();
+
                     while (digitalRead(keyPush) == LOW)
                     {
                         delay(10);
                     }
+                    ms.display();
                     menuTimeout = millis();
                 }
             }
@@ -6436,82 +6928,90 @@ void compass_arrow(signed int startx, signed int starty, unsigned int length, do
     display.drawLine(x2sta, y2sta, xdst, ydst, color);
 }
 
-void dispTX(bool port)
+void dispTxWindow(txDisp txs)
 {
     if (config.tx_display == false)
         return;
-    // display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false);
+
     display.clearDisplay();
-    // display.fillRect(0, 0, 128, 64, BLACK);
     disp_delay = config.dispDelay * 1000;
     timeHalfSec = millis() + disp_delay;
+    // send_aprs_table = txs.table;
+    // send_aprs_symbol = txs.symbol;
+
     // display.fillRect(0, 0, 128, 16, WHITE);
-    const uint8_t *ptrSymbol;
-    uint8_t symIdx = send_aprs_symbol - 0x21;
-    if (symIdx > 95)
-        symIdx = 0;
-    if (send_aprs_table == '/')
-    {
-        ptrSymbol = &Icon_TableA[symIdx][0];
-    }
-    else if (send_aprs_table == '\\')
-    {
-        ptrSymbol = &Icon_TableB[symIdx][0];
-    }
-    else
-    {
-        if (send_aprs_table < 'A' || send_aprs_table > 'Z')
-        {
-            send_aprs_table = 'N';
-            send_aprs_symbol = '&';
-            symIdx = 5; // &
-        }
-        ptrSymbol = &Icon_TableB[symIdx][0];
-    }
-    display.drawYBitmap(0, 0, ptrSymbol, 16, 16, WHITE);
-    if (!(send_aprs_table == '/' || send_aprs_table == '\\'))
-    {
-        display.drawChar(5, 4, send_aprs_table, BLACK, WHITE, 1);
-        display.drawChar(6, 5, send_aprs_table, BLACK, WHITE, 1);
-    }
+    // const uint8_t *ptrSymbol;
+    // uint8_t symIdx = send_aprs_symbol - 0x21;
+    // if (symIdx > 95)
+    //     symIdx = 0;
+    // if (send_aprs_table == '/')
+    // {
+    //     ptrSymbol = &Icon_TableA[symIdx][0];
+    // }
+    // else if (send_aprs_table == '\\')
+    // {
+    //     ptrSymbol = &Icon_TableB[symIdx][0];
+    // }
+    // else
+    // {
+    //     if (send_aprs_table < 'A' || send_aprs_table > 'Z')
+    //     {
+    //         send_aprs_table = 'N';
+    //         send_aprs_symbol = '&';
+    //         symIdx = 5; // &
+    //     }
+    //     ptrSymbol = &Icon_TableB[symIdx][0];
+    // }
+    // display.drawYBitmap(0, 0, ptrSymbol, 16, 16, WHITE);
+    // if (!(send_aprs_table == '/' || send_aprs_table == '\\'))
+    // {
+    //     display.drawChar(5, 4, send_aprs_table, BLACK, WHITE, 1);
+    //     display.drawChar(6, 5, send_aprs_table, BLACK, WHITE, 1);
+    // }
 
     display.setFont(&FreeSansBold9pt7b);
-    display.setCursor(20, 14);
-    if (strlen(config.igate_object))
+    display.setCursor(0, 14);
+    txs.name[sizeof(txs.name) - 1] = 0;
+    if (strlen(txs.name))
     {
-        display.print(config.igate_object);
-    }
-    else
-    {
-        display.print(config.aprs_mycall);
-        if (config.aprs_ssid > 0)
-        {
-            display.print("-");
-            display.print(config.aprs_ssid);
-        }
+        display.printf("%s", txs.name);
     }
 
     display.setFont(&FreeSerifItalic9pt7b);
 
-    if (port == 0)
+    if (txs.tx_ch == TXCH_TCP)
     {
         display.setCursor(5, 42);
         display.print("TCP");
         display.setCursor(15, 57);
         display.print("IP");
     }
-    else
+    else if (txs.tx_ch == TXCH_RF)
     {
         display.setCursor(3, 42);
         display.print("SEND");
         display.setCursor(15, 57);
         display.print("RF");
     }
+    else if (txs.tx_ch == TXCH_DIGI)
+    {
+        display.setCursor(3, 42);
+        display.print("RPT");
+        display.setCursor(15, 57);
+        display.print("RF");
+    }
+    else if (txs.tx_ch == TXCH_3PTY)
+    {
+        display.setCursor(3, 42);
+        display.print("FWD");
+        display.setCursor(15, 57);
+        display.print("RF");
+    }
 
     display.setFont();
     display.setTextColor(WHITE);
-    display.setCursor(115, 0);
-    display.print("TX");
+    // display.setCursor(115, 0);
+    // display.print("TX");
 
     display.drawRoundRect(0, 16, 128, 48, 5, WHITE);
     display.fillRoundRect(1, 17, 126, 10, 2, WHITE);
@@ -6520,19 +7020,18 @@ void dispTX(bool port)
     display.print("TX STATUS");
 
     display.setTextColor(WHITE);
-    display.setCursor(50, 30);
-    if (config.igate_gps)
+    // display.setCursor(50, 30);
+
+    char *pch;
+    int y = 30;
+    pch = strtok(txs.info, "\n");
+    while (pch != NULL)
     {
-        display.printf("POSITION GPS");
-        display.setCursor(50, 48);
-        display.printf("SPD %dkPh/%d", SB_SPEED, SB_HEADING);
+        display.setCursor(50, y);
+        display.printf("%s", pch);
+        pch = strtok(NULL, "\n");
+        y += 9;
     }
-    else
-    {
-        display.printf("POSITION FIX");
-    }
-    display.setCursor(50, 39);
-    display.printf("INTERVAL %dS", tx_interval);
 
     display.display();
 }
@@ -6548,7 +7047,7 @@ void dispWindow(String line, uint8_t mode, bool filter)
     struct pbuf_t aprs;
     uint16_t bgcolor, txtcolor;
     bool Monitor = false;
-    char text[200];
+    char text[300];
     unsigned char x = 0;
     char itemname[10];
     int start_val = line.indexOf(">", 0); // หาตำแหน่งแรกของ >
@@ -6710,7 +7209,7 @@ void dispWindow(String line, uint8_t mode, bool filter)
             if (dispPush)
             {
                 disp_delay = 600 * 1000;
-                display.drawRoundRect(0, 0, 128, 16, 5, WHITE);
+                display.drawRoundRect(0, 0, 128, 16, 3, WHITE);
             }
             else
             {
@@ -6976,11 +7475,14 @@ void dispWindow(String line, uint8_t mode, bool filter)
                     display.setTextColor(BLACK);
                     display.setCursor(48, 18);
                     display.print("MESSAGE");
-                    display.setCursor(108, 18);
+                    display.setCursor(100, 18);
                     display.print("{");
-                    strncpy(&text[0], aprs.msg.msgid, aprs.msg.msgid_len);
-                    int msgid = atoi(text);
-                    display.print(msgid, DEC);
+                    char txtID[7];
+                    memset(txtID, 0, sizeof(txtID));
+                    strncpy(&txtID[0], aprs.msg.msgid, aprs.msg.msgid_len);
+                    int msgid = atoi(txtID);
+                    // display.print(msgid, DEC);
+                    display.printf("%s", txtID);
                     display.print("}");
                     // memset(&text[0], 0, sizeof(text));
                     // memcpy(&text[0], aprs.comment, aprs.comment_len);
@@ -6988,24 +7490,37 @@ void dispWindow(String line, uint8_t mode, bool filter)
                     display.setTextColor(WHITE);
                     display.setCursor(2, 30);
                     display.print("To: ");
+                    memset(text, 0, sizeof(text));
                     strncpy(&text[0], aprs.dstname, aprs.dstname_len);
                     display.print(text);
-                    String mycall = config.aprs_mycall + String("-") + String(config.aprs_ssid, DEC);
-                    if (strcmp(mycall.c_str(), text) == 0)
-                    {
-                        display.setCursor(2, 54);
-                        display.print("ACK:");
-                        display.println(msgid);
-                        // String raw = sendIsAckMsg(src_call, msgid);
-                        // client.println(raw);
-                        // SerialTNC.println("}" + raw);
-                        //  if (slot == 0) {
-                        //	client.println(raw);
-                        //  }
-                        //  else {
-                        //	SerialTNC.println("}" + raw);
-                        //  }
-                    }
+                    String mycall = "";
+                    if (config.aprs_ssid > 0)
+                        mycall = String(config.aprs_mycall) + String("-") + String(config.aprs_ssid, DEC);
+                    else
+                        mycall = String(config.aprs_mycall);
+                    // if (strcmp(mycall.c_str(), text) == 0)
+                    // {
+                    //     display.setCursor(2, 54);
+                    //     display.print("ACK:");
+                    //     display.println(msgid);
+                    //     String rawData = sendIsAckMsg(src_call, txtID);
+                    //     log_d("IGATE_MSG: %s", rawData.c_str());
+                    //     //if (config.igate_loc2rf)
+                    //     { // IGATE SEND POSITION TO RF
+                    //         char *rawP = (char *)malloc(rawData.length());
+                    //         memcpy(rawP, rawData.c_str(), rawData.length());
+                    //         pkgTxPush(rawP, rawData.length(), 0);
+                    //         free(rawP);
+                    //     }
+                    //     // if (config.igate_loc2inet)
+                    //     // { // IGATE SEND TO APRS-IS
+                    //     //     if (aprsClient.connected())
+                    //     //     {
+                    //     //         aprsClient.println(rawData); // Send packet to Inet
+                    //     //     }
+                    //     // }
+                    // }
+                    memset(text, 0, sizeof(text));
                     strncpy(&text[0], aprs.msg.body, aprs.msg.body_len);
                     display.setCursor(2, 40);
                     display.print("Msg: ");

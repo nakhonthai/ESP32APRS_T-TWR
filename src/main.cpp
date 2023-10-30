@@ -23,6 +23,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <BLESecurity.h>
 #include "XPowersLib.h"
 #include "cppQueue.h"
 #include "digirepeater.h"
@@ -36,9 +37,6 @@
 #include <TinyGPSPlus.h>
 #include <pbuf.h>
 #include <parse_aprs.h>
-// #include <Fonts/FreeSansBold9pt7b.h>
-// #include <Fonts/FreeSerifItalic9pt7b.h>
-// #include <Fonts/Seven_Segment24pt7b.h>
 
 #include <WiFiUdp.h>
 
@@ -57,12 +55,11 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_I2CDevice.h>
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+#define SCREEN_WIDTH 128    // OLED display width, in pixels
+#define SCREEN_HEIGHT 64    // OLED display height, in pixels
 #define OLED_RESET -1       // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
 
 struct pbuf_t aprs;
 ParseAPRS aprsParse;
@@ -106,8 +103,6 @@ float dBV = 0;
 int mVrms = 0;
 
 float vbat;
-
-uint8_t dispFlagTX = 0;
 
 long timeNetwork, timeAprs, timeGui;
 
@@ -156,6 +151,36 @@ bool BTdeviceConnected = false;
 bool BToldDeviceConnected = false;
 uint8_t BTtxValue = 0;
 
+// class MySecurity : public BLESecurityCallbacks
+// {
+
+//   uint32_t onPassKeyRequest()
+//   {
+//     ESP_LOGI(LOG_TAG, "PassKeyRequest");
+//     return passkey;
+//   }
+//   void onPassKeyNotify(uint32_t pass_key)
+//   {
+//     ESP_LOGI(LOG_TAG, "The passkey Notify number:%d", pass_key);
+//   }
+//   bool onConfirmPIN(uint32_t pass_key)
+//   {
+//     ESP_LOGI(LOG_TAG, "The passkey YES/NO number:%d", pass_key);
+//     vTaskDelay(5000);
+//     return true;
+//   }
+//   bool onSecurityRequest()
+//   {
+//     ESP_LOGI(LOG_TAG, "SecurityRequest");
+//     return true;
+//   }
+
+//   void onAuthenticationComplete(esp_ble_auth_cmpl_t cmpl)
+//   {
+//     ESP_LOGI(LOG_TAG, "Starting BLE!");
+//   }
+// };
+
 class MyServerCallbacks : public BLEServerCallbacks
 {
   void onConnect(BLEServer *pServer)
@@ -180,8 +205,9 @@ class MyCallbacks : public BLECharacteristicCallbacks
       // Serial.println("*********");
       // Serial.print("Received Value: ");
       char raw[500];
+      int i = 0;
       memset(raw, 0, sizeof(raw));
-      for (int i = 0; i < rxValue.length(); i++)
+      for (i = 0; i < rxValue.length(); i++)
       {
         if (i > sizeof(raw))
           break;
@@ -193,11 +219,12 @@ class MyCallbacks : public BLECharacteristicCallbacks
       { // TNC2RAW MODE
         pkgTxPush(raw, strlen(raw), 1);
       }
-      // for (int i = 0; i < rxValue.length(); i++)
-      //   Serial.print(rxValue[i]);
-
-      // Serial.println();
-      // Serial.println("*********");
+      else if (config.bt_mode == 2)
+      {
+        // KISS MODE
+        for (int n = 0; n < i; n++)
+          kiss_serial((uint8_t)raw[n]);
+      }
     }
   }
 };
@@ -394,7 +421,7 @@ time_t setGpsTime()
     timeinfo.Minute = gps.time.minute();
     timeinfo.Second = gps.time.second();
     time_t timeStamp = makeTime(timeinfo);
-    time = timeStamp + TZ * SECS_PER_HOUR;
+    time = timeStamp + config.timeZone * SECS_PER_HOUR;
     setTime(time);
     // setTime(timeinfo.Hour,timeinfo.Minute,timeinfo.Second,timeinfo.Day, timeinfo.Month, timeinfo.Year);
     return time;
@@ -415,7 +442,7 @@ time_t getGpsTime()
     timeinfo.Minute = gps.time.minute();
     timeinfo.Second = gps.time.second();
     time_t timeStamp = makeTime(timeinfo);
-    time = timeStamp + TZ * SECS_PER_HOUR;
+    time = timeStamp + config.timeZone * SECS_PER_HOUR;
     return time;
   }
   return 0;
@@ -487,8 +514,15 @@ void defaultConfig()
   config.wifi_mode = WIFI_AP_STA_FIX;
   config.wifi_power = 44;
   config.wifi_ap_ch = 6;
-  sprintf(config.wifi_ssid, "APRSTH");
-  sprintf(config.wifi_pass, "aprsthnetwork");
+  config.wifi_sta[0].enable = true;
+  sprintf(config.wifi_sta[0].wifi_ssid, "APRSTH");
+  sprintf(config.wifi_sta[0].wifi_pass, "aprsthnetwork");
+  for (int i = 1; i < 5; i++)
+  {
+    config.wifi_sta[i].enable = false;
+    config.wifi_sta[i].wifi_ssid[0] = 0;
+    config.wifi_sta[i].wifi_pass[0] = 0;
+  }
   sprintf(config.wifi_ap_ssid, "ESP32IGate");
   sprintf(config.wifi_ap_pass, "aprsthnetwork");
   // Blutooth
@@ -500,7 +534,7 @@ void defaultConfig()
   sprintf(config.bt_uuid_rx, "6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
   sprintf(config.bt_uuid_tx, "6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
   sprintf(config.bt_name, "ESP32APRS");
-  sprintf(config.bt_pin, "0000");
+  config.bt_pin = 0;
 
   //--RF Module
   config.rf_en = true;
@@ -614,7 +648,7 @@ void defaultConfig()
   config.filterDistant = 0;
   config.h_up = true;
   config.tx_display = true;
-  config.rx_display=true;
+  config.rx_display = true;
   config.audio_hpf = false;
   config.audio_bpf = false;
   config.preamble = 3;
@@ -634,6 +668,9 @@ void defaultConfig()
   sprintf(config.wg_gw_address, "192.168.1.1");
   sprintf(config.wg_public_key, "");
   sprintf(config.wg_private_key, "");
+
+  sprintf(config.http_username, "admin");
+  sprintf(config.http_password, "admin");
 
   config.gpio_sql_pin = -1;
 
@@ -1064,7 +1101,7 @@ bool pkgTxSend()
       int decTime = millis() - txQueue[i].timeStamp;
       if (decTime > txQueue[i].Delay)
       {
-        txQueue[i].Active = false;        
+        txQueue[i].Active = false;
         memset(info, 0, sizeof(info));
         strcpy(info, txQueue[i].Info);
         psramBusy = false;
@@ -1085,12 +1122,11 @@ bool pkgTxSend()
           delay(50); // TOT 5sec
         }
 
-        //delay(2000);
+        // delay(2000);
         LED_Color(0, 0, 0);
         digitalWrite(POWER_PIN, 0); // set RF Power Low
         adcActive(true);
         setOLEDLock(false);
-        dispFlagTX = 1;
         return true;
       }
     }
@@ -1286,7 +1322,7 @@ void RF_MODULE(bool boot)
   log_d("RF Module Version %s", RF_VERSION);
 
   char str[200];
-  String rsp="\r\n";
+  String rsp = "\r\n";
   if (config.sql_level > 8)
     config.sql_level = 8;
   if ((config.rf_type == RF_SR_1WV) || (config.rf_type == RF_SR_1WU) || (config.rf_type == RF_SR_1W350))
@@ -1845,6 +1881,9 @@ void setup()
   {
     // Create the BLE Device
     BLEDevice::init(config.bt_name);
+    // BLEDevice::setEncryptionLevel(ESP_BLE_SEC_ENCRYPT_MITM);  // The line you told me to add
+    // BLESecurity *pSecurity = new BLESecurity();
+    // pSecurity->setStaticPIN(config.bt_pin);
 
     // Create the BLE Server
     pServer = BLEDevice::createServer();
@@ -1862,6 +1901,8 @@ void setup()
     BLECharacteristic *pRxCharacteristic = pService->createCharacteristic(
         config.bt_uuid_rx,
         BLECharacteristic::PROPERTY_WRITE);
+
+    // pRxCharacteristic->setAccessPermissions(ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_ENC_MITM);
     pRxCharacteristic->setCallbacks(new MyCallbacks());
 
     // Start the service
@@ -2497,20 +2538,22 @@ void loop()
   }
 }
 
-String sendIsAckMsg(String toCallSign, int msgId)
+String sendIsAckMsg(String toCallSign, char *msgId)
 {
   char str[300];
   char call[11];
   int i;
   memset(&call[0], 0, 11);
-  sprintf(call, "%s-%d", config.aprs_mycall, config.aprs_ssid);
   strcpy(&call[0], toCallSign.c_str());
   i = strlen(call);
   for (; i < 9; i++)
     call[i] = 0x20;
   memset(&str[0], 0, 300);
 
-  sprintf(str, "%s-%d>APTWR%s::%s:ack%d", config.aprs_mycall, config.aprs_ssid, VERSION, call, msgId);
+  if (config.aprs_ssid > 0)
+    sprintf(str, "%s-%d>APTWR,%s::%s:ack%s", config.aprs_mycall, config.aprs_ssid, config.igate_path, call, msgId);
+  else
+    sprintf(str, "%s>APTWR,%s::%s:ack%s", config.aprs_mycall, config.igate_path, call, msgId);
   return String(str);
 }
 
@@ -2567,7 +2610,7 @@ void taskGPS(void *pvParameters)
     {
       if (gps.time.isUpdated())
       {
-        time_t timeGps = getGpsTime();
+        time_t timeGps = getGpsTime(); // Local gps time
         if (timeGps > 1653152400 && timeGps < 2347462800)
         {
           setTime(timeGps);
@@ -2610,6 +2653,7 @@ void taskTNC(void *pvParameters)
 long timeSlot;
 void taskAPRS(void *pvParameters)
 {
+  char sts[50];
   //	long start, stop;
   char *raw;
   char *str;
@@ -2643,6 +2687,7 @@ void taskAPRS(void *pvParameters)
   tx_interval = config.trk_interval;
   tx_counter = tx_interval - 10;
   log_d("Task APRS has been start");
+  int rxPerMin = 0;
   for (;;)
   {
     unsigned long now = millis();
@@ -2775,12 +2820,25 @@ void taskAPRS(void *pvParameters)
         EVENT_TX_POSITION = 0;
         last_heading = SB_HEADING;
 
+        if (config.trk_gps)
+        {
+          if (gps.location.isValid())
+            sprintf(sts, "POSITION GPS\nSPD %dkPh/%d\nINTERVAL %ds", SB_SPEED, SB_HEADING, tx_interval);
+          else
+            sprintf(sts, "POSITION GPS\nGPS INVALID\nINTERVAL %ds", tx_interval);
+        }
+        else
+        {
+          sprintf(sts, "POSITION FIX\nINTERVAL %ds", tx_interval);
+        }
+
         if (config.trk_loc2rf)
         { // TRACKER SEND TO RF
           char *rawP = (char *)malloc(rawData.length());
           memcpy(rawP, rawData.c_str(), rawData.length());
           // rawData.toCharArray(rawP, rawData.length());
           pkgTxPush(rawP, rawData.length(), 0);
+          pushTxDisp(TXCH_RF, "TX TRACKER", sts);
           free(rawP);
         }
         if (config.trk_loc2inet)
@@ -2788,8 +2846,9 @@ void taskAPRS(void *pvParameters)
           if (aprsClient.connected())
           {
             aprsClient.println(rawData); // Send packet to Inet
+            pushTxDisp(TXCH_TCP, "TX TRACKER", sts);
           }
-        }        
+        }
       }
     }
 
@@ -2844,11 +2903,21 @@ void taskAPRS(void *pvParameters)
         // SerialBT.println(tnc2);
         if ((config.bt_mode == 1) && BTdeviceConnected)
         {
-          char *rawP = (char *)malloc(tnc2.length());
-          memcpy(rawP, tnc2.c_str(), tnc2.length());
-          pTxCharacteristic->setValue((uint8_t *)rawP, tnc2.length());
-          pTxCharacteristic->notify();
-          free(rawP);
+          if (config.bt_mode == 1)
+          {
+            char *rawP = (char *)malloc(tnc2.length());
+            memcpy(rawP, tnc2.c_str(), tnc2.length());
+            pTxCharacteristic->setValue((uint8_t *)rawP, tnc2.length());
+            pTxCharacteristic->notify();
+            free(rawP);
+          }
+          else if (config.bt_mode == 2)
+          { // KISS
+            uint8_t pkg[500];
+            int sz = kiss_wrapper(pkg);
+            pTxCharacteristic->setValue(pkg, sz);
+            pTxCharacteristic->notify();
+          }
         }
       }
 
@@ -2905,12 +2974,18 @@ void taskAPRS(void *pvParameters)
           {
             iGatetickInterval = millis() + (config.igate_interval * 1000);
             log_d("IGATE_POSITION: %s", rawData.c_str());
+
+            if (config.igate_gps)
+              sprintf(sts, "POSITION GPS\nINTERVAL %ds", tx_interval);
+            else
+              sprintf(sts, "POSITION FIX\nINTERVAL %ds", tx_interval);
             if (config.igate_loc2rf)
             { // IGATE SEND POSITION TO RF
               char *rawP = (char *)malloc(rawData.length());
               // rawData.toCharArray(rawP, rawData.length());
               memcpy(rawP, rawData.c_str(), rawData.length());
               pkgTxPush(rawP, rawData.length(), 0);
+              pushTxDisp(TXCH_RF, "TX IGATE", sts);
               free(rawP);
             }
             if (config.igate_loc2inet)
@@ -2918,6 +2993,7 @@ void taskAPRS(void *pvParameters)
               if (aprsClient.connected())
               {
                 aprsClient.println(rawData); // Send packet to Inet
+                pushTxDisp(TXCH_TCP, "TX IGATE", sts);
               }
             }
           }
@@ -2944,11 +3020,6 @@ void taskAPRS(void *pvParameters)
             status.rf2inet++;
             igateTLM.RF2INET++;
             igateTLM.TX++;
-#ifdef DEBUG
-            // printTime();
-            // log_d("RF->INET: ");
-            // log_d("%s\n", tnc2.c_str());
-#endif
           }
         }
       }
@@ -2977,12 +3048,18 @@ void taskAPRS(void *pvParameters)
           {
             DiGiInterval = millis() + (config.digi_interval * 1000);
             log_d("DIGI_POSITION: %s", rawData.c_str());
+
+            if (config.digi_gps)
+              sprintf(sts, "POSITION GPS\nINTERVAL %ds", tx_interval);
+            else
+              sprintf(sts, "POSITION FIX\nINTERVAL %ds", tx_interval);
             if (config.digi_loc2rf)
             { // DIGI SEND POSITION TO RF
               char *rawP = (char *)malloc(rawData.length());
               // rawData.toCharArray(rawP, rawData.length());
               memcpy(rawP, rawData.c_str(), rawData.length());
               pkgTxPush(rawP, rawData.length(), 0);
+              pushTxDisp(TXCH_RF, "TX DIGI POS", sts);
               free(rawP);
             }
             if (config.digi_loc2inet)
@@ -2990,6 +3067,7 @@ void taskAPRS(void *pvParameters)
               if (aprsClient.connected())
               {
                 aprsClient.println(rawData); // Send packet to Inet
+                pushTxDisp(TXCH_TCP, "TX DIGI POS", sts);
               }
             }
           }
@@ -3040,6 +3118,8 @@ void taskAPRS(void *pvParameters)
             // digiPkg.toCharArray(rawP, digiPkg.length());
             memcpy(rawP, digiPkg.c_str(), digiPkg.length());
             pkgTxPush(rawP, digiPkg.length(), digiDelay);
+            sprintf(sts, "--src call--\n%s\nDelay: %dms.", incomingPacket.src.call, digiDelay);
+            pushTxDisp(TXCH_DIGI, "DIGI REPEAT", sts);
             free(rawP);
           }
         }
@@ -3052,10 +3132,33 @@ int mqttRetry = 0;
 long wifiTTL = 0;
 WiFiMulti wifiMulti;
 
+// WiFi connect timeout per AP. Increase when connecting takes longer.
+const uint32_t connectTimeoutMs = 10000;
+
+// void Wifi_connected(WiFiEvent_t event, WiFiEventInfo_t info){
+//   log_d("Successfully connected to Access Point");
+// }
+
+// void Get_IPAddress(WiFiEvent_t event, WiFiEventInfo_t info){
+//   log_d("WIFI is connected!");
+//   log_d("IP address: %s",WiFi.localIP().toString().c_str());
+// }
+
+// void Wifi_disconnected(WiFiEvent_t event, WiFiEventInfo_t info){
+//   log_d("Disconnected from WIFI access point\n");
+//   log_d("WiFi lost connection. Reason: ");
+//   log_d("%s\n",info.wifi_sta_disconnected.reason);
+//   log_d("Reconnecting...");
+// }
+
 void taskNetwork(void *pvParameters)
 {
   int c = 0;
   log_d("Task Network has been start");
+
+  // WiFi.onEvent(Wifi_connected,SYSTEM_EVENT_STA_CONNECTED);
+  // WiFi.onEvent(Get_IPAddress, SYSTEM_EVENT_STA_GOT_IP);
+  // WiFi.onEvent(Wifi_disconnected, SYSTEM_EVENT_STA_DISCONNECTED);
 
   if (config.wifi_mode == WIFI_STA_FIX)
   { /**< WiFi station mode */
@@ -3076,8 +3179,13 @@ void taskNetwork(void *pvParameters)
 
   if (config.wifi_mode & WIFI_STA_FIX)
   {
-    wifiMulti.addAP(config.wifi_ssid, config.wifi_pass);
-    wifiMulti.addAP("APRSTH", "aprsthnetwork");
+    for (int i = 0; i < 5; i++)
+    {
+      if (config.wifi_sta[i].enable)
+      {
+        wifiMulti.addAP(config.wifi_sta[i].wifi_ssid, config.wifi_sta[i].wifi_pass);
+      }
+    }
     WiFi.setTxPower((wifi_power_t)config.wifi_power);
     WiFi.setHostname("ESP32APRS_T-TWR");
   }
@@ -3112,7 +3220,8 @@ void taskNetwork(void *pvParameters)
     timeNetworkOld = now;
     // wdtNetworkTimer = millis();
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    if (WiFi.status() == WL_CONNECTED)
+    // if (WiFi.status() == WL_CONNECTED)
+    if (wifiMulti.run(connectTimeoutMs) == WL_CONNECTED)
     {
       serviceHandle();
 
@@ -3236,6 +3345,9 @@ void taskNetwork(void *pvParameters)
                       tnc2Raw += ":}";      // 3rd-party frame
                       tnc2Raw += line;
                       pkgTxPush(tnc2Raw.c_str(), tnc2Raw.length(), 0);
+                      char sts[50];
+                      sprintf(sts, "--SRC CALL--\n%s\n", src_call.c_str());
+                      pushTxDisp(TXCH_3PTY, "TX INET->RF", sts);
                       status.inet2rf++;
                       igateTLM.INET2RF++;
                       log_d("INET2RF: %s\n", line);
@@ -3248,39 +3360,40 @@ void taskNetwork(void *pvParameters)
           }
         }
       }
-    }
 
-    if (millis() > pingTimeout)
-    {
-      pingTimeout = millis() + 300000;
-      log_d("Ping GW to %s\n", WiFi.gatewayIP().toString().c_str());
-      if (ping_start(WiFi.gatewayIP(), 3, 0, 0, 5) == true)
+      if (millis() > pingTimeout)
       {
-        log_d("GW Success!!\n");
-      }
-      else
-      {
-        log_d("GW Fail!\n");
-        WiFi.disconnect();
-        wifiTTL = 0;
-      }
-      if (config.vpn)
-      {
-        IPAddress vpnIP;
-        vpnIP.fromString(String(config.wg_gw_address));
-        log_d("Ping VPN to %s", vpnIP.toString().c_str());
-        if (ping_start(vpnIP, 2, 0, 0, 10) == true)
+        pingTimeout = millis() + 300000;
+        log_d("Ping GW to %s\n", WiFi.gatewayIP().toString().c_str());
+        if (ping_start(WiFi.gatewayIP(), 3, 0, 0, 5) == true)
         {
-          log_d("VPN Ping Success!!");
+          log_d("GW Success!!\n");
         }
         else
         {
-          log_d("VPN Ping Fail!");
-          wireguard_remove();
-          delay(3000);
-          wireguard_setup();
+          log_d("GW Fail!\n");
+          WiFi.disconnect();
+          WiFi.reconnect();
+          wifiTTL = 0;
+        }
+        if (config.vpn)
+        {
+          IPAddress vpnIP;
+          vpnIP.fromString(String(config.wg_gw_address));
+          log_d("Ping VPN to %s", vpnIP.toString().c_str());
+          if (ping_start(vpnIP, 2, 0, 0, 10) == true)
+          {
+            log_d("VPN Ping Success!!");
+          }
+          else
+          {
+            log_d("VPN Ping Fail!");
+            wireguard_remove();
+            delay(3000);
+            wireguard_setup();
+          }
         }
       }
-    }
-  }
+    } // WiFi connected
+  }   // for loop
 }
