@@ -1043,6 +1043,40 @@ int pkgListUpdate(char *call, char *raw, uint16_t type, bool channel)
   return i;
 }
 
+bool pkgTxDuplicate(AX25Msg ax25)
+{
+  while (psramBusy)
+    delay(1);
+  psramBusy = true;
+  char callsign[12];
+  for (int i = 0; i < PKGTXSIZE; i++)
+  {
+    if (txQueue[i].Active)
+    {
+      if (ax25.src.ssid > 0)
+        sprintf(callsign, "%s-%d", ax25.src.call, ax25.src.ssid);
+      else
+        sprintf(callsign, "%s", ax25.src.call);
+      if (strncmp(&txQueue[i].Info[0], callsign, strlen(callsign)) >= 0) // Check duplicate src callsign
+      {
+        char *ecs1 = strstr(txQueue[i].Info, ":");
+        if (ecs1 == NULL)
+          continue;
+        ;
+        if (strncmp(ecs1, (const char *)ax25.info, strlen(ecs1)) >= 0)
+        { // Check duplicate aprs info
+          txQueue[i].Active = false;
+          psramBusy = false;
+          return true;
+        }
+      }
+    }
+  }
+
+  psramBusy = false;
+  return false;
+}
+
 bool pkgTxPush(const char *info, size_t len, int dly)
 {
   char *ecs = strstr(info, ">");
@@ -1052,22 +1086,22 @@ bool pkgTxPush(const char *info, size_t len, int dly)
   while (psramBusy)
     delay(1);
   psramBusy = true;
-  for (int i = 0; i < PKGTXSIZE; i++)
-  {
-    if (txQueue[i].Active)
-    {
-      if (!(strncmp(&txQueue[i].Info[0], info, info - ecs)))
-      {
-        // strcpy(&txQueue[i].Info[0], info);
-        memset(txQueue[i].Info, 0, sizeof(txQueue[i].Info));
-        memcpy(&txQueue[i].Info[0], info, len);
-        txQueue[i].Delay = dly;
-        txQueue[i].timeStamp = millis();
-        psramBusy = false;
-        return true;
-      }
-    }
-  }
+  // for (int i = 0; i < PKGTXSIZE; i++)
+  // {
+  //   if (txQueue[i].Active)
+  //   {
+  //     if ((strncmp(&txQueue[i].Info[0], info, info - ecs)==0)) //Check src callsign
+  //     {
+  //       // strcpy(&txQueue[i].Info[0], info);
+  //       memset(txQueue[i].Info, 0, sizeof(txQueue[i].Info));
+  //       memcpy(&txQueue[i].Info[0], info, len);
+  //       txQueue[i].Delay = dly;
+  //       txQueue[i].timeStamp = millis();
+  //       psramBusy = false;
+  //       return true;
+  //     }
+  //   }
+  // }
 
   // Add
   for (int i = 0; i < PKGTXSIZE; i++)
@@ -3082,6 +3116,8 @@ void taskAPRS(void *pvParameters)
         // Digi repeater filter
         if ((type & config.digiFilter))
         {
+          // Packet recheck
+          pkgTxDuplicate(incomingPacket); // Search duplicate in tx and drop packet for renew
           int dlyFlag = digiProcess(incomingPacket);
           if (dlyFlag > 0)
           {
@@ -3095,14 +3131,14 @@ void taskAPRS(void *pvParameters)
             {
               if (config.digi_delay == 0)
               { // Auto mode
-                if (digiCount > 20)
-                  digiDelay = random(5000);
-                else if (digiCount > 10)
-                  digiDelay = random(3000);
-                else if (digiCount > 0)
-                  digiDelay = random(1500);
-                else
-                  digiDelay = random(500);
+                // if (digiCount > 20)
+                //   digiDelay = random(5000);
+                // else if (digiCount > 10)
+                //   digiDelay = random(3000);
+                // else if (digiCount > 0)
+                //   digiDelay = random(1500);
+                // else
+                  digiDelay = random(100);
               }
               else
               {
