@@ -82,7 +82,7 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 * Combo Box: push to enter/exit,dial up/down for select item
 
 ## Display Main Menu
-
+![esp32aprs_mainmenu](image/ESP32APRS_Mainmenu.gif)
 ```
 |STATISTICS
 |STATION LIST
@@ -104,8 +104,6 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 |-WiFi Station
 |-Bluetooth
 |-RF Module
-
-![esp32aprs_mainmenu](image/ESP32APRS_Mainmenu.gif)
 
 |APRS
 |-IGATE MODE
