@@ -82,7 +82,7 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 * Combo Box: push to enter/exit,dial up/down for select item
 
 ## Display Main Menu
-![esp32aprs_mainmenu](image/ESP32APRS_Mainmenu.gif)
+![esp32aprs_mainmenu](image/ESP32APRS_Mainmenu.gif)  ![esp32aprs_menuicon](image/ESP32APRS_Display_MenuIcon.png) 
 ```
 |STATISTICS
 |STATION LIST
@@ -97,7 +97,7 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 ```
 
 ## Display Config Menu MAP
-![esp32aprs_menuigate](image/ESP32APRS_Display_mnuigate.png) ![esp32aprs_smartbeacon](image/ESP32APRS_Display_smartbeacon.png) ![esp32aprs_smartbeacon](image/ESP32APRS_Display_igate.png) ![esp32aprs_smartbeacon](image/ESP32APRS_Display_filter.png) 
+![esp32aprs_menuigate](image/ESP32APRS_Display_mnuigate.png) ![esp32aprs_smartbeacon](image/ESP32APRS_Display_smartbeacon.png) ![esp32aprs_smartbeacon](image/ESP32APRS_Display_igate.png)
 ```
 |WiFi/BT/RF
 |-WiFi AP
@@ -176,7 +176,7 @@ https://www.espressif.com/en/support/download/other-tools
 
 ## Donate
 
-To support the development of ESP32APRS you can make us a donation using [gitHub Sponsors](https://github.com/sponsors/nakhonthai). \
+To support the development of ESP32APRS you can make us a donation using [github sponsors](https://github.com/sponsors/nakhonthai). \
 If you want to donate some hardware to facilitate APRS porting and development, [contact us](https://www.facebook.com/atten).
 
 ## Credits & Reference
