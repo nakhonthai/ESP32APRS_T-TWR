@@ -3167,7 +3167,7 @@ void handle_digi()
 
 	html += "<td align=\"center\">\n";
 	html += "<fieldset id=\"FilterGrp\">\n";
-	html += "<legend>Filter RF to Internet</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
+	html += "<legend>Filter repeater</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
 	html += "<tr style=\"background:unset;\">";
 
 	String filterFlageEn = "";

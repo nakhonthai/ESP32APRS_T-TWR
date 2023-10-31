@@ -523,7 +523,7 @@ void defaultConfig()
     config.wifi_sta[i].wifi_ssid[0] = 0;
     config.wifi_sta[i].wifi_pass[0] = 0;
   }
-  sprintf(config.wifi_ap_ssid, "ESP32IGate");
+  sprintf(config.wifi_ap_ssid, "ESP32APRS");
   sprintf(config.wifi_ap_pass, "aprsthnetwork");
   // Blutooth
   config.bt_slave = false;
