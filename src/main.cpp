@@ -625,7 +625,7 @@ void defaultConfig()
   config.trk_minangle = 25;
   config.trk_slowinterval = 600;
 
-  sprintf(config.trk_symbol, "\\>");
+  sprintf(config.trk_symbol, "/[");
   sprintf(config.trk_symmove, "/>");
   sprintf(config.trk_symstop, "\\>");
   // sprintf(config.trk_btext, "");
