@@ -186,3 +186,9 @@ If you want to donate some hardware to facilitate APRS porting and development, 
 - APRS Library by markqvist [LibAPRS](https://github.com/markqvist/LibAPRS)
 - Hardware & Software LILYGO [T-TWR](https://github.com/Xinyuan-LilyGO/T-TWR)
 - Online UUID Generator [UUID-Gen](https://www.uuidgenerator.net/)
+
+## LILYGO® T-TWR Plus
+
+Order hardware at [https://www.aliexpress.com/item/1005005734253889.html](https://www.aliexpress.com/item/1005005734253889.html)
+Select T-TWR Plus VHF/UHF Only.
+`Do not use the model OpenEdition, because SA868 not working.`
