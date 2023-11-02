@@ -189,6 +189,7 @@ If you want to donate some hardware to facilitate APRS porting and development, 
 
 ## LILYGO® T-TWR Plus
 
-Order hardware at [https://www.aliexpress.com/item/1005005734253889.html](https://www.aliexpress.com/item/1005005734253889.html)
-Select T-TWR Plus VHF/UHF Only.
+Items purchased hardware from AliExpress at [https://www.aliexpress.com/item/1005005734253889.html](https://www.aliexpress.com/item/1005005734253889.html) \
+Items purchased hardware from lilygo store at [https://www.lilygo.cc/products/t-twr-plus?variant=42911934185653](https://www.lilygo.cc/products/t-twr-plus?variant=42911934185653) \
+Select T-TWR Plus VHF/UHF Only. \
 `Do not use the model OpenEdition, because SA868 not working.`
