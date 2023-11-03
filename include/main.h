@@ -12,7 +12,7 @@
 #define MAIN_H
 
 #define VERSION "0.2"
-#define VERSION_BUILD ' '
+#define VERSION_BUILD 'a'
 
 // #define DEBUG
 
@@ -114,17 +114,6 @@
 
 #include "HardwareSerial.h"
 #include "EEPROM.h"
-
-enum M17Flags
-{
-	DISCONNECTED = 1 << 0,
-	CONNECTING = 1 << 1,
-	M17_AUTH = 1 << 2,
-	M17_CONF = 1 << 3,
-	M17_OPTS = 1 << 4,
-	CONNECTED_RW = 1 << 5,
-	CONNECTED_RO = 1 << 6
-};
 
 typedef struct wifi_struct
 {

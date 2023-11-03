@@ -12,12 +12,12 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 ## Feature
 
 * Supported hardware: LILYGO T-TWR Plus V2.0 (No modifications required)
-* Supported RF: SA868 VHF/UHF model
-* Support APRS internet gateway
-* Support APRS digital repeater
+* Supported RF: SA868 T-TWR Plus VHF/UHF/350 model (Do not OpenEdition)
+* Support APRS internet gateway (IGATE)
+* Support APRS digital repeater (DIGI)
 * Support APRS tracker with fix position or smartbeacon mode from GNSS
 * Using ESP-Arduino development on Visual studio code + Platform IO
-* Support Bell202 1200bps AFSK
+* Support Bell202 1200bps AFSK (It has a very good sine wave signal.)
 * Implementing software modem, decoding and encoding
 * Support BLE:Bluetooth TNC2/KISS Mode
 * Support monitor display menu icon and configuration
@@ -29,7 +29,7 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 * support status battery,wifi,gnss,bluetooth
 * support VPN wireguard
 * support global time zone
-* support web service auth 
+* support web service auth login
 * support sd card
 * display received and transmit packet on the LED and display OLED
 

@@ -22,7 +22,7 @@ String webString;
 bool defaultSetting = false;
 
 void serviceHandle()
-{	
+{
 	server.handleClient();
 }
 
@@ -34,9 +34,10 @@ void handle_logout()
 
 void setMainPage()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	webString = "<html><head>\n";
 	webString += "<meta name=\"robots\" content=\"index\" />\n";
 	webString += "<meta name=\"robots\" content=\"follow\" />\n";
@@ -94,7 +95,7 @@ void setMainPage()
 	webString += "<div class=\"container\">\n";
 	webString += "<div class=\"header\">\n";
 	// webString += "<div style=\"font-size: 8px; text-align: right; padding-right: 8px;\">ESP32APRS T-TWR Plus Firmware V" + String(VERSION) + "</div>\n";
-	//webString += "<div style=\"font-size: 8px; text-align: right; padding-right: 8px;\"><a href=\"/logout\">[LOG OUT]</a></div>\n";
+	// webString += "<div style=\"font-size: 8px; text-align: right; padding-right: 8px;\"><a href=\"/logout\">[LOG OUT]</a></div>\n";
 	webString += "<h1>ESP32APRS T-TWR Plus</h1>\n";
 	webString += "<div style=\"font-size: 8px; text-align: right; padding-right: 8px;\"><a href=\"/logout\">[LOG OUT]</a></div>\n";
 	webString += "<div class=\"row\">\n";
@@ -153,9 +154,10 @@ void handle_css()
 
 void handle_dashboard()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	webString = "<script type=\"text/javascript\">\n";
 	webString += "function reloadSysInfo() {\n";
 	webString += "$(\"#sysInfo\").load(\"/sysinfo\", function () { setTimeout(reloadSysInfo, 60000) });\n";
@@ -302,9 +304,10 @@ void handle_dashboard()
 
 void handle_sidebar()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	String html = "<table style=\"background:white;border-collapse: unset;\">\n";
 	html += "<tr>\n";
 	html += "<th colspan=\"2\">Modes Enabled</th>\n";
@@ -514,7 +517,14 @@ void handle_lastHeard()
 				int end_ssid = line.indexOf(",", 0);
 				int start_dst = line.indexOf(">", 2);
 				int start_dstssid = line.indexOf("-", start_dst);
-				String path = line.substring(end_ssid + 1, start_info);
+				String path = "";
+
+				if ((end_ssid > start_dst) && (end_ssid < start_info))
+				{
+					path = line.substring(end_ssid + 1, start_info);
+				}
+				if (end_ssid < 5)
+					end_ssid = start_info;
 				if ((start_dstssid > start_dst) && (start_dstssid < start_dst + 10))
 				{
 					aprs.dstcall_end_or_ssid = &aprs.data[start_dstssid];
@@ -580,18 +590,25 @@ void handle_lastHeard()
 						html += "(" + String(itemname) + ")";
 					}
 					html += +"</td>";
-					String LPath = path.substring(path.lastIndexOf(',') + 1);
-					// if(path.indexOf("qAR")>=0 || path.indexOf("qAS")>=0 || path.indexOf("qAC")>=0){ //Via from Internet Server
-					if (path.indexOf("qA") >= 0 || path.indexOf("TCPIP") >= 0)
+					if (path == "")
 					{
-						html += "<td style=\"text-align: left;\">INET: " + LPath + "</td>";
+						html += "<td style=\"text-align: left;\">RF: DIRECT</td>";
 					}
 					else
 					{
-						if (path.indexOf("*") > 0)
-							html += "<td style=\"text-align: left;\">DIGI: " + path + "</td>";
+						String LPath = path.substring(path.lastIndexOf(',') + 1);
+						// if(path.indexOf("qAR")>=0 || path.indexOf("qAS")>=0 || path.indexOf("qAC")>=0){ //Via from Internet Server
+						if (path.indexOf("qA") >= 0 || path.indexOf("TCPIP") >= 0)
+						{
+							html += "<td style=\"text-align: left;\">INET: " + LPath + "</td>";
+						}
 						else
-							html += "<td style=\"text-align: left;\">RF: " + path + "</td>";
+						{
+							if (LPath.indexOf("*") > 0)
+								html += "<td style=\"text-align: left;\">DIGI: " + path + "</td>";
+							else
+								html += "<td style=\"text-align: left;\">RF: " + path + "</td>";
+						}
 					}
 					// html += "<td>" + path + "</td>";
 					if (aprs.flags & F_HASPOS)
@@ -637,9 +654,10 @@ void handle_lastHeard()
 #ifdef SDCARD
 void handle_storage()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	String dirname = "/";
 	char strTime[100];
 
@@ -757,9 +775,10 @@ void handle_storage()
 
 void handle_radio()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	// bool noiseEn=false;
 	bool radioEnable = false;
 	if (server.hasArg("commitRadio"))
@@ -1202,9 +1221,10 @@ void handle_radio()
 
 void handle_vpn()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	if (server.hasArg("commitVPN"))
 	{
 		bool vpnEn = false;
@@ -1381,9 +1401,10 @@ void handle_vpn()
 
 void handle_system()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	if (server.hasArg("updateTimeZone"))
 	{
 		for (uint8_t i = 0; i < server.args(); i++)
@@ -1953,9 +1974,10 @@ void handle_system()
 
 void handle_igate()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	bool aprsEn = false;
 	bool rf2inetEn = false;
 	bool inet2rfEn = false;
@@ -2720,9 +2742,10 @@ void handle_igate()
 
 void handle_digi()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	bool digiEn = false;
 	bool posGPS = false;
 	bool bcnEN = false;
@@ -3227,9 +3250,10 @@ void handle_digi()
 
 void handle_tracker()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	bool trakerEn = false;
 	bool smartEn = false;
 	bool compEn = false;
@@ -3757,10 +3781,11 @@ void handle_tracker()
 }
 
 void handle_wireless()
-{	
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+{
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	if (server.hasArg("commitWiFiAP"))
 	{
 		bool wifiAP = false;
@@ -3807,8 +3832,9 @@ void handle_wireless()
 	else if (server.hasArg("commitWiFiClient"))
 	{
 		bool wifiSTA = false;
-		String nameSSID,namePASS;
-		for(int n=0;n<5;n++) config.wifi_sta[n].enable=false;
+		String nameSSID, namePASS;
+		for (int n = 0; n < 5; n++)
+			config.wifi_sta[n].enable = false;
 		for (uint8_t i = 0; i < server.args(); i++)
 		{
 			if (server.argName(i) == "wificlient")
@@ -3822,8 +3848,9 @@ void handle_wireless()
 				}
 			}
 
-			for(int n=0;n<5;n++){
-				nameSSID="wifiStation"+String(n);
+			for (int n = 0; n < 5; n++)
+			{
+				nameSSID = "wifiStation" + String(n);
 				if (server.argName(i) == nameSSID)
 				{
 					if (server.arg(i) != "")
@@ -3834,7 +3861,7 @@ void handle_wireless()
 						}
 					}
 				}
-				nameSSID="wifi_ssid"+String(n);
+				nameSSID = "wifi_ssid" + String(n);
 				if (server.argName(i) == nameSSID)
 				{
 					if (server.arg(i) != "")
@@ -3842,7 +3869,7 @@ void handle_wireless()
 						strcpy(config.wifi_sta[n].wifi_ssid, server.arg(i).c_str());
 					}
 				}
-				namePASS="wifi_pass"+String(n);
+				namePASS = "wifi_pass" + String(n);
 				if (server.argName(i) == namePASS)
 				{
 					if (server.arg(i) != "")
@@ -4012,10 +4039,10 @@ void handle_wireless()
 		for (int n = 0; n < 5; n++)
 		{
 			html += "<tr>\n";
-			html += "<td align=\"right\"><b>Station #" + String(n+1) + ":</b></td>\n";
+			html += "<td align=\"right\"><b>Station #" + String(n + 1) + ":</b></td>\n";
 			html += "<td align=\"center\">\n";
-			html += "<fieldset id=\"filterDispGrp" + String(n+1) + "\">\n";
-			html += "<legend>WiFi Station #" + String(n+1) + "</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
+			html += "<fieldset id=\"filterDispGrp" + String(n + 1) + "\">\n";
+			html += "<legend>WiFi Station #" + String(n + 1) + "</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
 			html += "<tr style=\"background:unset;\">";
 			// html += "<tr>\n";
 			html += "<td align=\"right\" width=\"120\"><b>Enable:</b></td>\n";
@@ -4036,7 +4063,6 @@ void handle_wireless()
 			html += "</td></tr>\n";
 		}
 
-		
 		html += "</table><br />\n";
 		html += "<div><button type='submit' id='submitWiFiClient'  name=\"commit\"> Apply Change </button></div>\n";
 		html += "<input type=\"hidden\" name=\"commitWiFiClient\"/>\n";
@@ -4208,9 +4234,10 @@ void handle_realtime()
 
 void handle_about()
 {
-	if (!server.authenticate(config.http_username, config.http_password)) {
-      return server.requestAuthentication();
-    }
+	if (!server.authenticate(config.http_username, config.http_password))
+	{
+		return server.requestAuthentication();
+	}
 	char strCID[50];
 	uint64_t chipid = ESP.getEfuseMac();
 	sprintf(strCID, "%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
@@ -4542,14 +4569,12 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 }
 #endif
 
-
-
 void webService()
 {
 	server.close();
 	// web client handlers
 	server.on("/", setMainPage);
-	server.on("/logout",handle_logout);
+	server.on("/logout", handle_logout);
 #ifdef SDCARD
 	server.on("/file", handle_storage);
 	server.on("/download", handle_download);

@@ -1871,8 +1871,8 @@ void setup()
   display.setFont();
   display.setTextColor(WHITE);
 
-  display.setCursor(55, 40);
-  display.print("Version " + String(VERSION));
+  display.setCursor(60, 40);
+  display.printf("FW Ver %s%c", VERSION, VERSION_BUILD);
   display.setCursor(60, 55);
   display.print("Copy@2023");
   display.display();
