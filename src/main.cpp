@@ -558,6 +558,8 @@ void defaultConfig()
   config.inet2rf = false;
   config.igate_loc2rf = false;
   config.igate_loc2inet = true;
+  config.rf2inetFilter=0xFFF;//All
+  config.inet2rfFilter=config.digiFilter=FILTER_OBJECT|FILTER_ITEM|FILTER_MESSAGE|FILTER_MICE|FILTER_POSITION|FILTER_WX;
   //--APRS-IS
   config.aprs_ssid = 1;
   config.aprs_port = 14580;
@@ -592,6 +594,7 @@ void defaultConfig()
   config.digi_alt = 0;
   config.digi_interval = 600;
   config.digi_delay = 0;
+  config.digiFilter=FILTER_OBJECT|FILTER_ITEM|FILTER_MESSAGE|FILTER_MICE|FILTER_POSITION|FILTER_WX;
   sprintf(config.digi_symbol, "/#");
   sprintf(config.digi_phg, "");
   sprintf(config.digi_comment, "DIGI MODE");
@@ -959,13 +962,16 @@ int popTNC2Raw(int &ret)
 
 pkgListType getPkgList(int idx)
 {
-  pkgListType ret;
-  while (psramBusy)
-    delay(1);
-  psramBusy = true;
-  memcpy(&ret, &pkgList[idx], sizeof(pkgListType));
-  psramBusy = false;
-  return ret;
+    pkgListType ret;
+#ifdef BOARD_HAS_PSRAM
+    while (psramBusy)
+        delay(1);
+    psramBusy = true;
+#endif
+    memset(&ret,0,sizeof(pkgListType));
+    if(idx<PKGLISTSIZE) memcpy(&ret, &pkgList[idx], sizeof(pkgListType));
+    psramBusy = false;
+    return ret;
 }
 
 int pkgListUpdate(char *call, char *raw, uint16_t type, bool channel)
@@ -983,11 +989,11 @@ int pkgListUpdate(char *call, char *raw, uint16_t type, bool channel)
     sz = 10;
   // strncpy(callsign, call, sz);
   memcpy(callsign, call, sz);
-
-  while (psramBusy)
-    delay(1);
-  psramBusy = true;
-
+#ifdef BOARD_HAS_PSRAM
+    while (psramBusy)
+        delay(1);
+    psramBusy = true;
+#endif
   int i = pkgList_Find(callsign, type);
   if (i > PKGLISTSIZE)
   {
@@ -1481,15 +1487,15 @@ boolean APRSConnect()
     if (strlen(config.igate_object) >= 3)
     {
       uint16_t passcode = aprsParse.passCode(config.igate_object);
-      login = "user " + String(config.igate_object) + " pass " + String(passcode, DEC) + " vers ESP32APRS T-TWR+ " + String(VERSION) + " filter " + String(config.aprs_filter);
+      login = "user " + String(config.igate_object) + " pass " + String(passcode, DEC) + " vers ESP32APRS T-TWR+ " + String(VERSION) + String(VERSION_BUILD) + " filter " + String(config.aprs_filter);
     }
     else
     {
       uint16_t passcode = aprsParse.passCode(config.aprs_mycall);
       if (config.aprs_ssid == 0)
-        login = "user " + String(config.aprs_mycall) + " pass " + String(passcode, DEC) + " vers ESP32APRS T-TWR+ " + String(VERSION) + " filter " + String(config.aprs_filter);
+        login = "user " + String(config.aprs_mycall) + " pass " + String(passcode, DEC) + " vers ESP32APRS T-TWR+ " + String(VERSION) + String(VERSION_BUILD) + " filter " + String(config.aprs_filter);
       else
-        login = "user " + String(config.aprs_mycall) + "-" + String(config.aprs_ssid) + " pass " + String(passcode, DEC) + " vers ESP32APRS T-TWR+ " + String(VERSION) + " filter " + String(config.aprs_filter);
+        login = "user " + String(config.aprs_mycall) + "-" + String(config.aprs_ssid) + " pass " + String(passcode, DEC) + " vers ESP32APRS T-TWR+ " + String(VERSION) + String(VERSION_BUILD) + " filter " + String(config.aprs_filter);
     }
     aprsClient.println(login);
     // Serial.println(login);
@@ -2935,7 +2941,7 @@ void taskAPRS(void *pvParameters)
       if (config.bt_master)
       { // Output TNC2RAW to BT Serial
         // SerialBT.println(tnc2);
-        if ((config.bt_mode == 1) && BTdeviceConnected)
+        if (BTdeviceConnected)
         {
           if (config.bt_mode == 1)
           {
@@ -3026,6 +3032,7 @@ void taskAPRS(void *pvParameters)
             { // IGATE SEND TO APRS-IS
               if (aprsClient.connected())
               {
+                status.txCount++;
                 aprsClient.println(rawData); // Send packet to Inet
                 pushTxDisp(TXCH_TCP, "TX IGATE", sts);
               }
@@ -3100,6 +3107,7 @@ void taskAPRS(void *pvParameters)
             { // DIGI SEND TO APRS-IS
               if (aprsClient.connected())
               {
+                status.txCount++;
                 aprsClient.println(rawData); // Send packet to Inet
                 pushTxDisp(TXCH_TCP, "TX DIGI POS", sts);
               }

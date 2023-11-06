@@ -1181,7 +1181,7 @@ void handle_radio()
 		String strFlag = "";
 		if (config.audio_hpf)
 			strFlag = "checked";
-		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"HPF\" value=\"OK\" " + strFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\"><i> *Audio high pass filter >1KHz cutoff 6Khz</i></label></td>\n";
+		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"HPF\" value=\"OK\" " + strFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\"><i> *Audio high pass filter >1KHz cutoff 10Khz</i></label></td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>Audio BPF:</b></td>\n";
@@ -2003,14 +2003,18 @@ void handle_igate()
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.aprs_mycall, server.arg(i).c_str());
+					String name=server.arg(i);
+					name.trim();
+					strcpy(config.aprs_mycall, name.c_str());
 				}
 			}
 			if (server.argName(i) == "igateObject")
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.igate_object, server.arg(i).c_str());
+					String name=server.arg(i);
+					name.trim();
+					strcpy(config.igate_object, name.c_str());
 				}
 				else
 				{
@@ -2769,7 +2773,9 @@ void handle_digi()
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.digi_mycall, server.arg(i).c_str());
+					String name=server.arg(i);
+					name.trim();
+					strcpy(config.digi_mycall, name.c_str());
 				}
 			}
 			if (server.argName(i) == "mySSID")
@@ -3331,14 +3337,18 @@ void handle_tracker()
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.trk_mycall, server.arg(i).c_str());
+					String name=server.arg(i);
+					name.trim();
+					strcpy(config.trk_mycall, name.c_str());
 				}
 			}
 			if (server.argName(i) == "trackerObject")
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.trk_item, server.arg(i).c_str());
+					String name=server.arg(i);
+					name.trim();
+					strcpy(config.trk_item, name.c_str());
 				}
 				else
 				{

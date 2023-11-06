@@ -2470,9 +2470,9 @@ int ParseAPRS::parse_aprs_comment(struct pbuf_t *pb, char const *input, unsigned
 		else
 		{
 			rest = (char *)input;
-			rest_len = strlen(rest);
-			// rest_len = input_len;
-			rest[rest_len] = 0;
+			//rest_len = strlen(rest);
+			rest_len = input_len;
+			//rest[rest_len] = 0;
 		}
 	}
 	else if (input_len > 0)
@@ -2488,29 +2488,19 @@ int ParseAPRS::parse_aprs_comment(struct pbuf_t *pb, char const *input, unsigned
 	{
 		// char* res;
 		/* Check for optional altitude anywhere in the comment, take the first occurrence. */
-		res = strstr(rest, "/A=");
-		if (res)
+		if (res = strstr(rest, "/A="))
 		{
-			DEBUG_LOG("Found Alt : ");
-			DEBUG_LOG(res);
-			DEBUG_LOG("\n");
+			//log_d("Found Alt : %s", res);
 			/* Save altitude, if not already there. */
-			if (!pb->altitude)
-			{
-				memcpy(altitude, res + 3, 6);
-				altitude[6] = 0;
-				tmp_s = atoi(altitude);
-				pb->altitude = (double)(tmp_s * FT_TO_M);
-				pb->flags |= F_ALT;
-			}
+			memcpy(altitude, res + 3, 6);
+			altitude[6] = 0;
+			tmp_s = atoi(altitude);
+			pb->altitude = (double)(tmp_s * FT_TO_M);
+			pb->flags |= F_ALT;
 
 			/* Remove altitude. */
-			rest = parse_remove_part(rest, rest_len, res - rest, res - rest + 9, &rest_len);
-			// rest = (char*)res + 9;
-			// rest_len = rest_len - 9;
-			/*tmp_str = parse_remove_part(res, rest_len, input-res, input - res+9, &tmp_us);
-			rest = tmp_str;
-			rest_len = tmp_us;*/
+			rest = (char *)res + 9;
+			rest_len = rest_len - 9;
 		}
 	}
 

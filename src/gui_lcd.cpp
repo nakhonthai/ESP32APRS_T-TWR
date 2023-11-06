@@ -7064,6 +7064,8 @@ void dispWindow(String line, uint8_t mode, bool filter)
         int end_ssid = line.indexOf(",", 0);
         int start_dst = line.indexOf(">", 2);
         int start_dstssid = line.indexOf("-", start_dst);
+        if ((end_ssid < 0)||(end_ssid>start_info))
+					end_ssid = start_info;
         if ((start_dstssid > start_dst) && (start_dstssid < start_dst + 10))
         {
             aprs.dstcall_end_or_ssid = &aprs.data[start_dstssid];

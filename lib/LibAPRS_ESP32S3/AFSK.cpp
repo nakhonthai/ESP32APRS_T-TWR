@@ -280,7 +280,7 @@ void AFSK_init(Afsk *afsk)
   // HPF
   flt.size = FIR_BPF_N;
   flt.pass_freq = 1000;
-  flt.cutoff_freq = 6000;
+  flt.cutoff_freq = 10000;
   hpf_an = filter_coeff(&flt);
   filter_init(&hpf, hpf_an, FIR_BPF_N);
 
