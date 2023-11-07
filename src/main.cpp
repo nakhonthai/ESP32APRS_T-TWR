@@ -2721,9 +2721,7 @@ void taskAPRS(void *pvParameters)
   unsigned long timeAprsOld = millis();
   unsigned long gpsTimeout;
 
-  // tx_counter = igate_tx_counter = digi_tx_counter = millis();
-  // tx_interval = igate_tx_interval = digi_tx_interval = millis() + 5000;
-  DiGiInterval = iGatetickInterval = millis() + 15000;
+  tickInterval = DiGiInterval = iGatetickInterval = millis() + 15000;
   tx_interval = config.trk_interval;
   tx_counter = tx_interval - 10;
   log_d("Task APRS has been start");
@@ -2781,6 +2779,7 @@ void taskAPRS(void *pvParameters)
         tickInterval = millis() + 1000;
 
         tx_counter++;
+        //log_d("TRACKER tx_counter=%d\t INTERVAL=%d\n", tx_counter, tx_interval);
         // Check interval timeout
         if (config.trk_smartbeacon && config.trk_gps)
         {

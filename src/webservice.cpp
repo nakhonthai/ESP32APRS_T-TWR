@@ -420,7 +420,7 @@ void handle_symbol()
 	html += "<tr>\n";
 	for (i = 33; i < 129; i++)
 	{
-		html += "<td><img src=\"http://aprs.nakhonthai.net/symbols/icons/" + String(i) + "-1.png\"></td>\n";
+		html += "<td><img src=\"http://www.dprns.com/symbols/icons/" + String(i) + "-1.png\"></td>\n";
 		if (((i % 16) == 0) && (i < 126))
 			html += "</tr>\n<tr>\n";
 	}
@@ -431,7 +431,7 @@ void handle_symbol()
 	html += "<tr>\n";
 	for (i = 33; i < 129; i++)
 	{
-		html += "<td><img src=\"http://aprs.nakhonthai.net/symbols/icons/" + String(i) + "-2.png\"></td>\n";
+		html += "<td><img src=\"http://www.dprns.com/symbols/icons/" + String(i) + "-2.png\"></td>\n";
 		if (((i % 16) == 0) && (i < 126))
 			html += "</tr>\n<tr>\n";
 	}
@@ -574,12 +574,12 @@ void handle_lastHeard()
 							{
 								fileImg = "dot.png";
 							}
-							html += "<td><img src=\"http://aprs.nakhonthai.net/symbols/icons/" + fileImg + "\"></td>";
+							html += "<td><img src=\"http://www.dprns.com/symbols/icons/" + fileImg + "\"></td>";
 						}
 					}
 					else
 					{
-						html += "<td><img src=\"http://aprs.nakhonthai.net/symbols/icons/dot.png\"></td>";
+						html += "<td><img src=\"http://www.dprns.com/symbols/icons/dot.png\"></td>";
 					}
 					html += "<td>" + src_call;
 					if (aprs.srcname_len > 0 && aprs.srcname_len < 10) // Get Item/Object
@@ -680,7 +680,7 @@ void handle_storage()
 	uint8_t cardType = SD.cardType();
 
 	webString = "<table style=\"width:200px\">\n";
-	webString += "<th colspan=\"2\"><span><b>SD Card infomation</b></span></th>\n";
+	webString += "<th colspan=\"2\"><span><b>SD Card information</b></span></th>\n";
 	webString += "<tr>\n";
 	webString += "<td align=\"right\"><b>SD CARD TYPE:</b></td><td>";
 	if (cardType == CARD_NONE)
@@ -2401,7 +2401,7 @@ void handle_igate()
 	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '/'</th></tr><tr>\");\n";
 	for (i = 33; i < 129; i++)
 	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",1);\\\" src=\\\"http://aprs.nakhonthai.net/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
+		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",1);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
 		if (((i % 16) == 0) && (i < 126))
 			html += "newWindow.document.write(\"</tr><tr>\");\n";
 	}
@@ -2410,7 +2410,7 @@ void handle_igate()
 	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '\\\'</th></tr><tr>\");\n";
 	for (i = 33; i < 129; i++)
 	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",2);\\\" src=\\\"http://aprs.nakhonthai.net/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
+		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",2);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
 		if (((i % 16) == 0) && (i < 126))
 			html += "newWindow.document.write(\"</tr><tr>\");\n";
 	}
@@ -2423,7 +2423,7 @@ void handle_igate()
 	html += "document.getElementById('igateSymbol').value = String.fromCharCode(symbol);\n";
 	html += "if(table==1){\n document.getElementById('igateTable').value='/';\n";
 	html += "}else if(table==2){\n document.getElementById('igateTable').value='\\\\';\n}\n";
-	html += "document.getElementById('igateImgSymbol').src = \"http://aprs.nakhonthai.net/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
+	html += "document.getElementById('igateImgSymbol').src = \"http://www.dprns.com/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
 	html += "\n}\n";
 	html += "function calculatePHGR(){document.forms.formIgate.texttouse.value=\"PHG\"+calcPower(document.forms.formIgate.power.value)+calcHeight(document.forms.formIgate.haat.value)+calcGain(document.forms.formIgate.gain.value)+calcDirection(document.forms.formIgate.direction.selectedIndex)}function Log2(e){return Math.log(e)/Math.log(2)}function calcPerHour(e){return e<10?e:String.fromCharCode(65+(e-10))}function calcHeight(e){return String.fromCharCode(48+Math.round(Log2(e/10),0))}function calcPower(e){if(e<1)return 0;if(e>=1&&e<4)return 1;if(e>=4&&e<9)return 2;if(e>=9&&e<16)return 3;if(e>=16&&e<25)return 4;if(e>=25&&e<36)return 5;if(e>=36&&e<49)return 6;if(e>=49&&e<64)return 7;if(e>=64&&e<81)return 8;if(e>=81)return 9}function calcDirection(e){if(e==\"0\")return\"0\";if(e==\"1\")return\"1\";if(e==\"2\")return\"2\";if(e==\"3\")return\"3\";if(e==\"4\")return\"4\";if(e==\"5\")return\"5\";if(e==\"6\")return\"6\";if(e==\"7\")return\"7\";if(e==\"8\")return\"8\"}function calcGain(e){return e>9?\"9\":e<0?\"0\":Math.round(e,0)}\n";
 	html += "function onRF2INETCheck() {\n";
@@ -2488,7 +2488,7 @@ void handle_igate()
 		table = "1";
 	if (config.igate_symbol[0] == 92)
 		table = "2";
-	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"igateTable\" name=\"igateTable\" type=\"text\" value=\"" + String(config.igate_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"igateSymbol\" name=\"igateSymbol\" type=\"text\" value=\"" + String(config.igate_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"igateImgSymbol\" onclick=\"openWindowSymbol();\" src=\"http://aprs.nakhonthai.net/symbols/icons/" + String((int)config.igate_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
+	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"igateTable\" name=\"igateTable\" type=\"text\" value=\"" + String(config.igate_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"igateSymbol\" name=\"igateSymbol\" type=\"text\" value=\"" + String(config.igate_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"igateImgSymbol\" onclick=\"openWindowSymbol();\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.igate_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
 	html += "</tr>\n";
 	html += "<tr>\n";
 	html += "<td align=\"right\"><b>Item/Obj Name:</b></td>\n";
@@ -3031,7 +3031,7 @@ void handle_digi()
 	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '/'</th></tr><tr>\");\n";
 	for (i = 33; i < 129; i++)
 	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",1);\\\" src=\\\"http://aprs.nakhonthai.net/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
+		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",1);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
 		if (((i % 16) == 0) && (i < 126))
 			html += "newWindow.document.write(\"</tr><tr>\");\n";
 	}
@@ -3040,7 +3040,7 @@ void handle_digi()
 	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '\\\'</th></tr><tr>\");\n";
 	for (i = 33; i < 129; i++)
 	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",2);\\\" src=\\\"http://aprs.nakhonthai.net/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
+		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",2);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
 		if (((i % 16) == 0) && (i < 126))
 			html += "newWindow.document.write(\"</tr><tr>\");\n";
 	}
@@ -3051,7 +3051,7 @@ void handle_digi()
 	html += "document.getElementById('digiSymbol').value = String.fromCharCode(symbol);\n";
 	html += "if(table==1){\n document.getElementById('digiTable').value='/';\n";
 	html += "}else if(table==2){\n document.getElementById('digiTable').value='\\\\';\n}\n";
-	html += "document.getElementById('digiImgSymbol').src = \"http://aprs.nakhonthai.net/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
+	html += "document.getElementById('digiImgSymbol').src = \"http://www.dprns.com/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
 	html += "\n}\n";
 	html += "function calculatePHGR(){document.forms.formDIGI.texttouse.value=\"PHG\"+calcPower(document.forms.formDIGI.power.value)+calcHeight(document.forms.formDIGI.haat.value)+calcGain(document.forms.formDIGI.gain.value)+calcDirection(document.forms.formDIGI.direction.selectedIndex)}function Log2(e){return Math.log(e)/Math.log(2)}function calcPerHour(e){return e<10?e:String.fromCharCode(65+(e-10))}function calcHeight(e){return String.fromCharCode(48+Math.round(Log2(e/10),0))}function calcPower(e){if(e<1)return 0;if(e>=1&&e<4)return 1;if(e>=4&&e<9)return 2;if(e>=9&&e<16)return 3;if(e>=16&&e<25)return 4;if(e>=25&&e<36)return 5;if(e>=36&&e<49)return 6;if(e>=49&&e<64)return 7;if(e>=64&&e<81)return 8;if(e>=81)return 9}function calcDirection(e){if(e==\"0\")return\"0\";if(e==\"1\")return\"1\";if(e==\"2\")return\"2\";if(e==\"3\")return\"3\";if(e==\"4\")return\"4\";if(e==\"5\")return\"5\";if(e==\"6\")return\"6\";if(e==\"7\")return\"7\";if(e==\"8\")return\"8\"}function calcGain(e){return e>9?\"9\":e<0?\"0\":Math.round(e,0)}\n";
 	html += "</script>\n";
@@ -3100,7 +3100,7 @@ void handle_digi()
 		table = "1";
 	if (config.digi_symbol[0] == 92)
 		table = "2";
-	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"digiTable\" name=\"digiTable\" type=\"text\" value=\"" + String(config.digi_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"digiSymbol\" name=\"digiSymbol\" type=\"text\" value=\"" + String(config.digi_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"digiImgSymbol\" onclick=\"openWindowSymbol();\" src=\"http://aprs.nakhonthai.net/symbols/icons/" + String((int)config.digi_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
+	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"digiTable\" name=\"digiTable\" type=\"text\" value=\"" + String(config.digi_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"digiSymbol\" name=\"digiSymbol\" type=\"text\" value=\"" + String(config.digi_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"digiImgSymbol\" onclick=\"openWindowSymbol();\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.digi_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
 	html += "</tr>\n";
 	html += "<tr>\n";
 	html += "<td align=\"right\"><b>PATH:</b></td>\n";
@@ -3584,7 +3584,7 @@ void handle_tracker()
 	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '/'</th></tr><tr>\");\n";
 	for (i = 33; i < 129; i++)
 	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(\"+sel.toString()+\"," + String(i) + ",1);\\\" src=\\\"http://aprs.nakhonthai.net/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
+		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(\"+sel.toString()+\"," + String(i) + ",1);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
 		if (((i % 16) == 0) && (i < 126))
 			html += "newWindow.document.write(\"</tr><tr>\");\n";
 	}
@@ -3593,7 +3593,7 @@ void handle_tracker()
 	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '\\\'</th></tr><tr>\");\n";
 	for (i = 33; i < 129; i++)
 	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(\"+sel.toString()+\"," + String(i) + ",2);\\\" src=\\\"http://aprs.nakhonthai.net/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
+		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(\"+sel.toString()+\"," + String(i) + ",2);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
 		if (((i % 16) == 0) && (i < 126))
 			html += "newWindow.document.write(\"</tr><tr>\");\n";
 	}
@@ -3617,7 +3617,7 @@ void handle_tracker()
 	html += "txtsymbol.value = String.fromCharCode(symbol);\n";
 	html += "if(table==1){\n txttable.value='/';\n";
 	html += "}else if(table==2){\n txttable.value='\\\\';\n}\n";
-	html += "imgicon.src = \"http://aprs.nakhonthai.net/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
+	html += "imgicon.src = \"http://www.dprns.com/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
 	html += "\n}\n";
 	html += "function onSmartCheck() {\n";
 	html += "if (document.querySelector('#smartBcnEnable').checked) {\n";
@@ -3742,7 +3742,7 @@ void handle_tracker()
 		table = "1";
 	if (config.trk_symbol[0] == 92)
 		table = "2";
-	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"trackerTable\" name=\"trackerTable\" type=\"text\" value=\"" + String(config.trk_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"trackerSymbol\" name=\"trackerSymbol\" type=\"text\" value=\"" + String(config.trk_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"trackerImgSymbol\" onclick=\"openWindowSymbol(0);\" src=\"http://aprs.nakhonthai.net/symbols/icons/" + String((int)config.trk_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
+	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"trackerTable\" name=\"trackerTable\" type=\"text\" value=\"" + String(config.trk_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"trackerSymbol\" name=\"trackerSymbol\" type=\"text\" value=\"" + String(config.trk_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"trackerImgSymbol\" onclick=\"openWindowSymbol(0);\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.trk_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
 	html += "</tr>\n";
 	html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.0001\" id=\"trackerPosLat\" name=\"trackerPosLat\" type=\"number\" value=\"" + String(config.trk_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
 	html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.0001\" id=\"trackerPosLon\" name=\"trackerPosLon\" type=\"number\" value=\"" + String(config.trk_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
@@ -3765,7 +3765,7 @@ void handle_tracker()
 		table = "1";
 	if (config.trk_symmove[0] == 92)
 		table = "2";
-	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"moveTable\" name=\"moveTable\" type=\"text\" value=\"" + String(config.trk_symmove[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"moveSymbol\" name=\"moveSymbol\" type=\"text\" value=\"" + String(config.trk_symmove[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"moveImgSymbol\" onclick=\"openWindowSymbol(1);\" src=\"http://aprs.nakhonthai.net/symbols/icons/" + String((int)config.trk_symmove[1]) + "-" + table + ".png\"> <i>*Click icon for select MOVE symbol</i></td>\n";
+	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"moveTable\" name=\"moveTable\" type=\"text\" value=\"" + String(config.trk_symmove[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"moveSymbol\" name=\"moveSymbol\" type=\"text\" value=\"" + String(config.trk_symmove[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"moveImgSymbol\" onclick=\"openWindowSymbol(1);\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.trk_symmove[1]) + "-" + table + ".png\"> <i>*Click icon for select MOVE symbol</i></td>\n";
 	html += "</tr>\n";
 	html += "<tr>\n";
 	html += "<td align=\"right\">Stop Symbol:</td>\n";
@@ -3774,7 +3774,7 @@ void handle_tracker()
 		table = "1";
 	if (config.trk_symstop[0] == 92)
 		table = "2";
-	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"stopTable\" name=\"stopTable\" type=\"text\" value=\"" + String(config.trk_symstop[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"stopSymbol\" name=\"stopSymbol\" type=\"text\" value=\"" + String(config.trk_symstop[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"stopImgSymbol\" onclick=\"openWindowSymbol(2);\" src=\"http://aprs.nakhonthai.net/symbols/icons/" + String((int)config.trk_symstop[1]) + "-" + table + ".png\"> <i>*Click icon for select STOP symbol</i></td>\n";
+	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"stopTable\" name=\"stopTable\" type=\"text\" value=\"" + String(config.trk_symstop[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"stopSymbol\" name=\"stopSymbol\" type=\"text\" value=\"" + String(config.trk_symstop[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"stopImgSymbol\" onclick=\"openWindowSymbol(2);\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.trk_symstop[1]) + "-" + table + ".png\"> <i>*Click icon for select STOP symbol</i></td>\n";
 	html += "</tr>\n";
 	html += "<tr><td style=\"text-align: right;\">High Speed:</td><td style=\"text-align: left;\"><input size=\"3\" min=\"10\" max=\"1000\" step=\"1\" id=\"hspeed\" name=\"hspeed\" type=\"number\" value=\"" + String(config.trk_hspeed) + "\" /> km/h</td></tr>\n";
 	html += "<tr><td style=\"text-align: right;\">Low Speed:</td><td style=\"text-align: left;\"><input size=\"3\" min=\"1\" max=\"250\" step=\"1\" id=\"lspeed\" name=\"lspeed\" type=\"number\" value=\"" + String(config.trk_lspeed) + "\" /> km/h</td></tr>\n";
@@ -4256,8 +4256,8 @@ void handle_about()
 	webString += "<table style=\"text-align:unset;border-width:0px;background:unset\"><tr style=\"background:unset;\"><td width=\"49%\" style=\"border:unset;\">";
 
 	webString += "<table>";
-	webString += "<th colspan=\"2\"><span><b>System Infomation</b></span></th>\n";
-	// webString += "<tr><th width=\"200\"><span><b>Name</b></span></th><th><span><b>Infomation</b></span></th></tr>";
+	webString += "<th colspan=\"2\"><span><b>System Information</b></span></th>\n";
+	// webString += "<tr><th width=\"200\"><span><b>Name</b></span></th><th><span><b>Information</b></span></th></tr>";
 	webString += "<tr><td align=\"right\"><b>Hardware Version: </b></td><td align=\"left\"> LILYGO T-TWR Plus </td></tr>";
 	webString += "<tr><td align=\"right\"><b>Firmware Version: </b></td><td align=\"left\"> V" + String(VERSION) + String(VERSION_BUILD) + "</td></tr>\n";
 	webString += "<tr><td align=\"right\"><b>RF Module: </b></td><td align=\"left\"> MODEL: " + String(RF_TYPE[config.rf_type]) + "</td></tr>\n";
@@ -4271,8 +4271,8 @@ void handle_about()
 	webString += "<td width=\"49%\" style=\"border:unset;\">";
 
 	webString += "<table>";
-	webString += "<th colspan=\"2\"><span><b>Developer/Support Infomation</b></span></th>\n";
-	// webString += "<tr><th width=\"200\"><span><b>Name</b></span></th><th><span><b>Infomation</b></span></th></tr>";
+	webString += "<th colspan=\"2\"><span><b>Developer/Support Information</b></span></th>\n";
+	// webString += "<tr><th width=\"200\"><span><b>Name</b></span></th><th><span><b>Information</b></span></th></tr>";
 	webString += "<tr><td align=\"right\"><b>Name: </b></td><td align=\"left\">Mr.Somkiat Nakhonthai </td></tr>";
 	webString += "<tr><td align=\"right\"><b>Callsign: </b></td><td align=\"left\">HS5TQA</td></tr>\n";
 	webString += "<tr><td align=\"right\"><b>Country: </b></td><td align=\"left\">Bangkok,Thailand</td></tr>\n";

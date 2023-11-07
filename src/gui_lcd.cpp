@@ -5329,7 +5329,7 @@ void on_update_selected(MenuItem *p_menu_item)
     ESP.restart();
 }
 
-void on_infomation_selected(MenuItem *p_menu_item)
+void on_information_selected(MenuItem *p_menu_item)
 {
     String str;
     char cstr[50];
@@ -5342,7 +5342,7 @@ void on_infomation_selected(MenuItem *p_menu_item)
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
     display.setTextColor(BLACK);
-    str = String("INFOMATION");
+    str = String("INFORMATION");
     x = str.length() * 6;
     display.setCursor(64 - (x / 2), 4);
     display.print(str);
@@ -5553,7 +5553,7 @@ MenuSystem ms(my_renderer);
 Menu mnuAbout("ABOUT");
 MenuItem mnuAbout_mi1("OTA Update", &on_update_selected);
 MenuItem mnuAbout_mi2("WiFi Status", &on_wifistatus_selected);
-MenuItem mnuAbout_mi3("Infomations", &on_infomation_selected);
+MenuItem mnuAbout_mi3("Information", &on_information_selected);
 // MenuItem mnuAbout_mi4("Dash Board", &on_dashboard_selected);
 
 Menu mnuConfig("Save/Load");
@@ -6627,7 +6627,7 @@ void mainDisp(void *pvParameters)
                     }
                     else if (menuSel == 7) // ABout
                     {
-                        on_infomation_selected(NULL);
+                        on_information_selected(NULL);
                     }
                     else
                     {

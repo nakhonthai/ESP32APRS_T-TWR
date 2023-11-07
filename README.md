@@ -86,8 +86,8 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 ```
 |STATISTICS
 |STATION LIST
-|-push long >3sec for decode display aprs infomation,push click switch to raw packet
-|GNSS INFOMATION
+|-push long >3sec for decode display aprs information,push click switch to raw packet
+|GNSS INFORMATION
 |-push long >3sec for switch info and compass/speed
 |SYSTEM INFO
 |SETTING
@@ -127,14 +127,14 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 |-Save/Load
 |  |-Save Config
 |  |-Load Config
-|  |-Factore Reset
+|  |-Factory Reset
 |  |-REBOOT
 |-OLED Setting
 |-Display Filter
 |-ABOUT
 |  |-OTA Update
 |  |-WiFi Status
-|  |-Infomations
+|  |-Information
 ```
 
 ## ESP32APRS_T-TWR firmware installation (do it first time, next time via the web browser)

@@ -160,7 +160,7 @@ int igateProcess(AX25Msg &Packet)
         }
     }
 
-    // Add Infomation
+    // Add Information
     header += String(F(":"));
     uint8_t Raw[500];
     memset(Raw, 0, sizeof(Raw)); // Clear frame packet
