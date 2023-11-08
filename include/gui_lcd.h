@@ -143,7 +143,7 @@ typedef struct menuListName
 const menuListName menuList[MAX_MENU] PROGMEM = {
 	{iconList, "STATISTICS"},
 	{iconStation, "STATION LIST"},
-	{iconNavigation, "GNSS INFOMATION"},
+	{iconNavigation, "GNSS INFORMATION"},
 	{iconSetting, "SYSTEM INFO"},
 	{iconTool, "SETTING"},
 	{iconWebservice, "QR Web Service"},

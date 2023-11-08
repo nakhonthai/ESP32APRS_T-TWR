@@ -7050,8 +7050,16 @@ void dispWindow(String line, uint8_t mode, bool filter)
     char text[300];
     unsigned char x = 0;
     char itemname[10];
-    int start_val = line.indexOf(">", 0); // หาตำแหน่งแรกของ >
-    if (start_val > 3)
+    int start_val = line.indexOf(":}", 10);
+    if (start_val > 0)
+    {
+        String new_info = line.substring(start_val + 2);
+        start_val = new_info.indexOf(">", 0);
+        if (start_val > 3 && start_val < 12)
+            line = new_info;
+    }
+    start_val = line.indexOf(">", 0); // หาตำแหน่งแรกของ >
+    if (start_val > 3 && start_val < 12)
     {
         powerWakeup();
         // Serial.println(line);

@@ -832,6 +832,7 @@ uint16_t pkgType(const char *raw)
   char packettype = 0;
   const char *info_start, *body;
   int paclen = strlen(raw);
+  char *ptr;
 
   if (*raw == 0)
     return 0;
@@ -912,6 +913,11 @@ uint16_t pkgType(const char *raw)
     break;
   case '}':
     type |= FILTER_THIRDPARTY;
+    ptr=strchr(raw,':');
+    if(ptr!=NULL){
+        ptr++;
+        type|=pkgType(ptr);
+    }
     break;
   case 'T':
     type |= FILTER_TELEMETRY;
@@ -1002,7 +1008,7 @@ int pkgListUpdate(char *call, char *raw, uint16_t type, bool channel)
   }
   if (i > -1)
   { // Found call in old pkg
-    if (channel == pkgList[i].channel)
+    if ((channel==1)||(channel == pkgList[i].channel))
     {
       pkgList[i].time = time(NULL);
       pkgList[i].pkg++;
