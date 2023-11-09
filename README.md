@@ -177,7 +177,8 @@ https://www.espressif.com/en/support/download/other-tools
 ## Donate
 
 To support the development of ESP32APRS you can make us a donation using [github sponsors](https://github.com/sponsors/nakhonthai). \
-If you want to donate some hardware to facilitate APRS porting and development, [contact us](https://www.facebook.com/atten).
+If you want to donate some hardware to facilitate APRS porting and development, [contact us](https://www.facebook.com/atten). \
+<a href="https://www.paypal.me/hs5tqa"><img src="blue.svg" height="40"></a> 
 
 ## Credits & Reference
 
