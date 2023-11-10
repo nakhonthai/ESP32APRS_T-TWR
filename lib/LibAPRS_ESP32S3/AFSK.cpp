@@ -820,7 +820,7 @@ void AFSK_Poll(bool SA818, bool RFPower)
 
           if (sync_flage == true)
           {
-            mV = (int)((float)adcVal / 1.1862F); // ADC Raw to mV
+            mV = (int)((float)adcVal / 1.1862F); // ADC_RAW ADC_ATTEN_DB_11 to mV
             mVsum += powl(mV, 2);                // VRMS = √(1/n)(V1^2 +V2^2 + … + Vn^2)
             mVsumCount++;
           }

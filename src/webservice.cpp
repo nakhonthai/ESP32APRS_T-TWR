@@ -639,9 +639,17 @@ void handle_lastHeard()
 					}
 					else
 					{
+						//Vp-p to dBV at http://earmark.net/gesr/opamp/db_calc.htm
 						double Vrms = (double)pkg.audio_level / 1000;
 						double audBV = 20.0F * log10(Vrms);
-						html += "<td>" + String(audBV, 1) + "dBV</td></tr>\n";
+						if(audBV<-15.0F){ 
+							html += "<td style=\"color: #0000f0;\">"; //Low wave amplitude <0.5Vp-p
+						}else if(audBV>-4.0F){ 
+							html += "<td style=\"color: #f00000;\">"; //High wave amplitude >1.8Vp-p
+						}else{
+							html += "<td style=\"color: #008000;\">";
+						}
+						html += String(audBV, 1) + "dBV</td></tr>\n";
 					}
 				}
 			}
@@ -1024,7 +1032,7 @@ void handle_radio()
 		html += "</script>\n";
 		html += "<form id='formRadio' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
 		html += "<table>\n";
-		html += "<th colspan=\"2\"><span><b>RF Module</b></span></th>\n";
+		html += "<th colspan=\"2\"><span><b>RF Analog Module</b></span></th>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>Enable:</b></td>\n";
 		String radioEnFlag = "";
@@ -1108,7 +1116,7 @@ void handle_radio()
 		html += "<option value=\"0\" selected>0.0</option>\n";
 		for (int i = 0; i < 39; i++)
 		{
-			if (config.tone_tx == i)
+			if (config.tone_rx == i)
 				html += "<option value=\"" + String(i) + "\" selected>" + String(ctcss[i], 1) + "</option>\n";
 			else
 				html += "<option value=\"" + String(i) + "\" >" + String(ctcss[i], 1) + "</option>\n";
@@ -4260,11 +4268,11 @@ void handle_about()
 	// webString += "<tr><th width=\"200\"><span><b>Name</b></span></th><th><span><b>Information</b></span></th></tr>";
 	webString += "<tr><td align=\"right\"><b>Hardware Version: </b></td><td align=\"left\"> LILYGO T-TWR Plus </td></tr>";
 	webString += "<tr><td align=\"right\"><b>Firmware Version: </b></td><td align=\"left\"> V" + String(VERSION) + String(VERSION_BUILD) + "</td></tr>\n";
-	webString += "<tr><td align=\"right\"><b>RF Module: </b></td><td align=\"left\"> MODEL: " + String(RF_TYPE[config.rf_type]) + "</td></tr>\n";
+	webString += "<tr><td align=\"right\"><b>RF Analog Module: </b></td><td align=\"left\"> MODEL: " + String(RF_TYPE[config.rf_type]) + "</td></tr>\n";
 	webString += "<tr><td align=\"right\"><b>ESP32 Model: </b></td><td align=\"left\"> " + String(ESP.getChipModel()) + "</td></tr>";
-	webString += "<tr><td align=\"right\"><b>ESP32 Chip ID: </b></td><td align=\"left\"> " + String(strCID) + "</td></tr>";
-	webString += "<tr><td align=\"right\"><b>ESP32 Revision: </b></td><td align=\"left\"> " + String(ESP.getChipRevision()) + "</td></tr>";
-	webString += "<tr><td align=\"right\"><b>ESP32 Flash: </b></td><td align=\"left\">" + String(ESP.getFlashChipSize() / 1000) + " KByte</td></tr>";
+	webString += "<tr><td align=\"right\"><b>Chip ID: </b></td><td align=\"left\"> " + String(strCID) + "</td></tr>";
+	webString += "<tr><td align=\"right\"><b>Revision: </b></td><td align=\"left\"> " + String(ESP.getChipRevision()) + "</td></tr>";
+	webString += "<tr><td align=\"right\"><b>Flash: </b></td><td align=\"left\">" + String(ESP.getFlashChipSize() / 1000) + " KByte</td></tr>";
 	webString += "<tr><td align=\"right\"><b>PSRAM: </b></td><td align=\"left\">" + String(ESP.getPsramSize() / 1000) + " KByte</td></tr>";
 	webString += "</table>";
 	webString += "</td><td width=\"2%\" style=\"border:unset;\"></td>";

@@ -1311,6 +1311,29 @@ String SA868_getVERSION()
   }
 }
 
+String FRS_getVERSION()
+{
+    String data;
+    String version;
+
+    SerialRF.printf("AT+DMOVER\r\n");
+    if (SA868_waitResponse(data, "\r\n", 1000))
+    {
+        int st=data.indexOf("DMOVER:");
+        if(st>0){
+            version = data.substring(st+7, data.indexOf("\r\n"));
+        }else{
+            version="Not found";
+        }
+        return version;
+    }
+    else
+    {
+        // timeout or error
+        return "-";
+    }
+}
+
 unsigned long SA818_Timeout = 0;
 
 void RF_MODULE_SLEEP()
@@ -1318,6 +1341,35 @@ void RF_MODULE_SLEEP()
   digitalWrite(POWER_PIN, LOW);
   digitalWrite(PULLDOWN_PIN, LOW);
   // PMU.disableDC3();
+}
+
+
+String hexToString(String hex) {  //for String to HEX conversion
+  String text = "";    
+  for(int k=0;k< hex.length();k++) {
+    if(k%2!=0) {
+      char temp[3];
+      sprintf(temp,"%c%c",hex[k-1],hex[k]);
+      int number = (int)strtol(temp, NULL, 16);
+      text+=char(number);
+    }
+  }  
+  return text;
+}
+
+String ctcssToHex(unsigned int decValue, int section){  //use to convert the CTCSS reading which RF module needed
+  if(decValue == 7777){
+    return hexToString("FF");
+  }
+  String d1d0 = String(decValue);
+  if (decValue < 1000){
+    d1d0 = "0" + d1d0;
+  }
+  if (section == 1) {
+    return hexToString(d1d0.substring(2,4));
+  }else{
+    return hexToString(d1d0.substring(0,2));
+  }
 }
 
 void RF_MODULE(bool boot)
@@ -1364,8 +1416,6 @@ void RF_MODULE(bool boot)
 
   delay(1500);
   SerialRF.write("\r\n");
-  RF_VERSION = SA868_getVERSION();
-  log_d("RF Module Version %s", RF_VERSION);
 
   char str[200];
   String rsp = "\r\n";
@@ -1373,6 +1423,9 @@ void RF_MODULE(bool boot)
     config.sql_level = 8;
   if ((config.rf_type == RF_SR_1WV) || (config.rf_type == RF_SR_1WU) || (config.rf_type == RF_SR_1W350))
   {
+    SerialRF.printf("AT+DMOCONNECT\r\n");
+    if (SA868_waitResponse(data, rsp, 1000))
+      log_d("%s", data.c_str());
     sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%d,%01d,%d,0", config.band, config.freq_tx + ((float)config.offset_tx / 1000000), config.freq_rx + ((float)config.offset_rx / 1000000), config.tone_rx, config.sql_level, config.tone_tx);
     SerialRF.println(str);
     log_d("Write to SR_FRS: %s", str);
@@ -1397,6 +1450,9 @@ void RF_MODULE(bool boot)
     SerialRF.printf("AT+DMOCONNECT\r\n");
     if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
+    SerialRF.printf("AT+DMOCONNECT\r\n");
+    if (SA868_waitResponse(data, rsp, 1000))
+      log_d("%s", data.c_str());
     sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%04d,%01d,%04d\r\n", config.band, config.freq_tx, config.freq_rx, config.tone_tx, config.sql_level, config.tone_rx);
     SerialRF.print(str);
     log_d("Write to SA868: %s", str);
@@ -1416,12 +1472,53 @@ void RF_MODULE(bool boot)
   {
     uint8_t flag = 0;  // Bit0:busy lock 0:OFF,1:ON Bit1:band 0:Wide,1:Narrow
     uint8_t flag1 = 0; // Bit0: Hi/Lo 0:2W,1:0.5W  Bit1:Middle 0:2W/0.5W 1:1W
+    RF_VERSION = FRS_getVERSION();
+    log_d("RF Module Version %s", RF_VERSION.c_str());
+
+    String tone_rx, tone_tx;
+
+    if (config.tone_rx > 0)
+    {
+      int idx = config.tone_rx;
+      if (idx < sizeof(ctcss))
+      {
+        int tone = (int)(ctcss[config.tone_rx] * 10.0F);
+        tone_rx = ctcssToHex(tone, 1);
+        tone_rx += ctcssToHex(tone, 2);
+        log_d("Tone RX[%d] rx=%0X %0X", tone, tone_rx.charAt(0), tone_rx.charAt(1));
+      }
+    }
+    else
+    {
+      tone_rx = ctcssToHex(7777, 1);
+      tone_rx += ctcssToHex(7777, 2);
+    }
+
+    if (config.tone_tx > 0)
+    {
+      int idx = config.tone_tx;
+      if (idx < sizeof(ctcss))
+      {
+        int tone = (int)(ctcss[config.tone_tx] * 10.0F);
+        tone_tx = ctcssToHex(tone, 1);
+        tone_tx += ctcssToHex(tone, 2);
+        log_d("Tone RX[%d] tx=%0X %0X", tone, tone_tx.charAt(0), tone_tx.charAt(1));
+      }
+    }
+    else
+    {
+      tone_tx = ctcssToHex(7777, 1);
+      tone_tx += ctcssToHex(7777, 2);
+    }
+
     if (config.band == 0)
       flag |= 0x02;
     if (config.rf_power == 0)
       flag1 |= 0x02;
+    sprintf(str, "AT+DMOGRP=%0.5f,%0.5f,%s,%s,%d,%d\r\n", config.freq_rx, config.freq_tx, tone_rx.c_str(), tone_tx.c_str(), flag, flag1);
+    log_d("Write to SR_FRS_2W: %s", str);
+    SerialRF.print(str);
 
-    SerialRF.printf("AT+DMOGRP=%0.5f,%0.5f,%04d,%04d,%d,%d\r\n", config.freq_rx, config.freq_tx, config.tone_rx, config.tone_tx, flag, flag1);
     if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
     SerialRF.printf("AT+DMOSAV=1\r\n");
@@ -1433,7 +1530,9 @@ void RF_MODULE(bool boot)
     SerialRF.printf("AT+DMOVOX=0\r\n");
     if (SA868_waitResponse(data, rsp, 1000))
       log_d("%s", data.c_str());
-    SerialRF.printf("AT+DMOFUN=%01d,2,1,0,0\r\n", config.sql_level);
+    SerialRF.printf("AT+DMOFUN=%d,5,1,0,0\r\n", config.sql_level);
+    if (SA868_waitResponse(data, rsp, 1000))
+      log_d("%s", data.c_str());
   }
 }
 
