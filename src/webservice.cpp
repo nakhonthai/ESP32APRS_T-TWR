@@ -2197,6 +2197,7 @@ void handle_igate()
 		config.igate_loc2inet = pos2INET;
 
 		saveEEPROM();
+		initInterval=true;
 		String html = "OK";
 		server.send(200, "text/html", html);
 	}
@@ -2369,387 +2370,387 @@ void handle_igate()
 		saveEEPROM();
 		String html = "OK";
 		server.send(200, "text/html", html);
-	}
+	}else{
+		String html = "<script type=\"text/javascript\">\n";
+		html += "$('form').submit(function (e) {\n";
+		html += "e.preventDefault();\n";
+		html += "var data = new FormData(e.currentTarget);\n";
+		// html += "document.getElementById(\"submitIGATE\").disabled=true;\n";
+		html += "if(e.currentTarget.id===\"formIgate\") document.getElementById(\"submitIGATE\").disabled=true;\n";
+		html += "if(e.currentTarget.id===\"formIgateFilter\") document.getElementById(\"submitIGATEfilter\").disabled=true;\n";
+		html += "$.ajax({\n";
+		html += "url: '/igate',\n";
+		html += "type: 'POST',\n";
+		html += "data: data,\n";
+		html += "contentType: false,\n";
+		html += "processData: false,\n";
+		html += "success: function (data) {\n";
+		html += "alert(\"Submited Successfully\");\n";
+		html += "},\n";
+		html += "error: function (data) {\n";
+		html += "alert(\"An error occurred.\");\n";
+		html += "}\n";
+		html += "});\n";
+		html += "});\n";
+		html += "</script>\n<script type=\"text/javascript\">\n";
+		html += "function openWindowSymbol() {\n";
+		html += "var i, l, options = [{\n";
+		html += "value: 'first',\n";
+		html += "text: 'First'\n";
+		html += "}, {\n";
+		html += "value: 'second',\n";
+		html += "text: 'Second'\n";
+		html += "}],\n";
+		html += "newWindow = window.open(\"\", null, \"height=400,width=400,status=no,toolbar=no,menubar=no,location=no\");\n";
 
-	String html = "<script type=\"text/javascript\">\n";
-	html += "$('form').submit(function (e) {\n";
-	html += "e.preventDefault();\n";
-	html += "var data = new FormData(e.currentTarget);\n";
-	// html += "document.getElementById(\"submitIGATE\").disabled=true;\n";
-	html += "if(e.currentTarget.id===\"formIgate\") document.getElementById(\"submitIGATE\").disabled=true;\n";
-	html += "if(e.currentTarget.id===\"formIgateFilter\") document.getElementById(\"submitIGATEfilter\").disabled=true;\n";
-	html += "$.ajax({\n";
-	html += "url: '/igate',\n";
-	html += "type: 'POST',\n";
-	html += "data: data,\n";
-	html += "contentType: false,\n";
-	html += "processData: false,\n";
-	html += "success: function (data) {\n";
-	html += "alert(\"Submited Successfully\");\n";
-	html += "},\n";
-	html += "error: function (data) {\n";
-	html += "alert(\"An error occurred.\");\n";
-	html += "}\n";
-	html += "});\n";
-	html += "});\n";
-	html += "</script>\n<script type=\"text/javascript\">\n";
-	html += "function openWindowSymbol() {\n";
-	html += "var i, l, options = [{\n";
-	html += "value: 'first',\n";
-	html += "text: 'First'\n";
-	html += "}, {\n";
-	html += "value: 'second',\n";
-	html += "text: 'Second'\n";
-	html += "}],\n";
-	html += "newWindow = window.open(\"\", null, \"height=400,width=400,status=no,toolbar=no,menubar=no,location=no\");\n";
+		int i;
 
-	int i;
-
-	html += "newWindow.document.write(\"<table border=\\\"1\\\" align=\\\"center\\\">\");\n";
-	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '/'</th></tr><tr>\");\n";
-	for (i = 33; i < 129; i++)
-	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",1);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
-		if (((i % 16) == 0) && (i < 126))
-			html += "newWindow.document.write(\"</tr><tr>\");\n";
-	}
-	html += "newWindow.document.write(\"</tr></table><br />\");\n";
-	html += "newWindow.document.write(\"<table border=\\\"1\\\" align=\\\"center\\\">\");\n";
-	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '\\\'</th></tr><tr>\");\n";
-	for (i = 33; i < 129; i++)
-	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",2);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
-		if (((i % 16) == 0) && (i < 126))
-			html += "newWindow.document.write(\"</tr><tr>\");\n";
-	}
-	html += "newWindow.document.write(\"</tr></table>\");\n";
-
-	// html += "newWindow.document.write(\"</select>\");\");\n";
-	html += "}\n";
-
-	html += "function setValue(symbol,table) {\n";
-	html += "document.getElementById('igateSymbol').value = String.fromCharCode(symbol);\n";
-	html += "if(table==1){\n document.getElementById('igateTable').value='/';\n";
-	html += "}else if(table==2){\n document.getElementById('igateTable').value='\\\\';\n}\n";
-	html += "document.getElementById('igateImgSymbol').src = \"http://www.dprns.com/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
-	html += "\n}\n";
-	html += "function calculatePHGR(){document.forms.formIgate.texttouse.value=\"PHG\"+calcPower(document.forms.formIgate.power.value)+calcHeight(document.forms.formIgate.haat.value)+calcGain(document.forms.formIgate.gain.value)+calcDirection(document.forms.formIgate.direction.selectedIndex)}function Log2(e){return Math.log(e)/Math.log(2)}function calcPerHour(e){return e<10?e:String.fromCharCode(65+(e-10))}function calcHeight(e){return String.fromCharCode(48+Math.round(Log2(e/10),0))}function calcPower(e){if(e<1)return 0;if(e>=1&&e<4)return 1;if(e>=4&&e<9)return 2;if(e>=9&&e<16)return 3;if(e>=16&&e<25)return 4;if(e>=25&&e<36)return 5;if(e>=36&&e<49)return 6;if(e>=49&&e<64)return 7;if(e>=64&&e<81)return 8;if(e>=81)return 9}function calcDirection(e){if(e==\"0\")return\"0\";if(e==\"1\")return\"1\";if(e==\"2\")return\"2\";if(e==\"3\")return\"3\";if(e==\"4\")return\"4\";if(e==\"5\")return\"5\";if(e==\"6\")return\"6\";if(e==\"7\")return\"7\";if(e==\"8\")return\"8\"}function calcGain(e){return e>9?\"9\":e<0?\"0\":Math.round(e,0)}\n";
-	html += "function onRF2INETCheck() {\n";
-	html += "if (document.querySelector('#rf2inetEnable').checked) {\n";
-	// Checkbox has been checked
-	html += "document.getElementById(\"rf2inetFilterGrp\").disabled=false;\n";
-	html += "} else {\n";
-	// Checkbox has been unchecked
-	html += "document.getElementById(\"rf2inetFilterGrp\").disabled=true;\n";
-	html += "}\n}\n";
-	html += "function onINET2RFCheck() {\n";
-	html += "if (document.querySelector('#inet2rfEnable').checked) {\n";
-	// Checkbox has been checked
-	html += "document.getElementById(\"inet2rfFilterGrp\").disabled=false;\n";
-	html += "} else {\n";
-	// Checkbox has been unchecked
-	html += "document.getElementById(\"inet2rfFilterGrp\").disabled=true;\n";
-	html += "}\n}\n";
-	html += "</script>\n";
-
-	/************************ IGATE Mode **************************/
-	html += "<form id='formIgate' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
-	// html += "<h2>[IGATE] Internet Gateway Mode</h2>\n";
-	html += "<table>\n";
-	// html += "<tr>\n";
-	// html += "<th width=\"200\"><span><b>Setting</b></span></th>\n";
-	// html += "<th><span><b>Value</b></span></th>\n";
-	// html += "</tr>\n";
-	html += "<th colspan=\"2\"><span><b>[IGATE] Internet Gateway Mode</b></span></th>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Enable:</b></td>\n";
-	String igateEnFlag = "";
-	if (config.igate_en)
-		igateEnFlag = "checked";
-	html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"igateEnable\" value=\"OK\" " + igateEnFlag + "><span class=\"slider round\"></span></label></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Station Callsign:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"7\" size=\"6\" id=\"myCall\" name=\"myCall\" type=\"text\" value=\"" + String(config.aprs_mycall) + "\" /></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Station SSID:</b></td>\n";
-	html += "<td style=\"text-align: left;\">\n";
-	html += "<select name=\"mySSID\" id=\"mySSID\">\n";
-	for (uint8_t ssid = 0; ssid <= 15; ssid++)
-	{
-		if (config.aprs_ssid == ssid)
+		html += "newWindow.document.write(\"<table border=\\\"1\\\" align=\\\"center\\\">\");\n";
+		html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '/'</th></tr><tr>\");\n";
+		for (i = 33; i < 129; i++)
 		{
-			html += "<option value=\"" + String(ssid) + "\" selected>" + String(ssid) + "</option>\n";
+			html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",1);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
+			if (((i % 16) == 0) && (i < 126))
+				html += "newWindow.document.write(\"</tr><tr>\");\n";
 		}
+		html += "newWindow.document.write(\"</tr></table><br />\");\n";
+		html += "newWindow.document.write(\"<table border=\\\"1\\\" align=\\\"center\\\">\");\n";
+		html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '\\\'</th></tr><tr>\");\n";
+		for (i = 33; i < 129; i++)
+		{
+			html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",2);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
+			if (((i % 16) == 0) && (i < 126))
+				html += "newWindow.document.write(\"</tr><tr>\");\n";
+		}
+		html += "newWindow.document.write(\"</tr></table>\");\n";
+
+		// html += "newWindow.document.write(\"</select>\");\");\n";
+		html += "}\n";
+
+		html += "function setValue(symbol,table) {\n";
+		html += "document.getElementById('igateSymbol').value = String.fromCharCode(symbol);\n";
+		html += "if(table==1){\n document.getElementById('igateTable').value='/';\n";
+		html += "}else if(table==2){\n document.getElementById('igateTable').value='\\\\';\n}\n";
+		html += "document.getElementById('igateImgSymbol').src = \"http://www.dprns.com/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
+		html += "\n}\n";
+		html += "function calculatePHGR(){document.forms.formIgate.texttouse.value=\"PHG\"+calcPower(document.forms.formIgate.power.value)+calcHeight(document.forms.formIgate.haat.value)+calcGain(document.forms.formIgate.gain.value)+calcDirection(document.forms.formIgate.direction.selectedIndex)}function Log2(e){return Math.log(e)/Math.log(2)}function calcPerHour(e){return e<10?e:String.fromCharCode(65+(e-10))}function calcHeight(e){return String.fromCharCode(48+Math.round(Log2(e/10),0))}function calcPower(e){if(e<1)return 0;if(e>=1&&e<4)return 1;if(e>=4&&e<9)return 2;if(e>=9&&e<16)return 3;if(e>=16&&e<25)return 4;if(e>=25&&e<36)return 5;if(e>=36&&e<49)return 6;if(e>=49&&e<64)return 7;if(e>=64&&e<81)return 8;if(e>=81)return 9}function calcDirection(e){if(e==\"0\")return\"0\";if(e==\"1\")return\"1\";if(e==\"2\")return\"2\";if(e==\"3\")return\"3\";if(e==\"4\")return\"4\";if(e==\"5\")return\"5\";if(e==\"6\")return\"6\";if(e==\"7\")return\"7\";if(e==\"8\")return\"8\"}function calcGain(e){return e>9?\"9\":e<0?\"0\":Math.round(e,0)}\n";
+		html += "function onRF2INETCheck() {\n";
+		html += "if (document.querySelector('#rf2inetEnable').checked) {\n";
+		// Checkbox has been checked
+		html += "document.getElementById(\"rf2inetFilterGrp\").disabled=false;\n";
+		html += "} else {\n";
+		// Checkbox has been unchecked
+		html += "document.getElementById(\"rf2inetFilterGrp\").disabled=true;\n";
+		html += "}\n}\n";
+		html += "function onINET2RFCheck() {\n";
+		html += "if (document.querySelector('#inet2rfEnable').checked) {\n";
+		// Checkbox has been checked
+		html += "document.getElementById(\"inet2rfFilterGrp\").disabled=false;\n";
+		html += "} else {\n";
+		// Checkbox has been unchecked
+		html += "document.getElementById(\"inet2rfFilterGrp\").disabled=true;\n";
+		html += "}\n}\n";
+		html += "</script>\n";
+
+		/************************ IGATE Mode **************************/
+		html += "<form id='formIgate' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
+		// html += "<h2>[IGATE] Internet Gateway Mode</h2>\n";
+		html += "<table>\n";
+		// html += "<tr>\n";
+		// html += "<th width=\"200\"><span><b>Setting</b></span></th>\n";
+		// html += "<th><span><b>Value</b></span></th>\n";
+		// html += "</tr>\n";
+		html += "<th colspan=\"2\"><span><b>[IGATE] Internet Gateway Mode</b></span></th>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Enable:</b></td>\n";
+		String igateEnFlag = "";
+		if (config.igate_en)
+			igateEnFlag = "checked";
+		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"igateEnable\" value=\"OK\" " + igateEnFlag + "><span class=\"slider round\"></span></label></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Station Callsign:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"7\" size=\"6\" id=\"myCall\" name=\"myCall\" type=\"text\" value=\"" + String(config.aprs_mycall) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Station SSID:</b></td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"mySSID\" id=\"mySSID\">\n";
+		for (uint8_t ssid = 0; ssid <= 15; ssid++)
+		{
+			if (config.aprs_ssid == ssid)
+			{
+				html += "<option value=\"" + String(ssid) + "\" selected>" + String(ssid) + "</option>\n";
+			}
+			else
+			{
+				html += "<option value=\"" + String(ssid) + "\">" + String(ssid) + "</option>\n";
+			}
+		}
+		html += "</select></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Station Symbol:</b></td>\n";
+		String table = "1";
+		if (config.igate_symbol[0] == 47)
+			table = "1";
+		if (config.igate_symbol[0] == 92)
+			table = "2";
+		html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"igateTable\" name=\"igateTable\" type=\"text\" value=\"" + String(config.igate_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"igateSymbol\" name=\"igateSymbol\" type=\"text\" value=\"" + String(config.igate_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"igateImgSymbol\" onclick=\"openWindowSymbol();\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.igate_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Item/Obj Name:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"9\" size=\"9\" id=\"igateObject\" name=\"igateObject\" type=\"text\" value=\"" + String(config.igate_object) + "\" /><i> *If not used, leave it blank.In use 3-9 charactor</i></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>PATH:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"igatePath\" name=\"igatePath\" type=\"text\" value=\"" + String(config.igate_path) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Server Host:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"20\" size=\"20\" id=\"aprsHost\" name=\"aprsHost\" type=\"text\" value=\"" + String(config.aprs_host) + "\" /> *Support APRS-IS of T2THAI at <a href=\"http://aprs.dprns.com:14501\" target=\"_t2thai\">aprs.dprns.com:14580</a></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Server Port:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input min=\"1\" max=\"65535\" step=\"1\" id=\"aprsPort\" name=\"aprsPort\" type=\"number\" value=\"" + String(config.aprs_port) + "\" /> *Support AMPR Host at <a href=\"http://aprs.hs5tqa.ampr.org:14501\" target=\"_t2thai\">aprs.hs5tqa.ampr.org:14580</a></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Server Filter:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"30\" size=\"30\" id=\"aprsFilter\" name=\"aprsFilter\" type=\"text\" value=\"" + String(config.aprs_filter) + "\" /> *Filter: <a target=\"_blank\" href=\"http://www.aprs-is.net/javAPRSFilter.aspx\">http://www.aprs-is.net/javAPRSFilter.aspx</a></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Text Comment:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"50\" size=\"50\" id=\"igateComment\" name=\"igateComment\" type=\"text\" value=\"" + String(config.igate_comment) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>RF2INET:</b></td>\n";
+		String rf2inetEnFlag = "";
+		if (config.rf2inet)
+			rf2inetEnFlag = "checked";
+		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" id=\"rf2inetEnable\" name=\"rf2inetEnable\" onclick=\"onRF2INETCheck()\" value=\"OK\" " + rf2inetEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\"><i> *Switch RF to Internet gateway</i></label></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>INET2RF:</b></td>\n";
+		String inet2rfEnFlag = "";
+		if (config.inet2rf)
+			inet2rfEnFlag = "checked";
+		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" id=\"inet2rfEnable\" name=\"inet2rfEnable\" onclick=\"onINET2RFCheck()\" value=\"OK\" " + inet2rfEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\"><i> *Switch Internet to RF gateway</i></label></td>\n";
+		html += "</tr>\n<tr>";
+
+		html += "<td align=\"right\"><b>POSITION:</b></td>\n";
+		html += "<td align=\"center\">\n";
+		html += "<table>";
+		String igateBcnEnFlag = "";
+		if (config.igate_bcn)
+			igateBcnEnFlag = "checked";
+
+		html += "<tr><td style=\"text-align: right;\">Beacon:</td><td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"igateBcnEnable\" value=\"OK\" " + igateBcnEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\">  Interval:<input min=\"0\" max=\"3600\" step=\"1\" id=\"igatePosInv\" name=\"igatePosInv\" type=\"number\" value=\"" + String(config.igate_interval) + "\" />Sec.</label></td></tr>";
+		String igatePosFixFlag = "";
+		String igatePosGPSFlag = "";
+		String igatePos2RFFlag = "";
+		String igatePos2INETFlag = "";
+		if (config.igate_gps)
+			igatePosGPSFlag = "checked=\"checked\"";
 		else
+			igatePosFixFlag = "checked=\"checked\"";
+
+		if (config.igate_loc2rf)
+			igatePos2RFFlag = "checked";
+		if (config.igate_loc2inet)
+			igatePos2INETFlag = "checked";
+		html += "<tr><td style=\"text-align: right;\">Location:</td><td style=\"text-align: left;\"><input type=\"radio\" name=\"igatePosSel\" value=\"0\" " + igatePosFixFlag + "/>Fix <input type=\"radio\" name=\"igatePosSel\" value=\"1\" " + igatePosGPSFlag + "/>GPS </td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">TX Channel:</td><td style=\"text-align: left;\"><input type=\"checkbox\" name=\"igatePos2RF\" value=\"OK\" " + igatePos2RFFlag + "/>RF <input type=\"checkbox\" name=\"igatePos2INET\" value=\"OK\" " + igatePos2INETFlag + "/>Internet </td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.0001\" id=\"igatePosLat\" name=\"igatePosLat\" type=\"number\" value=\"" + String(config.igate_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.0001\" id=\"igatePosLon\" name=\"igatePosLon\" type=\"number\" value=\"" + String(config.igate_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Altitude:</td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"0.1\" id=\"igatePosAlt\" name=\"igatePosAlt\" type=\"number\" value=\"" + String(config.igate_alt, 2) + "\" /> meter. *Value 0 is not send height</td></tr>\n";
+		html += "</table></td>";
+		html += "</tr>\n";
+
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>PHG:</b></td>\n";
+		html += "<td align=\"center\">\n";
+		html += "<table>";
+		html += "<tr>\n";
+		html += "<td align=\"right\">Radio TX Power</td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"power\" id=\"power\">\n";
+		html += "<option value=\"1\" selected>1</option>\n";
+		html += "<option value=\"5\">5</option>\n";
+		html += "<option value=\"10\">10</option>\n";
+		html += "<option value=\"15\">15</option>\n";
+		html += "<option value=\"25\">25</option>\n";
+		html += "<option value=\"35\">35</option>\n";
+		html += "<option value=\"50\">50</option>\n";
+		html += "<option value=\"65\">65</option>\n";
+		html += "<option value=\"80\">80</option>\n";
+		html += "</select> Watts</td>\n";
+		html += "</tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Antenna Gain</td><td style=\"text-align: left;\"><input size=\"3\" min=\"0\" max=\"100\" step=\"0.1\" id=\"gain\" name=\"gain\" type=\"number\" value=\"6\" /> dBi</td></tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\">Height</td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"haat\" id=\"haat\">\n";
+		int k = 10;
+		for (uint8_t w = 0; w < 10; w++)
 		{
-			html += "<option value=\"" + String(ssid) + "\">" + String(ssid) + "</option>\n";
+			if (w == 0)
+			{
+				html += "<option value=\"" + String(k) + "\" selected>" + String(k) + "</option>\n";
+			}
+			else
+			{
+				html += "<option value=\"" + String(k) + "\">" + String(k) + "</option>\n";
+			}
+			k += k;
 		}
-	}
-	html += "</select></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Station Symbol:</b></td>\n";
-	String table = "1";
-	if (config.igate_symbol[0] == 47)
-		table = "1";
-	if (config.igate_symbol[0] == 92)
-		table = "2";
-	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"igateTable\" name=\"igateTable\" type=\"text\" value=\"" + String(config.igate_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"igateSymbol\" name=\"igateSymbol\" type=\"text\" value=\"" + String(config.igate_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"igateImgSymbol\" onclick=\"openWindowSymbol();\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.igate_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Item/Obj Name:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"9\" size=\"9\" id=\"igateObject\" name=\"igateObject\" type=\"text\" value=\"" + String(config.igate_object) + "\" /><i> *If not used, leave it blank.In use 3-9 charactor</i></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>PATH:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"igatePath\" name=\"igatePath\" type=\"text\" value=\"" + String(config.igate_path) + "\" /></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Server Host:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"20\" size=\"20\" id=\"aprsHost\" name=\"aprsHost\" type=\"text\" value=\"" + String(config.aprs_host) + "\" /> *Support APRS-IS of T2THAI at <a href=\"http://aprs.dprns.com:14501\" target=\"_t2thai\">aprs.dprns.com:14580</a></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Server Port:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input min=\"1\" max=\"65535\" step=\"1\" id=\"aprsPort\" name=\"aprsPort\" type=\"number\" value=\"" + String(config.aprs_port) + "\" /> *Support AMPR Host at <a href=\"http://aprs.hs5tqa.ampr.org:14501\" target=\"_t2thai\">aprs.hs5tqa.ampr.org:14580</a></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Server Filter:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"30\" size=\"30\" id=\"aprsFilter\" name=\"aprsFilter\" type=\"text\" value=\"" + String(config.aprs_filter) + "\" /> *Filter: <a target=\"_blank\" href=\"http://www.aprs-is.net/javAPRSFilter.aspx\">http://www.aprs-is.net/javAPRSFilter.aspx</a></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Text Comment:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"50\" size=\"50\" id=\"igateComment\" name=\"igateComment\" type=\"text\" value=\"" + String(config.igate_comment) + "\" /></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>RF2INET:</b></td>\n";
-	String rf2inetEnFlag = "";
-	if (config.rf2inet)
-		rf2inetEnFlag = "checked";
-	html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" id=\"rf2inetEnable\" name=\"rf2inetEnable\" onclick=\"onRF2INETCheck()\" value=\"OK\" " + rf2inetEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\"><i> *Switch RF to Internet gateway</i></label></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>INET2RF:</b></td>\n";
-	String inet2rfEnFlag = "";
-	if (config.inet2rf)
-		inet2rfEnFlag = "checked";
-	html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" id=\"inet2rfEnable\" name=\"inet2rfEnable\" onclick=\"onINET2RFCheck()\" value=\"OK\" " + inet2rfEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\"><i> *Switch Internet to RF gateway</i></label></td>\n";
-	html += "</tr>\n<tr>";
+		html += "</select> Feet</td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\">Antenna/Direction</td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"direction\" id=\"direction\">\n";
+		html += "<option>Omni</option><option>NE</option><option>E</option><option>SE</option><option>S</option><option>SW</option><option>W</option><option>NW</option><option>N</option>\n";
+		html += "</select></td>\n";
+		html += "</tr>\n";
 
-	html += "<td align=\"right\"><b>POSITION:</b></td>\n";
-	html += "<td align=\"center\">\n";
-	html += "<table>";
-	String igateBcnEnFlag = "";
-	if (config.igate_bcn)
-		igateBcnEnFlag = "checked";
+		html += "<tr><td align=\"right\"><b>PHG Text</b></td><td align=\"left\"><input name=\"texttouse\" type=\"text\" size=\"6\" style=\"background-color: rgb(97, 239, 170);\" value=\"" + String(config.igate_phg) + "\"/> <input type=\"button\" value=\"Calculate PHG\" onclick=\"javascript:calculatePHGR()\" /></td></tr>\n";
+		html += "</table></td>";
+		html += "</tr>\n";
 
-	html += "<tr><td style=\"text-align: right;\">Beacon:</td><td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"igateBcnEnable\" value=\"OK\" " + igateBcnEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\">  Interval:<input min=\"0\" max=\"3600\" step=\"1\" id=\"igatePosInv\" name=\"igatePosInv\" type=\"number\" value=\"" + String(config.igate_interval) + "\" />Sec.</label></td></tr>";
-	String igatePosFixFlag = "";
-	String igatePosGPSFlag = "";
-	String igatePos2RFFlag = "";
-	String igatePos2INETFlag = "";
-	if (config.igate_gps)
-		igatePosGPSFlag = "checked=\"checked\"";
-	else
-		igatePosFixFlag = "checked=\"checked\"";
+		html += "</table><br />\n";
+		html += "<div><button type='submit' id='submitIGATE'  name=\"commitIGATE\"> Apply Change </button></div>\n";
+		html += "<input type=\"hidden\" name=\"commitIGATE\"/>\n";
+		html += "</form><br /><br />";
 
-	if (config.igate_loc2rf)
-		igatePos2RFFlag = "checked";
-	if (config.igate_loc2inet)
-		igatePos2INETFlag = "checked";
-	html += "<tr><td style=\"text-align: right;\">Location:</td><td style=\"text-align: left;\"><input type=\"radio\" name=\"igatePosSel\" value=\"0\" " + igatePosFixFlag + "/>Fix <input type=\"radio\" name=\"igatePosSel\" value=\"1\" " + igatePosGPSFlag + "/>GPS </td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">TX Channel:</td><td style=\"text-align: left;\"><input type=\"checkbox\" name=\"igatePos2RF\" value=\"OK\" " + igatePos2RFFlag + "/>RF <input type=\"checkbox\" name=\"igatePos2INET\" value=\"OK\" " + igatePos2INETFlag + "/>Internet </td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.0001\" id=\"igatePosLat\" name=\"igatePosLat\" type=\"number\" value=\"" + String(config.igate_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.0001\" id=\"igatePosLon\" name=\"igatePosLon\" type=\"number\" value=\"" + String(config.igate_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Altitude:</td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"0.1\" id=\"igatePosAlt\" name=\"igatePosAlt\" type=\"number\" value=\"" + String(config.igate_alt, 2) + "\" /> meter. *Value 0 is not send height</td></tr>\n";
-	html += "</table></td>";
-	html += "</tr>\n";
+		html += "<form id='formIgateFilter' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
+		html += "<table>\n";
+		html += "<th colspan=\"2\"><span><b>[IGATE] Filter</b></span></th>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>RF2INET Filter:</b></td>\n";
 
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>PHG:</b></td>\n";
-	html += "<td align=\"center\">\n";
-	html += "<table>";
-	html += "<tr>\n";
-	html += "<td align=\"right\">Radio TX Power</td>\n";
-	html += "<td style=\"text-align: left;\">\n";
-	html += "<select name=\"power\" id=\"power\">\n";
-	html += "<option value=\"1\" selected>1</option>\n";
-	html += "<option value=\"5\">5</option>\n";
-	html += "<option value=\"10\">10</option>\n";
-	html += "<option value=\"15\">15</option>\n";
-	html += "<option value=\"25\">25</option>\n";
-	html += "<option value=\"35\">35</option>\n";
-	html += "<option value=\"50\">50</option>\n";
-	html += "<option value=\"65\">65</option>\n";
-	html += "<option value=\"80\">80</option>\n";
-	html += "</select> Watts</td>\n";
-	html += "</tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Antenna Gain</td><td style=\"text-align: left;\"><input size=\"3\" min=\"0\" max=\"100\" step=\"0.1\" id=\"gain\" name=\"gain\" type=\"number\" value=\"6\" /> dBi</td></tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\">Height</td>\n";
-	html += "<td style=\"text-align: left;\">\n";
-	html += "<select name=\"haat\" id=\"haat\">\n";
-	int k = 10;
-	for (uint8_t w = 0; w < 10; w++)
-	{
-		if (w == 0)
-		{
-			html += "<option value=\"" + String(k) + "\" selected>" + String(k) + "</option>\n";
-		}
+		html += "<td align=\"center\">\n";
+		if (config.rf2inet)
+			html += "<fieldset id=\"rf2inetFilterGrp\">\n";
 		else
-		{
-			html += "<option value=\"" + String(k) + "\">" + String(k) + "</option>\n";
-		}
-		k += k;
+			html += "<fieldset id=\"rf2inetFilterGrp\" disabled>\n";
+		html += "<legend>Filter RF to Internet</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
+		html += "<tr style=\"background:unset;\">";
+
+		String filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_MESSAGE)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterMessage\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Message</td>\n";
+
+		filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_STATUS)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterStatus\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Status</td>\n";
+
+		filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_TELEMETRY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterTelemetry\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Telemetry</td>\n";
+
+		filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_WX)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterWeather\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Weather</td>\n";
+
+		filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_OBJECT)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterObject\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Object</td>\n";
+
+		filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_ITEM)
+			filterFlageEn = "checked";
+		html += "</tr><tr style=\"background:unset;\"><td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterItem\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Item</td>\n";
+
+		filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_QUERY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterQuery\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Query</td>\n";
+
+		filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_BUOY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterBuoy\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Buoy</td>\n";
+
+		filterFlageEn = "";
+		if (config.rf2inetFilter & FILTER_POSITION)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterPosition\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Position</td>\n";
+
+		html += "<td style=\"border:unset;\"></td>";
+		html += "</tr></table></fieldset>\n";
+		html += "</td></tr>\n";
+
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>INET2RF Filter:</b></td>\n";
+
+		html += "<td align=\"center\">\n";
+		if (config.inet2rf)
+			html += "<fieldset id=\"inet2rfFilterGrp\">\n";
+		else
+			html += "<fieldset id=\"inet2rfFilterGrp\" disabled>\n";
+		html += "<legend>Filter Internet to RF</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
+		html += "<tr style=\"background:unset;\">";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_MESSAGE)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterMessage\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Message</td>\n";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_STATUS)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterStatus\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Status</td>\n";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_TELEMETRY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterTelemetry\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Telemetry</td>\n";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_WX)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterWeather\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Weather</td>\n";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_OBJECT)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterObject\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Object</td>\n";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_ITEM)
+			filterFlageEn = "checked";
+		html += "</tr><tr style=\"background:unset;\"><td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterItem\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Item</td>\n";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_QUERY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterQuery\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Query</td>\n";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_BUOY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterBuoy\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Buoy</td>\n";
+
+		filterFlageEn = "";
+		if (config.inet2rfFilter & FILTER_POSITION)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterPosition\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Position</td>\n";
+
+		html += "<td style=\"border:unset;\"></td>";
+		html += "</tr></table></fieldset>\n";
+		html += "</td></tr>\n";
+
+		html += "</table><br />\n";
+		html += "<div><button type='submit' id='submitIGATEfilter'  name=\"commitIGATEfilter\"> Apply Change </button></div>\n";
+		html += "<input type=\"hidden\" name=\"commitIGATEfilter\"/>\n";
+		html += "</form><br />";
+		server.send(200, "text/html", html); // send to someones browser when asked
 	}
-	html += "</select> Feet</td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\">Antenna/Direction</td>\n";
-	html += "<td style=\"text-align: left;\">\n";
-	html += "<select name=\"direction\" id=\"direction\">\n";
-	html += "<option>Omni</option><option>NE</option><option>E</option><option>SE</option><option>S</option><option>SW</option><option>W</option><option>NW</option><option>N</option>\n";
-	html += "</select></td>\n";
-	html += "</tr>\n";
-
-	html += "<tr><td align=\"right\"><b>PHG Text</b></td><td align=\"left\"><input name=\"texttouse\" type=\"text\" size=\"6\" style=\"background-color: rgb(97, 239, 170);\" value=\"" + String(config.igate_phg) + "\"/> <input type=\"button\" value=\"Calculate PHG\" onclick=\"javascript:calculatePHGR()\" /></td></tr>\n";
-	html += "</table></td>";
-	html += "</tr>\n";
-
-	html += "</table><br />\n";
-	html += "<div><button type='submit' id='submitIGATE'  name=\"commitIGATE\"> Apply Change </button></div>\n";
-	html += "<input type=\"hidden\" name=\"commitIGATE\"/>\n";
-	html += "</form><br /><br />";
-
-	html += "<form id='formIgateFilter' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
-	html += "<table>\n";
-	html += "<th colspan=\"2\"><span><b>[IGATE] Filter</b></span></th>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>RF2INET Filter:</b></td>\n";
-
-	html += "<td align=\"center\">\n";
-	if (config.rf2inet)
-		html += "<fieldset id=\"rf2inetFilterGrp\">\n";
-	else
-		html += "<fieldset id=\"rf2inetFilterGrp\" disabled>\n";
-	html += "<legend>Filter RF to Internet</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
-	html += "<tr style=\"background:unset;\">";
-
-	String filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_MESSAGE)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterMessage\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Message</td>\n";
-
-	filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_STATUS)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterStatus\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Status</td>\n";
-
-	filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_TELEMETRY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterTelemetry\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Telemetry</td>\n";
-
-	filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_WX)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterWeather\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Weather</td>\n";
-
-	filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_OBJECT)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterObject\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Object</td>\n";
-
-	filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_ITEM)
-		filterFlageEn = "checked";
-	html += "</tr><tr style=\"background:unset;\"><td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterItem\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Item</td>\n";
-
-	filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_QUERY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterQuery\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Query</td>\n";
-
-	filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_BUOY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterBuoy\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Buoy</td>\n";
-
-	filterFlageEn = "";
-	if (config.rf2inetFilter & FILTER_POSITION)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"rf2inetFilterPosition\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Position</td>\n";
-
-	html += "<td style=\"border:unset;\"></td>";
-	html += "</tr></table></fieldset>\n";
-	html += "</td></tr>\n";
-
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>INET2RF Filter:</b></td>\n";
-
-	html += "<td align=\"center\">\n";
-	if (config.inet2rf)
-		html += "<fieldset id=\"inet2rfFilterGrp\">\n";
-	else
-		html += "<fieldset id=\"inet2rfFilterGrp\" disabled>\n";
-	html += "<legend>Filter Internet to RF</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
-	html += "<tr style=\"background:unset;\">";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_MESSAGE)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterMessage\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Message</td>\n";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_STATUS)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterStatus\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Status</td>\n";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_TELEMETRY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterTelemetry\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Telemetry</td>\n";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_WX)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterWeather\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Weather</td>\n";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_OBJECT)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterObject\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Object</td>\n";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_ITEM)
-		filterFlageEn = "checked";
-	html += "</tr><tr style=\"background:unset;\"><td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterItem\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Item</td>\n";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_QUERY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterQuery\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Query</td>\n";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_BUOY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterBuoy\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Buoy</td>\n";
-
-	filterFlageEn = "";
-	if (config.inet2rfFilter & FILTER_POSITION)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"inet2rfFilterPosition\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Position</td>\n";
-
-	html += "<td style=\"border:unset;\"></td>";
-	html += "</tr></table></fieldset>\n";
-	html += "</td></tr>\n";
-
-	html += "</table><br />\n";
-	html += "<div><button type='submit' id='submitIGATEfilter'  name=\"commitIGATEfilter\"> Apply Change </button></div>\n";
-	html += "<input type=\"hidden\" name=\"commitIGATEfilter\"/>\n";
-	html += "</form><br />";
-	server.send(200, "text/html", html); // send to someones browser when asked
 }
 
 void handle_digi()
@@ -2999,267 +3000,268 @@ void handle_digi()
 		config.digi_loc2inet = pos2INET;
 
 		saveEEPROM();
+		initInterval=true;
 		String html = "OK";
 		server.send(200, "text/html", html);
-	}
+	}else{
+		String html = "<script type=\"text/javascript\">\n";
+		html += "$('form').submit(function (e) {\n";
+		html += "e.preventDefault();\n";
+		html += "var data = new FormData(e.currentTarget);\n";
+		html += "document.getElementById(\"submitDIGI\").disabled=true;\n";
+		html += "$.ajax({\n";
+		html += "url: '/digi',\n";
+		html += "type: 'POST',\n";
+		html += "data: data,\n";
+		html += "contentType: false,\n";
+		html += "processData: false,\n";
+		html += "success: function (data) {\n";
+		html += "alert(\"Submited Successfully\");\n";
+		html += "},\n";
+		html += "error: function (data) {\n";
+		html += "alert(\"An error occurred.\");\n";
+		html += "}\n";
+		html += "});\n";
+		html += "});\n";
+		html += "</script>\n<script type=\"text/javascript\">\n";
+		html += "function openWindowSymbol() {\n";
+		html += "var i, l, options = [{\n";
+		html += "value: 'first',\n";
+		html += "text: 'First'\n";
+		html += "}, {\n";
+		html += "value: 'second',\n";
+		html += "text: 'Second'\n";
+		html += "}],\n";
+		html += "newWindow = window.open(\"\", null, \"height=400,width=400,status=no,toolbar=no,menubar=no,titlebar=no,location=no\");\n";
 
-	String html = "<script type=\"text/javascript\">\n";
-	html += "$('form').submit(function (e) {\n";
-	html += "e.preventDefault();\n";
-	html += "var data = new FormData(e.currentTarget);\n";
-	html += "document.getElementById(\"submitDIGI\").disabled=true;\n";
-	html += "$.ajax({\n";
-	html += "url: '/digi',\n";
-	html += "type: 'POST',\n";
-	html += "data: data,\n";
-	html += "contentType: false,\n";
-	html += "processData: false,\n";
-	html += "success: function (data) {\n";
-	html += "alert(\"Submited Successfully\");\n";
-	html += "},\n";
-	html += "error: function (data) {\n";
-	html += "alert(\"An error occurred.\");\n";
-	html += "}\n";
-	html += "});\n";
-	html += "});\n";
-	html += "</script>\n<script type=\"text/javascript\">\n";
-	html += "function openWindowSymbol() {\n";
-	html += "var i, l, options = [{\n";
-	html += "value: 'first',\n";
-	html += "text: 'First'\n";
-	html += "}, {\n";
-	html += "value: 'second',\n";
-	html += "text: 'Second'\n";
-	html += "}],\n";
-	html += "newWindow = window.open(\"\", null, \"height=400,width=400,status=no,toolbar=no,menubar=no,titlebar=no,location=no\");\n";
+		int i;
 
-	int i;
-
-	html += "newWindow.document.write(\"<table border=\\\"1\\\" align=\\\"center\\\">\");\n";
-	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '/'</th></tr><tr>\");\n";
-	for (i = 33; i < 129; i++)
-	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",1);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
-		if (((i % 16) == 0) && (i < 126))
-			html += "newWindow.document.write(\"</tr><tr>\");\n";
-	}
-	html += "newWindow.document.write(\"</tr></table><br />\");\n";
-	html += "newWindow.document.write(\"<table border=\\\"1\\\" align=\\\"center\\\">\");\n";
-	html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '\\\'</th></tr><tr>\");\n";
-	for (i = 33; i < 129; i++)
-	{
-		html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",2);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
-		if (((i % 16) == 0) && (i < 126))
-			html += "newWindow.document.write(\"</tr><tr>\");\n";
-	}
-	html += "newWindow.document.write(\"</tr></table>\");\n";
-	html += "}\n";
-
-	html += "function setValue(symbol,table) {\n";
-	html += "document.getElementById('digiSymbol').value = String.fromCharCode(symbol);\n";
-	html += "if(table==1){\n document.getElementById('digiTable').value='/';\n";
-	html += "}else if(table==2){\n document.getElementById('digiTable').value='\\\\';\n}\n";
-	html += "document.getElementById('digiImgSymbol').src = \"http://www.dprns.com/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
-	html += "\n}\n";
-	html += "function calculatePHGR(){document.forms.formDIGI.texttouse.value=\"PHG\"+calcPower(document.forms.formDIGI.power.value)+calcHeight(document.forms.formDIGI.haat.value)+calcGain(document.forms.formDIGI.gain.value)+calcDirection(document.forms.formDIGI.direction.selectedIndex)}function Log2(e){return Math.log(e)/Math.log(2)}function calcPerHour(e){return e<10?e:String.fromCharCode(65+(e-10))}function calcHeight(e){return String.fromCharCode(48+Math.round(Log2(e/10),0))}function calcPower(e){if(e<1)return 0;if(e>=1&&e<4)return 1;if(e>=4&&e<9)return 2;if(e>=9&&e<16)return 3;if(e>=16&&e<25)return 4;if(e>=25&&e<36)return 5;if(e>=36&&e<49)return 6;if(e>=49&&e<64)return 7;if(e>=64&&e<81)return 8;if(e>=81)return 9}function calcDirection(e){if(e==\"0\")return\"0\";if(e==\"1\")return\"1\";if(e==\"2\")return\"2\";if(e==\"3\")return\"3\";if(e==\"4\")return\"4\";if(e==\"5\")return\"5\";if(e==\"6\")return\"6\";if(e==\"7\")return\"7\";if(e==\"8\")return\"8\"}function calcGain(e){return e>9?\"9\":e<0?\"0\":Math.round(e,0)}\n";
-	html += "</script>\n";
-
-	/************************ DIGI Mode **************************/
-	html += "<form id='formDIGI' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
-	// html += "<h2>[DIGI] Digital Repeater Mode</h2>\n";
-	html += "<table>\n";
-	// html += "<tr>\n";
-	// html += "<th width=\"200\"><span><b>Setting</b></span></th>\n";
-	// html += "<th><span><b>Value</b></span></th>\n";
-	// html += "</tr>\n";
-	html += "<th colspan=\"2\"><span><b>[DIGI] Dital Repeater Mode</b></span></th>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Enable:</b></td>\n";
-	String digiEnFlag = "";
-	if (config.digi_en)
-		digiEnFlag = "checked";
-	html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"digiEnable\" value=\"OK\" " + digiEnFlag + "><span class=\"slider round\"></span></label></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Station Callsign:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"7\" size=\"6\" id=\"myCall\" name=\"myCall\" type=\"text\" value=\"" + String(config.digi_mycall) + "\" /></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Station SSID:</b></td>\n";
-	html += "<td style=\"text-align: left;\">\n";
-	html += "<select name=\"mySSID\" id=\"mySSID\">\n";
-	for (uint8_t ssid = 0; ssid <= 15; ssid++)
-	{
-		if (config.digi_ssid == ssid)
+		html += "newWindow.document.write(\"<table border=\\\"1\\\" align=\\\"center\\\">\");\n";
+		html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '/'</th></tr><tr>\");\n";
+		for (i = 33; i < 129; i++)
 		{
-			html += "<option value=\"" + String(ssid) + "\" selected>" + String(ssid) + "</option>\n";
+			html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",1);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i) + "-1.png\\\"></td>\");\n";
+			if (((i % 16) == 0) && (i < 126))
+				html += "newWindow.document.write(\"</tr><tr>\");\n";
 		}
+		html += "newWindow.document.write(\"</tr></table><br />\");\n";
+		html += "newWindow.document.write(\"<table border=\\\"1\\\" align=\\\"center\\\">\");\n";
+		html += "newWindow.document.write(\"<tr><th colspan=\\\"16\\\">Table '\\\'</th></tr><tr>\");\n";
+		for (i = 33; i < 129; i++)
+		{
+			html += "newWindow.document.write(\"<td><img onclick=\\\"window.opener.setValue(" + String(i) + ",2);\\\" src=\\\"http://www.dprns.com/symbols/icons/" + String(i, DEC) + "-2.png\\\"></td>\");\n";
+			if (((i % 16) == 0) && (i < 126))
+				html += "newWindow.document.write(\"</tr><tr>\");\n";
+		}
+		html += "newWindow.document.write(\"</tr></table>\");\n";
+		html += "}\n";
+
+		html += "function setValue(symbol,table) {\n";
+		html += "document.getElementById('digiSymbol').value = String.fromCharCode(symbol);\n";
+		html += "if(table==1){\n document.getElementById('digiTable').value='/';\n";
+		html += "}else if(table==2){\n document.getElementById('digiTable').value='\\\\';\n}\n";
+		html += "document.getElementById('digiImgSymbol').src = \"http://www.dprns.com/symbols/icons/\"+symbol.toString()+'-'+table.toString();\n";
+		html += "\n}\n";
+		html += "function calculatePHGR(){document.forms.formDIGI.texttouse.value=\"PHG\"+calcPower(document.forms.formDIGI.power.value)+calcHeight(document.forms.formDIGI.haat.value)+calcGain(document.forms.formDIGI.gain.value)+calcDirection(document.forms.formDIGI.direction.selectedIndex)}function Log2(e){return Math.log(e)/Math.log(2)}function calcPerHour(e){return e<10?e:String.fromCharCode(65+(e-10))}function calcHeight(e){return String.fromCharCode(48+Math.round(Log2(e/10),0))}function calcPower(e){if(e<1)return 0;if(e>=1&&e<4)return 1;if(e>=4&&e<9)return 2;if(e>=9&&e<16)return 3;if(e>=16&&e<25)return 4;if(e>=25&&e<36)return 5;if(e>=36&&e<49)return 6;if(e>=49&&e<64)return 7;if(e>=64&&e<81)return 8;if(e>=81)return 9}function calcDirection(e){if(e==\"0\")return\"0\";if(e==\"1\")return\"1\";if(e==\"2\")return\"2\";if(e==\"3\")return\"3\";if(e==\"4\")return\"4\";if(e==\"5\")return\"5\";if(e==\"6\")return\"6\";if(e==\"7\")return\"7\";if(e==\"8\")return\"8\"}function calcGain(e){return e>9?\"9\":e<0?\"0\":Math.round(e,0)}\n";
+		html += "</script>\n";
+
+		/************************ DIGI Mode **************************/
+		html += "<form id='formDIGI' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
+		// html += "<h2>[DIGI] Digital Repeater Mode</h2>\n";
+		html += "<table>\n";
+		// html += "<tr>\n";
+		// html += "<th width=\"200\"><span><b>Setting</b></span></th>\n";
+		// html += "<th><span><b>Value</b></span></th>\n";
+		// html += "</tr>\n";
+		html += "<th colspan=\"2\"><span><b>[DIGI] Dital Repeater Mode</b></span></th>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Enable:</b></td>\n";
+		String digiEnFlag = "";
+		if (config.digi_en)
+			digiEnFlag = "checked";
+		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"digiEnable\" value=\"OK\" " + digiEnFlag + "><span class=\"slider round\"></span></label></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Station Callsign:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"7\" size=\"6\" id=\"myCall\" name=\"myCall\" type=\"text\" value=\"" + String(config.digi_mycall) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Station SSID:</b></td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"mySSID\" id=\"mySSID\">\n";
+		for (uint8_t ssid = 0; ssid <= 15; ssid++)
+		{
+			if (config.digi_ssid == ssid)
+			{
+				html += "<option value=\"" + String(ssid) + "\" selected>" + String(ssid) + "</option>\n";
+			}
+			else
+			{
+				html += "<option value=\"" + String(ssid) + "\">" + String(ssid) + "</option>\n";
+			}
+		}
+		html += "</select></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Station Symbol:</b></td>\n";
+		String table = "1";
+		if (config.digi_symbol[0] == 47)
+			table = "1";
+		if (config.digi_symbol[0] == 92)
+			table = "2";
+		html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"digiTable\" name=\"digiTable\" type=\"text\" value=\"" + String(config.digi_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"digiSymbol\" name=\"digiSymbol\" type=\"text\" value=\"" + String(config.digi_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"digiImgSymbol\" onclick=\"openWindowSymbol();\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.digi_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>PATH:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"digiPath\" name=\"digiPath\" type=\"text\" value=\"" + String(config.digi_path) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Text Comment:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input maxlength=\"50\" size=\"50\" id=\"digiComment\" name=\"digiComment\" type=\"text\" value=\"" + String(config.digi_comment) + "\" /></td>\n";
+		html += "</tr>\n";
+
+		html += "<tr><td style=\"text-align: right;\"><b>Repeat Delay:</b></td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"100\" id=\"digiDelay\" name=\"digiDelay\" type=\"number\" value=\"" + String(config.digi_delay) + "\" /> mSec. <i>*0 is auto,Other random of delay time</i></td></tr>";
+
+		html += "<tr><td align=\"right\"><b>POSITION:</b></td>\n";
+		html += "<td align=\"center\">\n";
+		html += "<table>";
+		String digiBcnEnFlag = "";
+		if (config.digi_bcn)
+			digiBcnEnFlag = "checked";
+
+		html += "<tr><td style=\"text-align: right;\">Beacon:</td><td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"digiBcnEnable\" value=\"OK\" " + digiBcnEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\">  Interval:<input min=\"0\" max=\"3600\" step=\"1\" id=\"digiPosInv\" name=\"digiPosInv\" type=\"number\" value=\"" + String(config.digi_interval) + "\" />Sec.</label></td></tr>";
+		String digiPosFixFlag = "";
+		String digiPosGPSFlag = "";
+		String digiPos2RFFlag = "";
+		String digiPos2INETFlag = "";
+		if (config.digi_gps)
+			digiPosGPSFlag = "checked=\"checked\"";
 		else
+			digiPosFixFlag = "checked=\"checked\"";
+
+		if (config.digi_loc2rf)
+			digiPos2RFFlag = "checked";
+		if (config.digi_loc2inet)
+			digiPos2INETFlag = "checked";
+		html += "<tr><td style=\"text-align: right;\">Location:</td><td style=\"text-align: left;\"><input type=\"radio\" name=\"digiPosSel\" value=\"0\" " + digiPosFixFlag + "/>Fix <input type=\"radio\" name=\"digiPosSel\" value=\"1\" " + digiPosGPSFlag + "/>GPS </td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">TX Channel:</td><td style=\"text-align: left;\"><input type=\"checkbox\" name=\"digiPos2RF\" value=\"OK\" " + digiPos2RFFlag + "/>RF <input type=\"checkbox\" name=\"digiPos2INET\" value=\"OK\" " + digiPos2INETFlag + "/>Internet </td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.0001\" id=\"digiPosLat\" name=\"digiPosLat\" type=\"number\" value=\"" + String(config.digi_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.0001\" id=\"digiPosLon\" name=\"digiPosLon\" type=\"number\" value=\"" + String(config.digi_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Altitude:</td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"0.1\" id=\"digiPosAlt\" name=\"digiPosAlt\" type=\"number\" value=\"" + String(config.digi_alt, 2) + "\" /> meter. *Value 0 is not send height</td></tr>\n";
+		html += "</table></td>";
+		html += "</tr>\n";
+
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>PHG:</b></td>\n";
+		html += "<td align=\"center\">\n";
+		html += "<table>";
+		html += "<tr>\n";
+		html += "<td align=\"right\">Radio TX Power</td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"power\" id=\"power\">\n";
+		html += "<option value=\"1\" selected>1</option>\n";
+		html += "<option value=\"5\">5</option>\n";
+		html += "<option value=\"10\">10</option>\n";
+		html += "<option value=\"15\">15</option>\n";
+		html += "<option value=\"25\">25</option>\n";
+		html += "<option value=\"35\">35</option>\n";
+		html += "<option value=\"50\">50</option>\n";
+		html += "<option value=\"65\">65</option>\n";
+		html += "<option value=\"80\">80</option>\n";
+		html += "</select> Watts</td>\n";
+		html += "</tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Antenna Gain</td><td style=\"text-align: left;\"><input size=\"3\" min=\"0\" max=\"100\" step=\"0.1\" id=\"gain\" name=\"gain\" type=\"number\" value=\"6\" /> dBi</td></tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\">Height</td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"haat\" id=\"haat\">\n";
+		int k = 10;
+		for (uint8_t w = 0; w < 10; w++)
 		{
-			html += "<option value=\"" + String(ssid) + "\">" + String(ssid) + "</option>\n";
+			if (w == 0)
+			{
+				html += "<option value=\"" + String(k) + "\" selected>" + String(k) + "</option>\n";
+			}
+			else
+			{
+				html += "<option value=\"" + String(k) + "\">" + String(k) + "</option>\n";
+			}
+			k += k;
 		}
+		html += "</select> Feet</td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\">Antenna/Direction</td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"direction\" id=\"direction\">\n";
+		html += "<option>Omni</option><option>NE</option><option>E</option><option>SE</option><option>S</option><option>SW</option><option>W</option><option>NW</option><option>N</option>\n";
+		html += "</select></td>\n";
+		html += "</tr>\n";
+		html += "<tr><td align=\"right\"><b>PHG Text</b></td><td align=\"left\"><input name=\"texttouse\" type=\"text\" size=\"6\" style=\"background-color: rgb(97, 239, 170);\" value=\"" + String(config.digi_phg) + "\"/> <input type=\"button\" value=\"Calculate PHG\" onclick=\"javascript:calculatePHGR()\" /></td></tr>\n";
+
+		html += "</table></tr>";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Filter:</b></td>\n";
+
+		html += "<td align=\"center\">\n";
+		html += "<fieldset id=\"FilterGrp\">\n";
+		html += "<legend>Filter repeater</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
+		html += "<tr style=\"background:unset;\">";
+
+		String filterFlageEn = "";
+		if (config.digiFilter & FILTER_MESSAGE)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterMessage\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Message</td>\n";
+
+		filterFlageEn = "";
+		if (config.digiFilter & FILTER_STATUS)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterStatus\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Status</td>\n";
+
+		filterFlageEn = "";
+		if (config.digiFilter & FILTER_TELEMETRY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterTelemetry\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Telemetry</td>\n";
+
+		filterFlageEn = "";
+		if (config.digiFilter & FILTER_WX)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterWeather\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Weather</td>\n";
+
+		filterFlageEn = "";
+		if (config.digiFilter & FILTER_OBJECT)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterObject\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Object</td>\n";
+
+		filterFlageEn = "";
+		if (config.digiFilter & FILTER_ITEM)
+			filterFlageEn = "checked";
+		html += "</tr><tr style=\"background:unset;\"><td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterItem\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Item</td>\n";
+
+		filterFlageEn = "";
+		if (config.digiFilter & FILTER_QUERY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterQuery\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Query</td>\n";
+
+		filterFlageEn = "";
+		if (config.digiFilter & FILTER_BUOY)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterBuoy\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Buoy</td>\n";
+
+		filterFlageEn = "";
+		if (config.digiFilter & FILTER_POSITION)
+			filterFlageEn = "checked";
+		html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterPosition\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Position</td>\n";
+
+		html += "<td style=\"border:unset;\"></td>";
+		html += "</tr></table></fieldset>\n";
+		html += "</td></tr>\n";
+		html += "</table><br />\n";
+		html += "<div><button type='submit' id='submitDIGI'  name=\"commitDIGI\"> Apply Change </button></div>\n";
+		html += "<input type=\"hidden\" name=\"commitDIGI\"/>\n";
+		html += "</form><br />";
+		server.send(200, "text/html", html); // send to someones browser when asked
 	}
-	html += "</select></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Station Symbol:</b></td>\n";
-	String table = "1";
-	if (config.digi_symbol[0] == 47)
-		table = "1";
-	if (config.digi_symbol[0] == 92)
-		table = "2";
-	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"digiTable\" name=\"digiTable\" type=\"text\" value=\"" + String(config.digi_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"digiSymbol\" name=\"digiSymbol\" type=\"text\" value=\"" + String(config.digi_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"digiImgSymbol\" onclick=\"openWindowSymbol();\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.digi_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>PATH:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"digiPath\" name=\"digiPath\" type=\"text\" value=\"" + String(config.digi_path) + "\" /></td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Text Comment:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"50\" size=\"50\" id=\"digiComment\" name=\"digiComment\" type=\"text\" value=\"" + String(config.digi_comment) + "\" /></td>\n";
-	html += "</tr>\n";
-
-	html += "<tr><td style=\"text-align: right;\"><b>Repeat Delay:</b></td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"100\" id=\"digiDelay\" name=\"digiDelay\" type=\"number\" value=\"" + String(config.digi_delay) + "\" /> mSec. <i>*0 is auto,Other random of delay time</i></td></tr>";
-
-	html += "<tr><td align=\"right\"><b>POSITION:</b></td>\n";
-	html += "<td align=\"center\">\n";
-	html += "<table>";
-	String digiBcnEnFlag = "";
-	if (config.digi_bcn)
-		digiBcnEnFlag = "checked";
-
-	html += "<tr><td style=\"text-align: right;\">Beacon:</td><td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"digiBcnEnable\" value=\"OK\" " + digiBcnEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\">  Interval:<input min=\"0\" max=\"3600\" step=\"1\" id=\"digiPosInv\" name=\"digiPosInv\" type=\"number\" value=\"" + String(config.digi_interval) + "\" />Sec.</label></td></tr>";
-	String digiPosFixFlag = "";
-	String digiPosGPSFlag = "";
-	String digiPos2RFFlag = "";
-	String digiPos2INETFlag = "";
-	if (config.digi_gps)
-		digiPosGPSFlag = "checked=\"checked\"";
-	else
-		digiPosFixFlag = "checked=\"checked\"";
-
-	if (config.digi_loc2rf)
-		digiPos2RFFlag = "checked";
-	if (config.digi_loc2inet)
-		digiPos2INETFlag = "checked";
-	html += "<tr><td style=\"text-align: right;\">Location:</td><td style=\"text-align: left;\"><input type=\"radio\" name=\"digiPosSel\" value=\"0\" " + digiPosFixFlag + "/>Fix <input type=\"radio\" name=\"digiPosSel\" value=\"1\" " + digiPosGPSFlag + "/>GPS </td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">TX Channel:</td><td style=\"text-align: left;\"><input type=\"checkbox\" name=\"digiPos2RF\" value=\"OK\" " + digiPos2RFFlag + "/>RF <input type=\"checkbox\" name=\"digiPos2INET\" value=\"OK\" " + digiPos2INETFlag + "/>Internet </td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.0001\" id=\"digiPosLat\" name=\"digiPosLat\" type=\"number\" value=\"" + String(config.digi_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.0001\" id=\"digiPosLon\" name=\"digiPosLon\" type=\"number\" value=\"" + String(config.digi_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Altitude:</td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"0.1\" id=\"digiPosAlt\" name=\"digiPosAlt\" type=\"number\" value=\"" + String(config.digi_alt, 2) + "\" /> meter. *Value 0 is not send height</td></tr>\n";
-	html += "</table></td>";
-	html += "</tr>\n";
-
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>PHG:</b></td>\n";
-	html += "<td align=\"center\">\n";
-	html += "<table>";
-	html += "<tr>\n";
-	html += "<td align=\"right\">Radio TX Power</td>\n";
-	html += "<td style=\"text-align: left;\">\n";
-	html += "<select name=\"power\" id=\"power\">\n";
-	html += "<option value=\"1\" selected>1</option>\n";
-	html += "<option value=\"5\">5</option>\n";
-	html += "<option value=\"10\">10</option>\n";
-	html += "<option value=\"15\">15</option>\n";
-	html += "<option value=\"25\">25</option>\n";
-	html += "<option value=\"35\">35</option>\n";
-	html += "<option value=\"50\">50</option>\n";
-	html += "<option value=\"65\">65</option>\n";
-	html += "<option value=\"80\">80</option>\n";
-	html += "</select> Watts</td>\n";
-	html += "</tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Antenna Gain</td><td style=\"text-align: left;\"><input size=\"3\" min=\"0\" max=\"100\" step=\"0.1\" id=\"gain\" name=\"gain\" type=\"number\" value=\"6\" /> dBi</td></tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\">Height</td>\n";
-	html += "<td style=\"text-align: left;\">\n";
-	html += "<select name=\"haat\" id=\"haat\">\n";
-	int k = 10;
-	for (uint8_t w = 0; w < 10; w++)
-	{
-		if (w == 0)
-		{
-			html += "<option value=\"" + String(k) + "\" selected>" + String(k) + "</option>\n";
-		}
-		else
-		{
-			html += "<option value=\"" + String(k) + "\">" + String(k) + "</option>\n";
-		}
-		k += k;
-	}
-	html += "</select> Feet</td>\n";
-	html += "</tr>\n";
-	html += "<tr>\n";
-	html += "<td align=\"right\">Antenna/Direction</td>\n";
-	html += "<td style=\"text-align: left;\">\n";
-	html += "<select name=\"direction\" id=\"direction\">\n";
-	html += "<option>Omni</option><option>NE</option><option>E</option><option>SE</option><option>S</option><option>SW</option><option>W</option><option>NW</option><option>N</option>\n";
-	html += "</select></td>\n";
-	html += "</tr>\n";
-	html += "<tr><td align=\"right\"><b>PHG Text</b></td><td align=\"left\"><input name=\"texttouse\" type=\"text\" size=\"6\" style=\"background-color: rgb(97, 239, 170);\" value=\"" + String(config.digi_phg) + "\"/> <input type=\"button\" value=\"Calculate PHG\" onclick=\"javascript:calculatePHGR()\" /></td></tr>\n";
-
-	html += "</table></tr>";
-	html += "<tr>\n";
-	html += "<td align=\"right\"><b>Filter:</b></td>\n";
-
-	html += "<td align=\"center\">\n";
-	html += "<fieldset id=\"FilterGrp\">\n";
-	html += "<legend>Filter repeater</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
-	html += "<tr style=\"background:unset;\">";
-
-	String filterFlageEn = "";
-	if (config.digiFilter & FILTER_MESSAGE)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterMessage\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Message</td>\n";
-
-	filterFlageEn = "";
-	if (config.digiFilter & FILTER_STATUS)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterStatus\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Status</td>\n";
-
-	filterFlageEn = "";
-	if (config.digiFilter & FILTER_TELEMETRY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterTelemetry\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Telemetry</td>\n";
-
-	filterFlageEn = "";
-	if (config.digiFilter & FILTER_WX)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterWeather\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Weather</td>\n";
-
-	filterFlageEn = "";
-	if (config.digiFilter & FILTER_OBJECT)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterObject\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Object</td>\n";
-
-	filterFlageEn = "";
-	if (config.digiFilter & FILTER_ITEM)
-		filterFlageEn = "checked";
-	html += "</tr><tr style=\"background:unset;\"><td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterItem\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Item</td>\n";
-
-	filterFlageEn = "";
-	if (config.digiFilter & FILTER_QUERY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterQuery\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Query</td>\n";
-
-	filterFlageEn = "";
-	if (config.digiFilter & FILTER_BUOY)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterBuoy\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Buoy</td>\n";
-
-	filterFlageEn = "";
-	if (config.digiFilter & FILTER_POSITION)
-		filterFlageEn = "checked";
-	html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" name=\"FilterPosition\" type=\"checkbox\" value=\"OK\" " + filterFlageEn + "/>Position</td>\n";
-
-	html += "<td style=\"border:unset;\"></td>";
-	html += "</tr></table></fieldset>\n";
-	html += "</td></tr>\n";
-	html += "</table><br />\n";
-	html += "<div><button type='submit' id='submitDIGI'  name=\"commitDIGI\"> Apply Change </button></div>\n";
-	html += "<input type=\"hidden\" name=\"commitDIGI\"/>\n";
-	html += "</form><br />";
-	server.send(200, "text/html", html); // send to someones browser when asked
 }
 
 void handle_tracker()
@@ -3552,6 +3554,7 @@ void handle_tracker()
 		config.trk_sat = optSat;
 
 		saveEEPROM();
+		initInterval=true;
 		String html = "OK";
 		server.send(200, "text/html", html);
 	}

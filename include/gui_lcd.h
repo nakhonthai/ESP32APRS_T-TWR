@@ -17,7 +17,7 @@
 #include "main.h"
 #include <parse_aprs.h>
 #include <TimeLib.h>
-#include "Time.h"
+#include "time.h"
 #include <TinyGPSPlus.h>
 #include <pbuf.h>
 #include "parse_aprs.h"
@@ -177,6 +177,7 @@ extern char send_aprs_symbol;
 extern ParseAPRS aprsParse;
 extern float vbat;
 extern time_t systemUptime;
+extern bool initInterval;
 
 extern XPowersAXP2101 PMU;
 

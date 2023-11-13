@@ -2001,6 +2001,7 @@ void on_igate_position_selected(MenuItem *p_menu_item)
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
+    initInterval=true;
 }
 
 void on_igate_function_selected(MenuItem *p_menu_item)
@@ -2342,6 +2343,7 @@ void on_igate_beacon_selected(MenuItem *p_menu_item)
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
+    initInterval=true;
 }
 
 void on_tracker_position_selected(MenuItem *p_menu_item)
@@ -2548,6 +2550,7 @@ void on_tracker_position_selected(MenuItem *p_menu_item)
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
+    initInterval=true;
 }
 
 void on_tracker_function_selected(MenuItem *p_menu_item)
@@ -2727,6 +2730,7 @@ void on_tracker_function_selected(MenuItem *p_menu_item)
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
+    initInterval=true;
 }
 
 void on_tracker_option_selected(MenuItem *p_menu_item)
@@ -2878,6 +2882,7 @@ void on_tracker_option_selected(MenuItem *p_menu_item)
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
+    initInterval=true;
 }
 
 void on_digi_position_selected(MenuItem *p_menu_item)
@@ -3065,6 +3070,7 @@ void on_digi_position_selected(MenuItem *p_menu_item)
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
+    initInterval=true;
 }
 
 void on_digi_function_selected(MenuItem *p_menu_item)
@@ -3228,6 +3234,7 @@ void on_digi_function_selected(MenuItem *p_menu_item)
     while (digitalRead(keyPush) == LOW)
         ;
     saveEEPROM();
+    initInterval=true;
 }
 
 void on_digi_option_selected(MenuItem *p_menu_item)
@@ -3371,366 +3378,6 @@ void on_digi_option_selected(MenuItem *p_menu_item)
         ;
     saveEEPROM();
 }
-
-// void on_tncfunction_selected(MenuItem *p_menu_item)
-// {
-//     int max_sel = 9;
-//     // MyTextBox txtBox[2];
-//     MyCheckBox chkBox[9];
-//     String str;
-//     // char ch[10];
-//     int x, i;
-//     int keyPrev = -1;
-//     display.clearDisplay();
-//     display.fillRect(0, 0, 128, 16, WHITE);
-//     display.setTextColor(BLACK);
-//     str = String("nTNC SETTING");
-//     x = str.length() * 6;
-//     display.setCursor(64 - (x / 2), 4);
-//     display.print(str);
-//     display.setTextColor(WHITE);
-
-//     chkBox[0].Checked = config.tnc;
-//     chkBox[0].x = 0;
-//     chkBox[0].y = 18;
-//     sprintf(chkBox[0].text, "TNC");
-
-//     chkBox[1].Checked = config.tnc_digi;
-//     chkBox[1].x = 35;
-//     chkBox[1].y = 18;
-//     sprintf(chkBox[1].text, "DIGI");
-
-//     chkBox[2].Checked = config.tnc_tracker;
-//     chkBox[2].x = 75;
-//     chkBox[2].y = 18;
-//     sprintf(chkBox[2].text, "TRACKER");
-
-//     chkBox[3].Checked = config.tnc_beacon;
-//     chkBox[3].x = 0;
-//     chkBox[3].y = 28;
-//     sprintf(chkBox[3].text, "BCN");
-
-//     chkBox[4].Checked = config.tnc_telemetry;
-//     chkBox[4].x = 35;
-//     chkBox[4].y = 28;
-//     sprintf(chkBox[4].text, "RF_TLM");
-
-//     chkBox[5].Checked = config.tnc_compress;
-//     chkBox[5].x = 0;
-//     chkBox[5].y = 38;
-//     sprintf(chkBox[5].text, "COMP");
-
-//     chkBox[6].Checked = config.tnc_telemetry;
-//     chkBox[6].x = 60;
-//     chkBox[6].y = 38;
-//     sprintf(chkBox[6].text, "INET_TLM");
-
-//     if (config.tnc_telemetry)
-//     {
-//         chkBox[4].Checked = false;
-//     }
-
-//     chkBox[7].Checked = config.rf2inet;
-//     chkBox[7].x = 0;
-//     chkBox[7].y = 48;
-//     sprintf(chkBox[7].text, "RF->INET");
-
-//     chkBox[8].Checked = config.inet2rf;
-//     chkBox[8].x = 60;
-//     chkBox[8].y = 48;
-//     sprintf(chkBox[8].text, "INET->RF");
-
-//     display.display();
-//     encoder0Pos = 0;
-//     delay(100);
-//     do
-//     {
-//         if (encoder0Pos >= max_sel)
-//             encoder0Pos = 0;
-//         if (encoder0Pos < 0)
-//             encoder0Pos = max_sel - 1;
-//         if (keyPrev != encoder0Pos)
-//         {
-//             keyPrev = encoder0Pos;
-//             for (i = 0; i < max_sel; i++)
-//                 chkBox[i].isSelect = false;
-//             chkBox[encoder0Pos].isSelect = true;
-//             for (i = 0; i < max_sel; i++)
-//                 chkBox[i].CheckBoxShow();
-//         }
-//         else
-//         {
-//             delay(50);
-//         }
-//         if (digitalRead(keyPush) == LOW)
-//         {
-//             currentTime = millis();
-//             while (digitalRead(keyPush) == LOW)
-//             {
-//                 ;
-//                 if ((millis() - currentTime) > 2000)
-//                     break; // OK Timeout
-//             };
-//             if ((millis() - currentTime) < 1500)
-//             {
-//                 i = encoder0Pos;
-//                 chkBox[i].Toggle();
-//                 switch (i)
-//                 {
-//                 case 0:
-//                     config.tnc = chkBox[i].Checked;
-//                     break;
-//                 case 1:
-//                     config.tnc_digi = chkBox[i].Checked;
-//                     break;
-//                 case 2:
-//                     config.tnc_tracker = chkBox[i].Checked;
-//                     break;
-//                 case 3:
-//                     config.tnc_beacon = chkBox[i].Checked;
-//                     break;
-//                 case 4:
-//                     config.tnc_telemetry = chkBox[i].Checked;
-//                     chkBox[6].Checked = false;
-//                     break;
-//                 case 5:
-//                     config.tnc_compress = chkBox[i].Checked;
-//                     break;
-//                 case 6:
-//                     config.tnc_telemetry = chkBox[i].Checked;
-//                     chkBox[4].Checked = false;
-//                     break;
-//                 case 7:
-//                     config.rf2inet = chkBox[i].Checked;
-//                     break;
-//                 case 8:
-//                     config.inet2rf = chkBox[i].Checked;
-//                     break;
-//                 }
-//                 encoder0Pos = keyPrev;
-//                 chkBox[i].CheckBoxShow();
-//                 while (digitalRead(keyPush) == LOW)
-//                     ;
-//             }
-//             else
-//             {
-//                 break;
-//             }
-//         }
-//     } while (1);
-//     /*display.clearDisplay();
-//     display.setCursor(30, 4);
-//     display.print("SAVE & EXIT");
-//     display.display();*/
-//     msgBox("KEY EXIT");
-//     while (digitalRead(keyPush) == LOW)
-//         ;
-//     saveEEPROM();
-// }
-
-// void on_tnctracker_selected(MenuItem *p_menu_item)
-// {
-//     int i;
-//     MyCheckBox chkBox[3];
-//     int max_sel = 8;
-//     MySymbolBox symBox[2];
-//     MyComboBox cbBox[3];
-//     String str;
-//     int x;
-//     int keyPrev = -1;
-//     display.clearDisplay();
-//     display.fillRect(0, 0, 128, 16, WHITE);
-//     display.setTextColor(BLACK);
-//     str = String("TRACKER CONFIG");
-//     x = str.length() * 6;
-//     display.setCursor(64 - (x / 2), 4);
-//     display.print(str);
-//     display.setTextColor(WHITE);
-
-//     chkBox[0].Checked = config.tnc_compress;
-//     chkBox[0].x = 0;
-//     chkBox[0].y = 18;
-//     sprintf(chkBox[0].text, "COMP");
-
-//     chkBox[1].Checked = config.tnc_altitude;
-//     chkBox[1].x = 40;
-//     chkBox[1].y = 18;
-//     sprintf(chkBox[1].text, "ALT");
-
-//     chkBox[2].Checked = config.tnc_speed;
-//     chkBox[2].x = 75;
-//     chkBox[2].y = 18;
-//     sprintf(chkBox[2].text, "CSR/SPD");
-
-//     display.setCursor(0, 30);
-//     display.print("SPD:");
-//     cbBox[0].isValue = true;
-//     cbBox[0].x = 25;
-//     cbBox[0].y = 28;
-//     cbBox[0].length = 3;
-//     cbBox[0].char_max = 250;
-//     cbBox[0].SetIndex(config.tnc_hspeed);
-
-//     display.setCursor(0, 42);
-//     display.print("INV:");
-//     cbBox[1].isValue = true;
-//     cbBox[1].x = 25;
-//     cbBox[1].y = 40;
-//     cbBox[1].length = 2;
-//     cbBox[1].char_max = 120;
-//     cbBox[1].SetIndex(config.tnc_maxinterval);
-
-//     display.setCursor(0, 54);
-//     display.print("ANG:");
-//     cbBox[2].isValue = true;
-//     cbBox[2].x = 25;
-//     cbBox[2].y = 52;
-//     cbBox[2].length = 2;
-//     cbBox[2].char_max = 180;
-//     cbBox[2].SetIndex(config.tnc_minangle);
-
-//     display.setCursor(67, 35);
-//     display.print("MOV");
-//     symBox[0].x = 65;
-//     symBox[0].y = 43;
-//     symBox[0].table = config.tnc_symmove[0];
-//     symBox[0].symbol = config.tnc_symmove[1];
-//     symBox[0].SetIndex(config.tnc_symmove[1]);
-//     symBox[0].Show();
-
-//     display.setCursor(99, 35);
-//     display.print("STP");
-//     symBox[1].x = 98;
-//     symBox[1].y = 43;
-//     symBox[1].table = config.tnc_symstop[0];
-//     symBox[1].symbol = config.tnc_symstop[1];
-//     symBox[1].SetIndex(config.tnc_symstop[1]);
-//     symBox[1].Show();
-
-//     display.display();
-//     encoder0Pos = 0;
-//     delay(100);
-//     do
-//     {
-//         if (encoder0Pos >= max_sel)
-//             encoder0Pos = 0;
-//         if (encoder0Pos < 0)
-//             encoder0Pos = max_sel - 1;
-//         if (keyPrev != encoder0Pos)
-//         {
-//             keyPrev = encoder0Pos;
-//             for (i = 0; i < 3; i++)
-//             {
-//                 chkBox[i].isSelect = false;
-//                 cbBox[i].isSelect = false;
-//             }
-//             symBox[0].isSelect = false;
-//             symBox[1].isSelect = false;
-
-//             if (encoder0Pos < 3)
-//                 chkBox[encoder0Pos].isSelect = true;
-//             if (encoder0Pos > 2 && encoder0Pos < 6)
-//                 cbBox[encoder0Pos - 3].isSelect = true;
-//             if (encoder0Pos > 5)
-//                 symBox[encoder0Pos - 6].isSelect = true;
-//             for (i = 0; i < 3; i++)
-//             {
-//                 chkBox[i].CheckBoxShow();
-//                 cbBox[i].Show();
-//             }
-//             symBox[0].Show();
-//             symBox[1].Show();
-//         }
-//         else
-//         {
-//             delay(50);
-//         }
-//         if (digitalRead(keyPush) == LOW)
-//         {
-//             currentTime = millis();
-//             while (digitalRead(keyPush) == LOW)
-//             {
-//                 if ((millis() - currentTime) > 2000)
-//                     break; // OK Timeout
-//             };
-//             if ((millis() - currentTime) < 1500)
-//             {
-//                 i = encoder0Pos;
-//                 if (i < 3)
-//                 {
-//                     chkBox[i].Toggle();
-//                     switch (i)
-//                     {
-//                     case 0:
-//                         config.tnc_compress = chkBox[i].Checked;
-//                         break;
-//                     case 1:
-//                         config.tnc_altitude = chkBox[i].Checked;
-//                         break;
-//                     case 2:
-//                         config.tnc_speed = chkBox[i].Checked;
-//                         break;
-//                     }
-//                     encoder0Pos = keyPrev;
-//                     chkBox[i].CheckBoxShow();
-//                 }
-//                 else if (i > 2 && i < 6)
-//                 {
-//                     i -= 3;
-//                     switch (i)
-//                     {
-//                     case 0:
-//                         cbBox[i].SelectValue(10, 200, 1);
-//                         config.tnc_hspeed = cbBox[i].GetValue();
-//                         break;
-//                     case 1:
-//                         cbBox[i].SelectValue(5, 60, 1);
-//                         config.tnc_maxinterval = cbBox[i].GetValue();
-//                         break;
-//                     case 2:
-//                         cbBox[i].SelectValue(5, 90, 1);
-//                         config.tnc_minangle = cbBox[i].GetValue();
-//                         break;
-//                     }
-//                     encoder0Pos = keyPrev;
-//                     cbBox[i].Show();
-//                 }
-//                 else if (encoder0Pos > 5)
-//                 {
-//                     i -= 6;
-//                     symBox[i].SelectItem();
-//                     switch (i)
-//                     {
-//                     case 0:
-//                         config.tnc_symmove[0] = symBox[i].table;
-//                         config.tnc_symmove[1] = symBox[i].symbol;
-//                         break;
-//                     case 1:
-//                         config.tnc_symstop[0] = symBox[i].table;
-//                         config.tnc_symstop[1] = symBox[i].symbol;
-//                         break;
-//                     }
-//                     encoder0Pos = keyPrev;
-//                     symBox[i].Show();
-//                 }
-//                 while (digitalRead(keyPush) == LOW)
-//                     ;
-//             }
-//             else
-//             {
-//                 break;
-//             }
-//         }
-//     } while (1);
-//     /*display.clearDisplay();
-//     display.setCursor(30, 4);
-//     display.print("SAVE & EXIT");
-//     display.display();*/
-//     msgBox("KEY EXIT");
-//     while (digitalRead(keyPush) == LOW)
-//         ;
-//     saveEEPROM();
-// }
 
 void on_filter_selected(MenuItem *p_menu_item)
 {

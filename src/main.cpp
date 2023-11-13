@@ -2796,6 +2796,7 @@ void taskTNC(void *pvParameters)
 }
 
 long timeSlot;
+bool initInterval=true;
 void taskAPRS(void *pvParameters)
 {
   char sts[50];
@@ -2826,7 +2827,7 @@ void taskAPRS(void *pvParameters)
   unsigned long timeAprsOld = millis();
   unsigned long gpsTimeout;
 
-  tickInterval = DiGiInterval = iGatetickInterval = millis() + 15000;
+  initInterval=true;
   tx_interval = config.trk_interval;
   tx_counter = tx_interval - 10;
   log_d("Task APRS has been start");
@@ -2834,6 +2835,10 @@ void taskAPRS(void *pvParameters)
   for (;;)
   {
     unsigned long now = millis();
+    if(initInterval){
+      tickInterval = DiGiInterval = iGatetickInterval = millis() + 15000;
+      initInterval=false;
+    }
     timeAprs = now - timeAprsOld;
     timeAprsOld = now;
     // wdtSensorTimer = now;
