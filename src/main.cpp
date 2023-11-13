@@ -3376,6 +3376,7 @@ void taskNetwork(void *pvParameters)
     // if (WiFi.status() == WL_CONNECTED)
     if (wifiMulti.run(connectTimeoutMs) == WL_CONNECTED)
     {
+      webService();
       serviceHandle();
 
       if (millis() > NTP_Timeout)
@@ -3547,6 +3548,8 @@ void taskNetwork(void *pvParameters)
           }
         }
       }
-    } // WiFi connected
+    }else if (config.wifi_mode & WIFI_AP_FIX){ // WiFi connected
+      serviceHandle();
+    }
   }   // for loop
 }

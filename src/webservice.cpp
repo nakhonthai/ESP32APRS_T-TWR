@@ -4590,8 +4590,14 @@ void listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 }
 #endif
 
+bool webServiceBegin=true;
 void webService()
 {
+	if(webServiceBegin){
+		webServiceBegin=false;
+	}else{
+		return;
+	}
 	server.close();
 	// web client handlers
 	server.on("/", setMainPage);
