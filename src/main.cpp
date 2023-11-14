@@ -2273,7 +2273,7 @@ String trk_gps_postion(String comment)
   memcpy(object, config.trk_item, strlen(config.trk_item));
   object[9] = 0;
 
-  if (gps.location.isValid())
+  if (gps.location.isValid()&&(gps.hdop.hdop()>10.0))
   {
     nowLat = gps.location.lat();
     nowLng = gps.location.lng();
@@ -2913,7 +2913,7 @@ void taskAPRS(void *pvParameters)
           tx_interval = config.trk_interval;
         }
 
-        if (config.trk_gps && gps.speed.isValid() && gps.location.isValid() && gps.course.isValid())
+        if (config.trk_gps && gps.speed.isValid() && gps.location.isValid() && gps.course.isValid() && (gps.hdop.hdop()>10.0))
         {
           SB_SPEED_OLD = SB_SPEED;
           if (gps.speed.isUpdated())
@@ -2947,7 +2947,7 @@ void taskAPRS(void *pvParameters)
         String rawData;
         String cmn = "";
         if (config.trk_sat)
-          cmn += "SAT:" + String(gps.satellites.value());
+          cmn += "SAT:" + String(gps.satellites.value())+",HDOP:"+String(gps.hdop.hdop(),1);
         if (config.trk_bat)
         {
           if (config.trk_sat)
@@ -2972,7 +2972,7 @@ void taskAPRS(void *pvParameters)
 
         if (config.trk_gps)
         {
-          if (gps.location.isValid())
+          if (gps.location.isValid()&&(gps.hdop.hdop()>10.0))
             sprintf(sts, "POSITION GPS\nSPD %dkPh/%d\nINTERVAL %ds", SB_SPEED, SB_HEADING, tx_interval);
           else
             sprintf(sts, "POSITION GPS\nGPS INVALID\nINTERVAL %ds", tx_interval);
@@ -3113,7 +3113,7 @@ void taskAPRS(void *pvParameters)
           String rawData = "";
           if (config.igate_gps)
           { // IGATE Send GPS position
-            if (gps.location.isValid())
+            if (gps.location.isValid()&&(gps.hdop.hdop()>10.0))
               rawData = igate_position(gps.location.lat(), gps.location.lng(), gps.altitude.meters(), "");
           }
           else
@@ -3188,7 +3188,7 @@ void taskAPRS(void *pvParameters)
           String rawData;
           if (config.digi_gps)
           { // DIGI Send GPS position
-            if (gps.location.isValid())
+            if (gps.location.isValid()&&(gps.hdop.hdop()>10.0))
               rawData = digi_position(gps.location.lat(), gps.location.lng(), gps.altitude.meters(), "");
           }
           else
