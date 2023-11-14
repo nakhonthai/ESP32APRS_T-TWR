@@ -1864,7 +1864,8 @@ void setupPower()
   PMU.setChargeTargetVoltage(XPOWERS_AXP2101_CHG_VOL_4V2);
 
   // Disable the PMU long press shutdown function
-  PMU.disableLongPressShutdown();
+  //PMU.disableLongPressShutdown();
+  PMU.enableLongPressShutdown();
 
   // Get charging target current
   const uint16_t currTable[] = {
