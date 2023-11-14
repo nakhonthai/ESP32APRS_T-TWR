@@ -12,7 +12,7 @@
 #define MAIN_H
 
 #define VERSION "0.2"
-#define VERSION_BUILD 'f'
+#define VERSION_BUILD 'g'
 
 // #define DEBUG
 

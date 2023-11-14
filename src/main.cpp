@@ -2157,7 +2157,7 @@ String compress_position(double nowLat, double nowLng, int alt_feed, double cour
   // Translate from semicircles to Base91 format
   char aprs_position[13];
   long latitude = semicircles((char *)lat.c_str(), (nowLat < 0));
-  long longitude = semicircles((char *)lon.c_str(), (nowLat < 0));
+  long longitude = semicircles((char *)lon.c_str(), (nowLng < 0));
   long ltemp = 1073741824L - latitude; // 90 degrees - latitude
   ESP_LOGE("GPS", "lat=%u lon=%u", latitude, longitude);
   memset(aprs_position, 0, sizeof(aprs_position));

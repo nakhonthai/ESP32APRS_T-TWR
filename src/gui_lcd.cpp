@@ -4933,7 +4933,9 @@ void on_update_selected(MenuItem *p_menu_item)
     // wait for WiFi connection
     if ((WiFi.status() == WL_CONNECTED))
     {
-        t_httpUpdate_return ret = ESPhttpUpdate.update(String("http://www.dprns.com/ESP32/ESP32APRS_TWR.bin"), String(VERSION));
+        String curVer=String(VERSION)+String(VERSION_BUILD);
+        curVer.trim();
+        t_httpUpdate_return ret = ESPhttpUpdate.update(String("http://www.dprns.com/ESP32/ESP32APRS_TWR.bin"), curVer);
 
         switch (ret)
         {
@@ -4950,10 +4952,10 @@ void on_update_selected(MenuItem *p_menu_item)
             break;
         }
 
-        SerialLOG.println(cstr);
+        log_d("%s",cstr);
         display.println(cstr);
-        display.print("New Current V");
-        display.printf("%s%c\n", VERSION, VERSION_BUILD);
+        // display.print("New Current V");
+        // display.printf("%s%c\n", VERSION, VERSION_BUILD);
         display.display();
         delay(2000);
     }
@@ -4999,8 +5001,8 @@ void on_information_selected(MenuItem *p_menu_item)
     display.print("Firmware: V");
     display.printf("%s%c\n", VERSION, VERSION_BUILD);
     display.printf("ESP32 Model: %s\n", ESP.getChipModel());
-    display.printf("ESP32 ID:%s\n", strCID);
-    display.printf("ESP32 Flash: %dMB\n", ESP.getFlashChipSize() / 1000000);
+    display.printf("ID:%s\n", strCID);
+    display.printf("Flash: %dMB\n", ESP.getFlashChipSize() / 1000000);
     display.printf("RF Type: %s\n", RF_TYPE[config.rf_type]);
     display.display();
     if (p_menu_item != NULL)
