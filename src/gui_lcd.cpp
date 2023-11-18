@@ -5909,7 +5909,7 @@ void topBar(int ws)
         display.drawBitmap(54, 2, iconClound, 12, 12, 1);
     }
 
-    if (gps.location.isValid())
+    if (gps.location.isValid() && (gps.hdop.hdop()<10) && (gps.satellites.value()>3))
     {
         display.drawBitmap(70, 2, iconLocation, 12, 12, 1);
     }
