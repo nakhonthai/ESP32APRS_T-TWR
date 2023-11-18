@@ -411,4 +411,6 @@ bool powerStatus();
 int packet2Raw(String &tnc2, AX25Msg &Packet);
 bool waitResponse(String &data, String rsp = "\r\n", uint32_t timeout = 1000);
 String sendIsAckMsg(String toCallSign, char *msgId);
+String trk_gps_postion(String comment);
+String trk_fix_position(String comment);
 #endif

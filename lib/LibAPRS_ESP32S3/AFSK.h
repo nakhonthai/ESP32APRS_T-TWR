@@ -256,27 +256,23 @@ typedef struct Afsk
 // to configure the pins as output pins, and the _ON()
 // and _OFF() functions writes to the PORT registers
 // to turn the pins on or off.
-void LED_Color(uint8_t r, uint8_t g, uint8_t b);
+void IRAM_ATTR LED_Color(uint8_t r, uint8_t g, uint8_t b);
 
 #define LED_RX_ON()                                     \
     {                                                   \
-        strip.setPixelColor(0, strip.Color(0, 255, 0)); \
-        strip.show();                                   \
+        LED_Color(0, 255, 0);                           \
     }
 #define LED_RX_OFF()                                  \
-    {                                                 \
-        strip.setPixelColor(0, strip.Color(0, 0, 0)); \
-        strip.show();                                 \
+    {                                                  \
+        LED_Color(0, 0, 0);                           \
     }
 #define LED_TX_ON()                                     \
     {                                                   \
-        strip.setPixelColor(0, strip.Color(255, 0, 0)); \
-        strip.show();                                   \
+        LED_Color(255, 0, 0);                           \
     }
 #define LED_TX_OFF()                                  \
     {                                                 \
-        strip.setPixelColor(0, strip.Color(0, 0, 0)); \
-        strip.show();                                 \
+        LED_Color(0, 0, 0);                           \
     }
 
 extern bool input_HPF;
@@ -298,5 +294,6 @@ void afskSetHPF(bool val);
 void afskSetBPF(bool val);
 // int IRAM_ATTR
 int read_adc_dma(uint32_t *ret_num, uint8_t *result);
+void setTransmit(bool val);
 
 #endif

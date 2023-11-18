@@ -649,6 +649,7 @@ void defaultConfig()
   config.dispRF = true;
   config.dispINET = false;
   config.filterDistant = 0;
+  config.dispFilter=FILTER_OBJECT|FILTER_ITEM|FILTER_MESSAGE|FILTER_MICE|FILTER_POSITION|FILTER_WX|FILTER_STATUS|FILTER_BUOY|FILTER_QUERY;
   config.h_up = true;
   config.tx_display = true;
   config.rx_display = true;
@@ -1132,6 +1133,34 @@ bool pkgTxPush(const char *info, size_t len, int dly)
   return true;
 }
 
+void burstAfterVoice()
+{
+  String rawData;
+  String cmn="";
+  if (gps.location.isValid()) // TRACKER by GPS
+  {
+    rawData = trk_gps_postion(cmn);
+  }
+  else // TRACKER by FIX position
+  {
+    rawData = trk_fix_position(cmn);
+  }
+  digitalWrite(POWER_PIN, config.rf_power); // RF Power LOW
+  digitalWrite(SA868_MIC_SEL, HIGH);          // Select = ESP2MIC
+  status.txCount++;
+  log_d("Burst TX->RF: %s\n", rawData.c_str());
+  APRS_setPreamble(10);
+  APRS_sendTNC2Pkt(rawData); // Send packet to RF
+
+  for (int i = 0; i < 100; i++)
+  {
+    if (digitalRead(SA868_PTT_PIN))
+      break;
+    delay(50); // TOT 5sec
+  }
+  digitalWrite(SA868_PWR_PIN, 0); // set RF Power Low
+}
+
 bool pkgTxSend()
 {
   if (getReceive())
@@ -1152,6 +1181,7 @@ bool pkgTxSend()
         strcpy(info, txQueue[i].Info);
         psramBusy = false;
         digitalWrite(POWER_PIN, config.rf_power); // RF Power LOW
+        digitalWrite(SA868_MIC_SEL, HIGH);          // Select = ESP2MIC
         status.txCount++;
         LED_Color(255, 0, 0);
         adcActive(false);
@@ -1386,6 +1416,10 @@ void RF_MODULE(bool boot)
   //! DC3 Radio & Pixels VDD , Don't change
   // PMU.setDC3Voltage(3400);
   // PMU.disableDC3();
+  pinMode(BUTTON_PTT_PIN,INPUT_PULLUP); //PTT BUTTON
+
+  pinMode(SA868_MIC_SEL, OUTPUT); // MIC_SEL
+  digitalWrite(SA868_MIC_SEL, LOW);
 
   pinMode(SA868_PD_PIN, OUTPUT);
   digitalWrite(SA868_PD_PIN, HIGH); // PWR HIGH
@@ -2002,7 +2036,7 @@ void setup()
     log_d("Manual Default configure!");
     display.clearDisplay();
     display.setTextSize(1);
-    display.setFont(&FreeMonoBold9pt7b);
+    display.setFont(&FreeSansBold9pt7b);
     display.setCursor(25, 25);
     display.println("Factory");
     display.setCursor(30, 45);
@@ -2596,6 +2630,7 @@ long sendTimer = 0;
 bool AFSKInitAct = false;
 int btn_count = 0;
 long timeCheck = 0;
+bool afterVoice = false;
 
 void loop()
 {
@@ -2620,6 +2655,35 @@ void loop()
       // do stuff here on connecting
       BToldDeviceConnected = BTdeviceConnected;
     }
+  }
+
+  //PTT push to FM Voice
+  if (digitalRead(BUTTON_PTT_PIN) == LOW)
+  {
+    pttStat=1;
+    //setTransmit(true);
+    AFSKInitAct = false;
+    delay(50);    
+    digitalWrite(POWER_PIN, config.rf_power); // RF Power
+    digitalWrite(SA868_MIC_SEL, LOW); // Select = MIC
+    digitalWrite(SA868_PTT_PIN,LOW); //PTT RF
+    delay(500);
+    LED_Color(100, 50, 0);
+    while(digitalRead(BUTTON_PTT_PIN)==LOW){
+      pttStat++;
+      delay(100);
+    }
+    pttStat=0;
+    burstAfterVoice();
+    char sts[50];
+    if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
+        sprintf(sts, "POSITION GPS\nSPD %dkPh/%d\n", SB_SPEED, SB_HEADING);
+      else
+        sprintf(sts, "POSITION GPS\nGPS INVALID\n");
+    pushTxDisp(TXCH_RF, "After Voice", sts);
+    LED_Color(0, 0, 0);
+    AFSKInitAct = true;
+    //setTransmit(false);
   }
 
   if (digitalRead(0) == LOW)
@@ -2857,8 +2921,9 @@ void taskAPRS(void *pvParameters)
     vTaskDelay(10 / portTICK_PERIOD_MS);
     // serviceHandle();
 
-    if (AFSKInitAct == true)
+    if (AFSKInitAct == false)
     {
+      continue;
     }
 
     if (config.rf_en)

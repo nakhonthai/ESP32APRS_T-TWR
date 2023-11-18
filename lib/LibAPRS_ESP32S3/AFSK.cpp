@@ -137,6 +137,7 @@ void adcActive(bool sts)
     hw_afsk_dac_isr=0;
   }else{
     adc_digi_stop();
+    hw_afsk_dac_isr=1;
     //adc_digi_deinitialize();
   }
 }
@@ -178,10 +179,13 @@ void AFSK_TimerEnable(bool sts)
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(1, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
 
-void LED_Color(uint8_t r, uint8_t g, uint8_t b)
+//portMUX_TYPE ledMux = portMUX_INITIALIZER_UNLOCKED;
+void IRAM_ATTR LED_Color(uint8_t r, uint8_t g, uint8_t b)
 {
+  //portENTER_CRITICAL_ISR(&ledMux);          // ISR start
   strip.setPixelColor(0, strip.Color(r, g, b));
   strip.show();
+  //portEXIT_CRITICAL_ISR(&ledMux);
 }
 
 bool getTransmit()
@@ -191,6 +195,11 @@ bool getTransmit()
     ret = true;
   if(hw_afsk_dac_isr) ret=true;
   return ret;
+}
+
+void setTransmit(bool val)
+{
+  hw_afsk_dac_isr=val;
 }
 
 bool getReceive()
@@ -220,7 +229,7 @@ void AFSK_hw_init(void)
   // pinMode(RSSI_PIN, INPUT_PULLUP);
   pinMode(PTT_PIN, OUTPUT);
   pinMode(17, OUTPUT); // MIC_SEL
-  pinMode(18, OUTPUT); // ESP2MIC
+  pinMode(MIC_PIN, OUTPUT); // ESP2MIC
   pinMode(1, ANALOG);  // AUDIO2ESP
 
   digitalWrite(17, HIGH);
@@ -300,7 +309,6 @@ static void AFSK_txStart(Afsk *afsk)
     digitalWrite(PTT_PIN, LOW);
     afsk->preambleLength = DIV_ROUND(custom_preamble * BITRATE, 4800);
     AFSK_DAC_IRQ_START();
-    // LED_TX_ON();
     AFSK_TimerEnable(true);
   }
   noInterrupts();
@@ -766,7 +774,6 @@ void IRAM_ATTR sample_isr()
     {
       digitalWrite(PTT_PIN, HIGH);
       AFSK_TimerEnable(false);
-      // LED_TX_OFF();
     }
     portEXIT_CRITICAL_ISR(&timerMux); // ISR end
   }

@@ -178,6 +178,7 @@ extern ParseAPRS aprsParse;
 extern float vbat;
 extern time_t systemUptime;
 extern bool initInterval;
+extern uint16_t pttStat;
 
 extern XPowersAXP2101 PMU;
 
@@ -192,6 +193,7 @@ void compass_arrow(signed int startx, signed int starty, unsigned int length, do
 void dispTxWindow(txDisp txs);
 void setOLEDLock(bool lck);
 void pushTxDisp(uint8_t ch, const char *name, char *info);
+
 
 // const char *str_status[] = {
 // 	"IDLE_STATUS",

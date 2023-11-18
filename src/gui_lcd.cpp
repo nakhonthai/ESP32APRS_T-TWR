@@ -5062,10 +5062,14 @@ void on_factory_selected(MenuItem *p_menu_item)
 {
     defaultConfig();
     display.clearDisplay();
-    display.setCursor(52, 4);
-    display.print("FACTORY");
-    display.setCursor(0, 18);
-    display.print("Reset configuration to Factory");
+    display.setTextSize(1);
+    display.setFont(&FreeSansBold9pt7b);
+    display.setCursor(25, 25);
+    display.println("Factory");
+    display.setCursor(30, 45);
+    display.print("RESET!");
+    display.setFont();
+    display.setTextColor(WHITE);
     display.display();
     delay(1000);
     while (digitalRead(keyPush) == LOW)
@@ -6084,6 +6088,8 @@ void setOLEDLock(bool lck)
 }
 
 extern unsigned long timeGui;
+uint16_t pttStat = 0;
+RTC_DATA_ATTR uint16_t lastStatDisp = 0;
 
 void mainDisp(void *pvParameters)
 {
@@ -6170,6 +6176,8 @@ void mainDisp(void *pvParameters)
     saveTimeout = millis();
     char curTabOld = 0;
     uint8_t menuSel = 0;
+
+    pttStat = 0;
     for (;;)
     {
         unsigned long now = millis();
@@ -6179,6 +6187,48 @@ void mainDisp(void *pvParameters)
         // Prevent RF interference with OLED
         if (oledLock == true)
             continue;
+        if(pttStat>0){
+            if(pttStat==1){
+                display.clearDisplay();
+                display.setTextSize(1);
+                display.setFont(&FreeSansBold9pt7b);
+                display.setCursor(5,14);
+                display.print("FM VOICE");
+                display.setFont(NULL);
+                display.setCursor(30, 20);
+                display.printf("%.4f MHz",config.freq_tx);
+                display.setCursor(30, 30);
+                display.printf("%.4f MHz",config.freq_rx);
+                display.setCursor(30, 40);
+                if(config.rf_power)
+                    display.printf("PWR: HIGH");
+                else
+                    display.printf("PWR: LOW");
+                display.fillRect(1, 19, 25, 10, 1);
+                display.drawRect(0, 18, 128, 32, 1);
+                display.setTextColor(BLACK, WHITE);
+                display.drawLine(0, 28, 127, 28, 1);
+                display.drawLine(0, 38, 127, 38, 1);
+                display.fillRect(1, 29, 25, 10, 1);
+                display.fillRect(1, 39, 25, 10, 1);
+                display.setCursor(8, 20);
+                display.print("TX:");
+                display.setCursor(8, 30);
+                display.print("RX:");
+                display.setCursor(2, 40);
+                display.print("PWR:");
+                display.setTextColor(WHITE);
+                display.display();
+            }else{
+                display.fillRect(100, 0, 28, 16, BLACK);
+                display.setCursor(105, 7);
+                display.printf("%.1f",(float)(pttStat)/100);
+                display.display();
+            }
+            delay(100);
+            continue;
+        }        
+
         if (getTransmit())
         {
             delay(1000);
