@@ -1999,6 +1999,7 @@ void handle_igate()
 	bool bcnEN = false;
 	bool pos2RF = false;
 	bool pos2INET = false;
+	bool timeStamp = false;
 
 	if (server.hasArg("commitIGATE"))
 	{
@@ -2192,6 +2193,14 @@ void handle_igate()
 						bcnEN = true;
 				}
 			}
+			if (server.argName(i) == "igateTimeStamp")
+			{
+				if (server.arg(i) != "")
+				{
+					if (String(server.arg(i)) == "OK")
+						timeStamp = true;
+				}
+			}
 		}
 
 		config.igate_en = aprsEn;
@@ -2201,6 +2210,7 @@ void handle_igate()
 		config.igate_bcn = bcnEN;
 		config.igate_loc2rf = pos2RF;
 		config.igate_loc2inet = pos2INET;
+		config.igate_timestamp = timeStamp;
 
 		saveEEPROM();
 		initInterval=true;
@@ -2541,6 +2551,13 @@ void handle_igate()
 		if (config.inet2rf)
 			inet2rfEnFlag = "checked";
 		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" id=\"inet2rfEnable\" name=\"inet2rfEnable\" onclick=\"onINET2RFCheck()\" value=\"OK\" " + inet2rfEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\"><i> *Switch Internet to RF gateway</i></label></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Time Stamp:</b></td>\n";
+		String timeStampFlag = "";
+		if (config.igate_timestamp)
+			timeStampFlag = "checked";
+		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"igateTimeStamp\" value=\"OK\" " + timeStampFlag + "><span class=\"slider round\"></span></label></td>\n";
 		html += "</tr>\n<tr>";
 
 		html += "<td align=\"right\"><b>POSITION:</b></td>\n";
@@ -2770,6 +2787,7 @@ void handle_digi()
 	bool bcnEN = false;
 	bool pos2RF = false;
 	bool pos2INET = false;
+	bool timeStamp = false;
 
 	if (server.hasArg("commitDIGI"))
 	{
@@ -2998,12 +3016,21 @@ void handle_digi()
 						config.digiFilter |= FILTER_POSITION;
 				}
 			}
+			if (server.argName(i) == "digiTimeStamp")
+			{
+				if (server.arg(i) != "")
+				{
+					if (String(server.arg(i)) == "OK")
+						timeStamp = true;
+				}
+			}
 		}
 		config.digi_en = digiEn;
 		config.digi_gps = posGPS;
 		config.digi_bcn = bcnEN;
 		config.digi_loc2rf = pos2RF;
 		config.digi_loc2inet = pos2INET;
+		config.digi_timestamp = timeStamp;
 
 		saveEEPROM();
 		initInterval=true;
@@ -3127,6 +3154,14 @@ void handle_digi()
 		html += "</tr>\n";
 
 		html += "<tr><td style=\"text-align: right;\"><b>Repeat Delay:</b></td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"100\" id=\"digiDelay\" name=\"digiDelay\" type=\"number\" value=\"" + String(config.digi_delay) + "\" /> mSec. <i>*0 is auto,Other random of delay time</i></td></tr>";
+
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>Time Stamp:</b></td>\n";
+		String timeStampFlag = "";
+		if (config.digi_timestamp)
+			timeStampFlag = "checked";
+		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"digiTimeStamp\" value=\"OK\" " + timeStampFlag + "><span class=\"slider round\"></span></label></td>\n";
+		html += "</tr>\n";
 
 		html += "<tr><td align=\"right\"><b>POSITION:</b></td>\n";
 		html += "<td align=\"center\">\n";
@@ -3288,6 +3323,7 @@ void handle_tracker()
 	bool optAlt = false;
 	bool optBat = false;
 	bool optSat = false;
+	bool timeStamp = false;
 
 	if (server.hasArg("commitTRACKER"))
 	{
@@ -3545,6 +3581,14 @@ void handle_tracker()
 						pos2INET = true;
 				}
 			}
+			if (server.argName(i) == "trackerTimeStamp")
+			{
+				if (server.arg(i) != "")
+				{
+					if (String(server.arg(i)) == "OK")
+						timeStamp = true;
+				}
+			}
 		}
 		config.trk_en = trakerEn;
 		config.trk_smartbeacon = smartEn;
@@ -3558,6 +3602,7 @@ void handle_tracker()
 		config.trk_altitude = optAlt;
 		config.trk_bat = optBat;
 		config.trk_sat = optSat;
+		config.trk_timestamp = timeStamp;
 
 		saveEEPROM();
 		initInterval=true;
@@ -3711,6 +3756,13 @@ void handle_tracker()
 	if (config.trk_compress)
 		compressEnFlag = "checked";
 	html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"compressEnable\" value=\"OK\" " + compressEnFlag + "><span class=\"slider round\"></span></label><label style=\"vertical-align: bottom;font-size: 8pt;\"><i> *Switch compress packet</i></label></td>\n";
+	html += "</tr>\n";
+	html += "<tr>\n";
+	html += "<td align=\"right\"><b>Time Stamp:</b></td>\n";
+	String timeStampFlag = "";
+	if (config.trk_timestamp)
+		timeStampFlag = "checked";
+	html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"trackerTimeStamp\" value=\"OK\" " + timeStampFlag + "><span class=\"slider round\"></span></label></td>\n";
 	html += "</tr>\n";
 	String trackerPos2RFFlag = "";
 	String trackerPos2INETFlag = "";

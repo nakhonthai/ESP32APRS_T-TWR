@@ -187,6 +187,7 @@ typedef struct Config_Struct
 	//--Position
 	bool igate_bcn;
 	bool igate_gps;
+	bool igate_timestamp;
 	float igate_lat;
 	float igate_lon;
 	float igate_alt;
@@ -202,6 +203,7 @@ typedef struct Config_Struct
 	bool digi_en;
 	bool digi_loc2rf;
 	bool digi_loc2inet;
+	bool digi_timestamp;
 	uint8_t digi_ssid;
 	char digi_mycall[10];
 	char digi_path[72];
@@ -224,6 +226,7 @@ typedef struct Config_Struct
 	bool trk_en;
 	bool trk_loc2rf;
 	bool trk_loc2inet;
+	bool trk_timestamp;
 	uint8_t trk_ssid;
 	char trk_mycall[10];
 	char trk_path[72];

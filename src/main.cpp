@@ -574,6 +574,7 @@ void defaultConfig()
   config.igate_lon = 100.4930;
   config.igate_alt = 0;
   config.igate_interval = 600;
+  config.igate_timestamp = false;
   sprintf(config.igate_symbol, "/&");
   sprintf(config.igate_object, "");
   sprintf(config.igate_phg, "");
@@ -585,6 +586,7 @@ void defaultConfig()
   config.digi_loc2rf = true;
   config.digi_loc2inet = false;
   config.digi_ssid = 3;
+  config.digi_timestamp = false;
   sprintf(config.digi_mycall, "NOCALL");
   sprintf(config.digi_path, "WIDE1-1");
   //--Position
@@ -607,6 +609,7 @@ void defaultConfig()
   config.trk_sat = false;
   config.trk_dx = false;
   config.trk_ssid = 9;
+  config.trk_timestamp = false;
   sprintf(config.trk_mycall, "NOCALL");
   sprintf(config.trk_path, "WIDE1-1,WIDE2-1");
 
@@ -2265,6 +2268,16 @@ String compress_position(double nowLat, double nowLng, int alt_feed, double cour
   return str_comp;
 }
 
+String getTimeStamp()
+{
+  char strtmp[50];
+  time_t now;
+  time(&now);
+  struct tm *info = gmtime(&now);
+  sprintf(strtmp, "%02d%02d%02dz", info->tm_mday, info->tm_hour, info->tm_min);
+  return String(strtmp);
+}
+
 String trk_gps_postion(String comment)
 {
   String rawData = "";
@@ -2311,11 +2324,6 @@ String trk_gps_postion(String comment)
     aprs_symbol = config.trk_symbol[1];
   }
 
-  char object[10];
-  memset(object, 0, 10);
-  memcpy(object, config.trk_item, strlen(config.trk_item));
-  object[9] = 0;
-
   if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
   {
     nowLat = gps.location.lat();
@@ -2355,14 +2363,27 @@ String trk_gps_postion(String comment)
 
       String compPosition = compress_position(nowLat, nowLng, gps.altitude.feet(), course, spdKnot, aprs_table, aprs_symbol, (gps.satellites.value()>3));
       // ESP_LOGE("GPS", "Compress=%s", aprs_position);
-      if (strlen(object) >= 3)
+      if (strlen(config.trk_item) >= 3)
       {
-        // sprintf(rawTNC, "%s-%d>APTWR1,%s:)%s!%c%s", config.aprs_mycall, config.aprs_ssid, Path.c_str(), object, aprs_table, aprs_position);
-        sprintf(rawTNC, ")%s!%s", object, compPosition.c_str());
+        char object[10];
+        memset(object, 0x20, 10);
+        memcpy(object, config.trk_item,strlen(config.trk_item));
+        object[9] = 0;
+        if(config.trk_timestamp){
+          String timeStamp=getTimeStamp();
+          sprintf(rawTNC, ";%s*%s%s", object, timeStamp, compPosition.c_str());
+        }else{
+          sprintf(rawTNC, ")%s!%s", config.trk_item, compPosition.c_str());
+        }
       }
       else
       {
-        sprintf(rawTNC, "!%s", compPosition.c_str());
+         if(config.trk_timestamp){
+          String timeStamp=getTimeStamp();
+          sprintf(rawTNC, "/%s%s",timeStamp, compPosition.c_str());
+        }else{
+          sprintf(rawTNC, "!%s", compPosition.c_str());
+        }
       }
     }
     else
@@ -2382,17 +2403,27 @@ String trk_gps_postion(String comment)
       {
         sprintf(csd_spd, "%03d/%03d", (int)gps.course.deg(), (int)gps.speed.knots());
       }
-      if (strlen(object) >= 3)
+      if (strlen(config.trk_item) >= 3)
       {
         char object[10];
-        memset(object, 0, 10);
-        strcpy(object, config.trk_item);
+        memset(object, 0x20, 10);
+        memcpy(object, config.trk_item,strlen(config.trk_item));
         object[9] = 0;
-        sprintf(rawTNC, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", object, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
+        if(config.trk_timestamp){
+          String timeStamp=getTimeStamp();
+          sprintf(rawTNC, ";%s*%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", object,timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
+        }else{
+          sprintf(rawTNC, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", config.trk_item, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
+        }
       }
       else
       {
-        sprintf(rawTNC, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
+        if(config.trk_timestamp){
+          String timeStamp=getTimeStamp();
+          sprintf(rawTNC, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s",timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
+        }else{
+          sprintf(rawTNC, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
+        }
       }
       if (config.trk_altitude)
       {
@@ -2409,7 +2440,7 @@ String trk_gps_postion(String comment)
   }
   else
   {
-    sprintf(rawTNC, ">%s ", object);
+    sprintf(rawTNC, ">%s ", config.trk_item);
   }
 
   String tnc2Raw = "";
@@ -2443,11 +2474,25 @@ String trk_fix_position(String comment)
     // ESP_LOGE("GPS", "Compress=%s", aprs_position);
     if (strlen(config.trk_item) >= 3)
     {
-      sprintf(loc, ")%s!%s", config.trk_item, compPosition.c_str());
+      char object[10];
+      memset(object, 0x20, 10);
+      memcpy(object, config.trk_item,strlen(config.trk_item));
+      object[9] = 0;
+      if(config.trk_timestamp){
+        String timeStamp=getTimeStamp();
+        sprintf(loc, ";%s*%s%s", object, timeStamp, compPosition.c_str());
+      }else{
+        sprintf(loc, ")%s!%s", config.trk_item, compPosition.c_str());
+      }
     }
     else
     {
-      sprintf(loc, "!%s", compPosition.c_str());
+      if(config.trk_timestamp){
+        String timeStamp=getTimeStamp();
+        sprintf(loc, "/%s%s",timeStamp, compPosition.c_str());
+      }else{
+        sprintf(loc, "!%s", compPosition.c_str());
+      }
     }
   }
   else
@@ -2467,14 +2512,24 @@ String trk_fix_position(String comment)
     if (strlen(config.trk_item) >= 3)
     {
       char object[10];
-      memset(object, 0, 10);
-      strcpy(object, config.trk_item);
+      memset(object, 0x20, 10);
+      memcpy(object, config.trk_item,strlen(config.trk_item));
       object[9] = 0;
-      sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
+      if(config.trk_timestamp){
+        String timeStamp=getTimeStamp();
+        sprintf(loc, ";%s*%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object,timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
+      }else{
+        sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", config.trk_item, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
+      }
     }
     else
     {
-      sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
+      if(config.trk_timestamp){
+        String timeStamp=getTimeStamp();
+        sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c",timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
+      }else{
+        sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
+      }
     }
 
     if (config.trk_alt > 0)
@@ -2526,14 +2581,24 @@ String igate_position(double lat, double lon, double alt, String comment)
   if (strlen(config.igate_object) >= 3)
   {
     char object[10];
-    memset(object, 0, 10);
-    strcpy(object, config.igate_object);
+    memset(object, 0x20, 10);
+    memcpy(object, config.igate_object,strlen(config.igate_object));
     object[9] = 0;
-    sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object, lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
+    if(config.igate_timestamp){
+      String timeStamp=getTimeStamp();
+      sprintf(loc, ";%s*%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object, timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
+    }else{
+      sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", config.igate_object, lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
+    }
   }
   else
   {
-    sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
+    if(config.igate_timestamp){
+      String timeStamp=getTimeStamp();      
+      sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c",timeStamp.c_str(), lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
+    }else{
+      sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
+    }
   }
   if (config.aprs_ssid == 0)
     sprintf(strtmp, "%s>APTWR", config.aprs_mycall);
@@ -2573,7 +2638,12 @@ String digi_position(double lat, double lon, double alt, String comment)
   {
     sprintf(strAltitude, "/A=%06d", (int)(alt * 3.28F));
   }
-  sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.digi_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.digi_symbol[1]);
+  if(config.digi_timestamp){
+    String timeStamp=getTimeStamp();
+    sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c",timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.digi_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.digi_symbol[1]);
+  }else{
+    sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.digi_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.digi_symbol[1]);
+  }
   if (config.digi_ssid == 0)
     sprintf(strtmp, "%s>APTWR", config.digi_mycall);
   else
