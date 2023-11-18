@@ -2001,9 +2001,16 @@ void setup()
     defaultConfig();
     log_d("Manual Default configure!");
     display.clearDisplay();
-    display.setCursor(10, 22);
-    display.print("Factory Reset!");
+    display.setTextSize(1);
+    display.setFont(&FreeMonoBold9pt7b);
+    display.setCursor(25, 25);
+    display.println("Factory");
+    display.setCursor(30, 45);
+    display.print("RESET!");
+    display.setFont();
+    display.setTextColor(WHITE);
     display.display();
+    delay(2000);
   }
 
   // ตรวจสอบคอนฟิกซ์ผิดพลาด
@@ -2015,12 +2022,14 @@ void setup()
   {
     log_d("Config EEPROM Error!");
     display.clearDisplay();
-    display.setCursor(12, 22);
+    display.drawYBitmap(50, 0, iconAlert, 28, 28, WHITE);
+    display.setCursor(25, 33);
     display.print("EEPROM Error!");
-    display.setCursor(10, 42);
-    display.print("Factory Default");
+    display.setCursor(23, 45);
+    display.print("Factory Reset");
     display.display();
     defaultConfig();
+    delay(2000);
   }
 
   if (config.bt_master == true)
