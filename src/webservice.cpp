@@ -255,7 +255,7 @@ void handle_dashboard()
 	if (WiFi.isConnected())
 		webString += "<td style=\"background: #ffffff;\">" + String(WiFi.RSSI()) + " dBm</td>\n";
 	else
-		webString += "<td style=\"background:#606060; color:#b0b0b0;\" aria-disabled=\"true>\">Disconnect</td>\n";
+		webString += "<td style=\"background:#606060; color:#b0b0b0;\" aria-disabled=\"true\">Disconnect</td>\n";
 	webString += "</tr>\n";
 	webString += "</table>\n";
 	webString += "<br />\n";
@@ -267,7 +267,7 @@ void handle_dashboard()
 	if (config.bt_master)
 		webString += "<td style=\"background:#0b0; color:#030; width:50%;\">Enabled</td>\n";
 	else
-		webString += "<td style=\"background:#606060; color:#b0b0b0;\" aria-disabled=\"true>\">Disabled</td>\n";
+		webString += "<td style=\"background:#606060; color:#b0b0b0;\" aria-disabled=\"true\">Disabled</td>\n";
 	webString += "</tr>\n";
 	webString += "<tr>\n";
 	webString += "<tr>\n";
@@ -346,15 +346,15 @@ void handle_sidebar()
 	if (aprsClient.connected() == true)
 		html += "<th style=\"background:#0b0; color:#030; width:50%;border-radius: 10px;border: 2px solid white;\">APRS-IS</th>\n";
 	else
-		html += "<th style=\"background:#606060; color:#b0b0b0;border-radius: 10px;border: 2px solid white;\" aria-disabled=\"true>\">APRS-IS</th>\n";
+		html += "<th style=\"background:#606060; color:#b0b0b0;border-radius: 10px;border: 2px solid white;\" aria-disabled=\"true\">APRS-IS</th>\n";
 	if (wireguard_active() == true)
 		html += "<th style=\"background:#0b0; color:#030; width:50%;border-radius: 10px;border: 2px solid white;\">VPN</th>\n";
 	else
-		html += "<th style=\"background:#606060; color:#b0b0b0;border-radius: 10px;border: 2px solid white;\" aria-disabled=\"true>\">VPN</th>\n";
+		html += "<th style=\"background:#606060; color:#b0b0b0;border-radius: 10px;border: 2px solid white;\" aria-disabled=\"true\">VPN</th>\n";
 	html += "</tr>\n";
 	html += "<tr>\n";
-	html += "<th style=\"background:#606060; color:#b0b0b0;border-radius: 10px;border: 2px solid white;\" aria-disabled=\"true>\">4G LTE</th>\n";
-	html += "<th style=\"background:#606060; color:#b0b0b0;border-radius: 10px;border: 2px solid white;\" aria-disabled=\"true>\">MQTT</th>\n";
+	html += "<th style=\"background:#606060; color:#b0b0b0;border-radius: 10px;border: 2px solid white;\" aria-disabled=\"true\">4G LTE</th>\n";
+	html += "<th style=\"background:#606060; color:#b0b0b0;border-radius: 10px;border: 2px solid white;\" aria-disabled=\"true\">MQTT</th>\n";
 	html += "</tr>\n";
 	html += "</table>\n";
 	html += "<br />\n";
