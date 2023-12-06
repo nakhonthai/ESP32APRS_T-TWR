@@ -4586,7 +4586,7 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
     sprintf(txtBox[1].text, "%.4f", config.freq_rx);
 
     display.setCursor(0, 54);
-    display.print("SEQ:");
+    display.print("SQL:");
     cbBox[0].isValue = true;
     cbBox[0].x = 25;
     cbBox[0].y = 52;
