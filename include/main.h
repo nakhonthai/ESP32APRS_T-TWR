@@ -12,7 +12,7 @@
 #define MAIN_H
 
 #define VERSION "0.3"
-#define VERSION_BUILD ' '
+#define VERSION_BUILD 'b'
 
 // #define DEBUG
 
@@ -195,7 +195,7 @@ typedef struct Config_Struct
 	char igate_symbol[3] = "N&";
 	char igate_object[10];
 	char igate_phg[8];
-	char igate_path[72];
+	uint8_t igate_path;
 	char igate_comment[50];
 	//--Filter
 
@@ -206,7 +206,7 @@ typedef struct Config_Struct
 	bool digi_timestamp;
 	uint8_t digi_ssid;
 	char digi_mycall[10];
-	char digi_path[72];
+	uint8_t digi_path;
 	uint16_t digi_delay; // ms
 	uint16_t digiFilter;
 	//--Position
@@ -229,7 +229,7 @@ typedef struct Config_Struct
 	bool trk_timestamp;
 	uint8_t trk_ssid;
 	char trk_mycall[10];
-	char trk_path[72];
+	uint8_t trk_path;
 	//--Position
 	bool trk_gps;
 	float trk_lat;
@@ -296,7 +296,7 @@ typedef struct Config_Struct
 	char http_username[32];
 	char http_password[64];
 
-	char path[4][15];
+	char path[4][72];
 
 	uint8_t gpio_sql_pin = -1;
 
@@ -416,4 +416,5 @@ bool waitResponse(String &data, String rsp = "\r\n", uint32_t timeout = 1000);
 String sendIsAckMsg(String toCallSign, char *msgId);
 String trk_gps_postion(String comment);
 String trk_fix_position(String comment);
+String getPath(int idx);
 #endif

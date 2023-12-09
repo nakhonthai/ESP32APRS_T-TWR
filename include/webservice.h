@@ -69,6 +69,8 @@ const timeZoneName tzList[40] PROGMEM= {
 	{+14.00, "(GMT +14:00) Line Islands, Tokelau"},
 };
 
+#define PATH_LEN 17
+const char PATH_NAME[PATH_LEN][15] = {"OFF", "DST-TRACE 1", "DST-TRACE 2", "DST-TRACE 3", "DST-TRACE 4", "TRACE1-1", "TRACE2-2", "TRACE3-3", "WIDE1-1","RFONLY","RELAY","GATE","ECHO","UserDefine 1","UserDefine 2","UserDefine 3","UserDefine 4"};
 
 // ใช้ตัวแปรโกลบอลในไฟล์ main.cpp
 extern statusType status;

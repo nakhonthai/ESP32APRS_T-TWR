@@ -269,7 +269,7 @@ private:
 public:
 	// struct textboxType {
 	char text[30];
-	char item[10][30];
+	char item[20][30];
 	int x;
 	int y;
 	unsigned int length;

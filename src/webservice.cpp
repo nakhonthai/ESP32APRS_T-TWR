@@ -235,15 +235,15 @@ void handle_dashboard()
 	webString += "<tr>\n";
 	webString += "<td>MODE</td>\n";
 	String strWiFiMode = "OFF";
-	if (config.wifi_mode == WIFI_STA)
+	if (config.wifi_mode == WIFI_STA_FIX)
 	{
 		strWiFiMode = "STA";
 	}
-	else if (config.wifi_mode == WIFI_AP)
+	else if (config.wifi_mode == WIFI_AP_FIX)
 	{
 		strWiFiMode = "AP";
 	}
-	else if (config.wifi_mode == WIFI_AP_STA)
+	else if (config.wifi_mode == WIFI_AP_STA_FIX)
 	{
 		strWiFiMode = "AP+STA";
 	}
@@ -1544,7 +1544,6 @@ void handle_system()
 				{
 					strcpy(config.http_username, server.arg(i).c_str());
 				}
-				break;
 			}
 			if (server.argName(i) == "webauth_pass")
 			{
@@ -1552,7 +1551,46 @@ void handle_system()
 				{
 					strcpy(config.http_password, server.arg(i).c_str());
 				}
-				break;
+			}
+		}
+		saveEEPROM();
+		String html = "OK";
+		server.send(200, "text/html", html);
+	}else if (server.hasArg("commitPath"))
+	{
+		for (uint8_t i = 0; i < server.args(); i++)
+		{
+			// Serial.print("SERVER ARGS ");
+			// Serial.print(server.argName(i));
+			// Serial.print("=");
+			// Serial.println(server.arg(i));
+			if (server.argName(i) == "path1")
+			{
+				if (server.arg(i) != "")
+				{
+					strcpy(config.path[0], server.arg(i).c_str());
+				}
+			}
+			if (server.argName(i) == "path2")
+			{
+				if (server.arg(i) != "")
+				{
+					strcpy(config.path[1], server.arg(i).c_str());
+				}
+			}
+			if (server.argName(i) == "path3")
+			{
+				if (server.arg(i) != "")
+				{
+					strcpy(config.path[1], server.arg(i).c_str());
+				}
+			}
+			if (server.argName(i) == "path4")
+			{
+				if (server.arg(i) != "")
+				{
+					strcpy(config.path[3], server.arg(i).c_str());
+				}
 			}
 		}
 		saveEEPROM();
@@ -1849,6 +1887,31 @@ void handle_system()
 		html += "<input type=\"hidden\" name=\"commitWebAuth\"/>\n";
 		html += "</form><br /><br />";
 
+		/************************ PATH USER define **************************/
+		html += "<form id='formPath' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
+		html += "<table>\n";
+		html += "<th colspan=\"2\"><span><b>PATH USER Define</b></span></th>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>PATH_1:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input size=\"72\" maxlength=\"72\" class=\"form-control\" name=\"path1\" type=\"text\" value=\"" + String(config.path[0]) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "<tr>\n";
+		html += "<td align=\"right\"><b>PATH_2:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input size=\"72\" maxlength=\"72\" class=\"form-control\" name=\"path2\" type=\"text\" value=\"" + String(config.path[1]) + "\" /></td>\n";
+		html += "</tr>\n";
+				html += "<tr>\n";
+		html += "<td align=\"right\"><b>PATH_3:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input size=\"72\" maxlength=\"72\" class=\"form-control\" name=\"path3\" type=\"text\" value=\"" + String(config.path[2]) + "\" /></td>\n";
+		html += "</tr>\n";
+				html += "<tr>\n";
+		html += "<td align=\"right\"><b>PATH_4:</b></td>\n";
+		html += "<td style=\"text-align: left;\"><input size=\"72\" maxlength=\"72\" class=\"form-control\" name=\"path4\" type=\"text\" value=\"" + String(config.path[3]) + "\" /></td>\n";
+		html += "</tr>\n";
+		html += "</table><br />\n";
+		html += "<div><button type='submit' id='submitPath'  name=\"commitPath\"> Apply Change </button></div>\n";
+		html += "<input type=\"hidden\" name=\"commitPath\"/>\n";
+		html += "</form><br /><br />";
+
 		html += "<form id='formDisp' method=\"POST\" action='#' enctype='multipart/form-data'>\n";
 		// html += "<h2>Display Setting</h2>\n";
 		html += "<table>\n";
@@ -2131,7 +2194,8 @@ void handle_igate()
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.igate_path, server.arg(i).c_str());
+					if (isValidNumber(server.arg(i)))
+						config.igate_path = server.arg(i).toInt();
 				}
 			}
 			if (server.argName(i) == "igateComment")
@@ -2523,7 +2587,21 @@ void handle_igate()
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>PATH:</b></td>\n";
-		html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"igatePath\" name=\"igatePath\" type=\"text\" value=\"" + String(config.igate_path) + "\" /></td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"igatePath\" id=\"igatePath\">\n";
+		for (uint8_t pthIdx = 0; pthIdx < PATH_LEN; pthIdx++)
+		{
+			if (config.igate_path == pthIdx)
+			{
+				html += "<option value=\"" + String(pthIdx) + "\" selected>" + String(PATH_NAME[pthIdx]) + "</option>\n";
+			}
+			else
+			{
+				html += "<option value=\"" + String(pthIdx) + "\">" + String(PATH_NAME[pthIdx]) + "</option>\n";
+			}
+		}
+		html += "</select></td>\n";
+		//html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"igatePath\" name=\"igatePath\" type=\"text\" value=\"" + String(config.igate_path) + "\" /></td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>Server Host:</b></td>\n";
@@ -2586,8 +2664,8 @@ void handle_igate()
 			igatePos2INETFlag = "checked";
 		html += "<tr><td style=\"text-align: right;\">Location:</td><td style=\"text-align: left;\"><input type=\"radio\" name=\"igatePosSel\" value=\"0\" " + igatePosFixFlag + "/>Fix <input type=\"radio\" name=\"igatePosSel\" value=\"1\" " + igatePosGPSFlag + "/>GPS </td></tr>\n";
 		html += "<tr><td style=\"text-align: right;\">TX Channel:</td><td style=\"text-align: left;\"><input type=\"checkbox\" name=\"igatePos2RF\" value=\"OK\" " + igatePos2RFFlag + "/>RF <input type=\"checkbox\" name=\"igatePos2INET\" value=\"OK\" " + igatePos2INETFlag + "/>Internet </td></tr>\n";
-		html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.0001\" id=\"igatePosLat\" name=\"igatePosLat\" type=\"number\" value=\"" + String(config.igate_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
-		html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.0001\" id=\"igatePosLon\" name=\"igatePosLon\" type=\"number\" value=\"" + String(config.igate_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.00001\" id=\"igatePosLat\" name=\"igatePosLat\" type=\"number\" value=\"" + String(config.igate_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.00001\" id=\"igatePosLon\" name=\"igatePosLon\" type=\"number\" value=\"" + String(config.igate_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
 		html += "<tr><td style=\"text-align: right;\">Altitude:</td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"0.1\" id=\"igatePosAlt\" name=\"igatePosAlt\" type=\"number\" value=\"" + String(config.igate_alt, 2) + "\" /> meter. *Value 0 is not send height</td></tr>\n";
 		html += "</table></td>";
 		html += "</tr>\n";
@@ -2892,7 +2970,8 @@ void handle_digi()
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.digi_path, server.arg(i).c_str());
+					if (isValidNumber(server.arg(i)))
+						config.digi_path = server.arg(i).toInt();
 				}
 			}
 			if (server.argName(i) == "digiComment")
@@ -3149,7 +3228,21 @@ void handle_digi()
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>PATH:</b></td>\n";
-		html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"digiPath\" name=\"digiPath\" type=\"text\" value=\"" + String(config.digi_path) + "\" /></td>\n";
+		html += "<td style=\"text-align: left;\">\n";
+		html += "<select name=\"digiPath\" id=\"digiPath\">\n";
+		for (uint8_t pthIdx = 0; pthIdx < PATH_LEN; pthIdx++)
+		{
+			if (config.digi_path == pthIdx)
+			{
+				html += "<option value=\"" + String(pthIdx) + "\" selected>" + String(PATH_NAME[pthIdx]) + "</option>\n";
+			}
+			else
+			{
+				html += "<option value=\"" + String(pthIdx) + "\">" + String(PATH_NAME[pthIdx]) + "</option>\n";
+			}
+		}
+		html += "</select></td>\n";
+		//html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"digiPath\" name=\"digiPath\" type=\"text\" value=\"" + String(config.digi_path) + "\" /></td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>Text Comment:</b></td>\n";
@@ -3189,8 +3282,8 @@ void handle_digi()
 			digiPos2INETFlag = "checked";
 		html += "<tr><td style=\"text-align: right;\">Location:</td><td style=\"text-align: left;\"><input type=\"radio\" name=\"digiPosSel\" value=\"0\" " + digiPosFixFlag + "/>Fix <input type=\"radio\" name=\"digiPosSel\" value=\"1\" " + digiPosGPSFlag + "/>GPS </td></tr>\n";
 		html += "<tr><td style=\"text-align: right;\">TX Channel:</td><td style=\"text-align: left;\"><input type=\"checkbox\" name=\"digiPos2RF\" value=\"OK\" " + digiPos2RFFlag + "/>RF <input type=\"checkbox\" name=\"digiPos2INET\" value=\"OK\" " + digiPos2INETFlag + "/>Internet </td></tr>\n";
-		html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.0001\" id=\"digiPosLat\" name=\"digiPosLat\" type=\"number\" value=\"" + String(config.digi_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
-		html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.0001\" id=\"digiPosLon\" name=\"digiPosLon\" type=\"number\" value=\"" + String(config.digi_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.00001\" id=\"digiPosLat\" name=\"digiPosLat\" type=\"number\" value=\"" + String(config.digi_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
+		html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.00001\" id=\"digiPosLon\" name=\"digiPosLon\" type=\"number\" value=\"" + String(config.digi_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
 		html += "<tr><td style=\"text-align: right;\">Altitude:</td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"0.1\" id=\"digiPosAlt\" name=\"digiPosAlt\" type=\"number\" value=\"" + String(config.digi_alt, 2) + "\" /> meter. *Value 0 is not send height</td></tr>\n";
 		html += "</table></td>";
 		html += "</tr>\n";
@@ -3557,7 +3650,8 @@ void handle_tracker()
 			{
 				if (server.arg(i) != "")
 				{
-					strcpy(config.trk_path, server.arg(i).c_str());
+					if (isValidNumber(server.arg(i)))
+						config.trk_path = server.arg(i).toInt();
 				}
 			}
 			if (server.argName(i) == "trackerComment")
@@ -3739,7 +3833,21 @@ void handle_tracker()
 	html += "</tr>\n";
 	html += "<tr>\n";
 	html += "<td align=\"right\"><b>PATH:</b></td>\n";
-	html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"trackerPath\" name=\"trackerPath\" type=\"text\" value=\"" + String(config.trk_path) + "\" /></td>\n";
+	html += "<td style=\"text-align: left;\">\n";
+	html += "<select name=\"trackerPath\" id=\"trackerPath\">\n";
+	for (uint8_t pthIdx = 0; pthIdx < PATH_LEN; pthIdx++)
+	{
+		if (config.trk_path == pthIdx)
+		{
+			html += "<option value=\"" + String(pthIdx) + "\" selected>" + String(PATH_NAME[pthIdx]) + "</option>\n";
+		}
+		else
+		{
+			html += "<option value=\"" + String(pthIdx) + "\">" + String(PATH_NAME[pthIdx]) + "</option>\n";
+		}
+	}
+	html += "</select></td>\n";
+	//html += "<td style=\"text-align: left;\"><input maxlength=\"72\" size=\"72\" id=\"trackerPath\" name=\"trackerPath\" type=\"text\" value=\"" + String(config.trk_path) + "\" /></td>\n";
 	html += "</tr>\n";
 
 	html += "<tr>\n";
@@ -3816,8 +3924,8 @@ void handle_tracker()
 		table = "2";
 	html += "<td style=\"text-align: left;\">Table:<input maxlength=\"1\" size=\"1\" id=\"trackerTable\" name=\"trackerTable\" type=\"text\" value=\"" + String(config.trk_symbol[0]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> Symbol:<input maxlength=\"1\" size=\"1\" id=\"trackerSymbol\" name=\"trackerSymbol\" type=\"text\" value=\"" + String(config.trk_symbol[1]) + "\" style=\"background-color: rgb(97, 239, 170);\" /> <img border=\"1\" style=\"vertical-align: middle;\" id=\"trackerImgSymbol\" onclick=\"openWindowSymbol(0);\" src=\"http://www.dprns.com/symbols/icons/" + String((int)config.trk_symbol[1]) + "-" + table + ".png\"> <i>*Click icon for select symbol</i></td>\n";
 	html += "</tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.0001\" id=\"trackerPosLat\" name=\"trackerPosLat\" type=\"number\" value=\"" + String(config.trk_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
-	html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.0001\" id=\"trackerPosLon\" name=\"trackerPosLon\" type=\"number\" value=\"" + String(config.trk_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
+	html += "<tr><td style=\"text-align: right;\">Latitude:</td><td style=\"text-align: left;\"><input min=\"-90\" max=\"90\" step=\"0.00001\" id=\"trackerPosLat\" name=\"trackerPosLat\" type=\"number\" value=\"" + String(config.trk_lat, 5) + "\" />degrees (positive for North, negative for South)</td></tr>\n";
+	html += "<tr><td style=\"text-align: right;\">Longitude:</td><td style=\"text-align: left;\"><input min=\"-180\" max=\"180\" step=\"0.00001\" id=\"trackerPosLon\" name=\"trackerPosLon\" type=\"number\" value=\"" + String(config.trk_lon, 5) + "\" />degrees (positive for East, negative for West)</td></tr>\n";
 	html += "<tr><td style=\"text-align: right;\">Altitude:</td><td style=\"text-align: left;\"><input min=\"0\" max=\"10000\" step=\"0.1\" id=\"trackerPosAlt\" name=\"trackerPosAlt\" type=\"number\" value=\"" + String(config.trk_alt, 2) + "\" /> meter. *Value 0 is not send height</td></tr>\n";
 	html += "</table></td>";
 	html += "</tr>\n";

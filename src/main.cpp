@@ -578,7 +578,7 @@ void defaultConfig()
   sprintf(config.igate_symbol, "/&");
   sprintf(config.igate_object, "");
   sprintf(config.igate_phg, "");
-  sprintf(config.igate_path, "WIDE1-1");
+  config.igate_path = 8;
   sprintf(config.igate_comment, "IGate MODE");
 
   // DIGI REPEATER
@@ -588,7 +588,7 @@ void defaultConfig()
   config.digi_ssid = 3;
   config.digi_timestamp = false;
   sprintf(config.digi_mycall, "NOCALL");
-  sprintf(config.digi_path, "WIDE1-1");
+  config.digi_path = 8;
   //--Position
   config.digi_gps = false;
   config.digi_lat = 13.7555;
@@ -608,10 +608,10 @@ void defaultConfig()
   config.trk_bat = false;
   config.trk_sat = false;
   config.trk_dx = false;
-  config.trk_ssid = 9;
+  config.trk_ssid = 7;
   config.trk_timestamp = false;
   sprintf(config.trk_mycall, "NOCALL");
-  sprintf(config.trk_path, "WIDE1-1,WIDE2-1");
+  config.trk_path=2;
 
   //--Position
   config.trk_gps = false;
@@ -661,9 +661,9 @@ void defaultConfig()
   config.preamble = 3;
   sprintf(config.ntp_host, "ntp.dprns.com");
 
-  sprintf(config.path[0], "WIDE1-1");
+  sprintf(config.path[0], "TRACE4-4");
   sprintf(config.path[1], "WIDE1-1,WIDE2-1");
-  sprintf(config.path[2], "TRACK3-3");
+  sprintf(config.path[2], "YBOX");
   sprintf(config.path[3], "RS0ISS");
 
   // VPN Wireguard
@@ -2450,10 +2450,15 @@ String trk_gps_postion(String comment)
   else
     sprintf(strtmp, "%s-%d>APTWR", config.trk_mycall, config.trk_ssid);
   tnc2Raw = String(strtmp);
-  if (config.trk_path[0] != 0)
+  if (config.trk_path < 5)
+  {
+    if (config.trk_path > 0)
+      tnc2Raw += "-" + String(config.trk_path);
+  }
+  else
   {
     tnc2Raw += ",";
-    tnc2Raw += String(config.trk_path);
+    tnc2Raw += getPath(config.trk_path);
   }
   tnc2Raw += ":";
   tnc2Raw += String(rawTNC);
@@ -2546,10 +2551,15 @@ String trk_fix_position(String comment)
   else
     sprintf(strtmp, "%s-%d>APTWR", config.trk_mycall, config.trk_ssid);
   tnc2Raw = String(strtmp);
-  if (config.trk_path[0] != 0)
+  if (config.trk_path < 5)
+  {
+    if (config.trk_path > 0)
+      tnc2Raw += "-" + String(config.trk_path);
+  }
+  else
   {
     tnc2Raw += ",";
-    tnc2Raw += String(config.trk_path);
+    tnc2Raw += getPath(config.trk_path);
   }
   tnc2Raw += ":";
   tnc2Raw += String(loc);
@@ -2605,10 +2615,15 @@ String igate_position(double lat, double lon, double alt, String comment)
   else
     sprintf(strtmp, "%s-%d>APTWR", config.aprs_mycall, config.aprs_ssid);
   tnc2Raw = String(strtmp);
-  if (config.igate_path[0] != 0)
+  if (config.igate_path < 5)
+  {
+    if (config.igate_path > 0)
+      tnc2Raw += "-" + String(config.igate_path);
+  }
+  else
   {
     tnc2Raw += ",";
-    tnc2Raw += String(config.igate_path);
+    tnc2Raw += getPath(config.igate_path);
   }
   tnc2Raw += ":";
   tnc2Raw += String(loc);
@@ -2649,10 +2664,15 @@ String digi_position(double lat, double lon, double alt, String comment)
   else
     sprintf(strtmp, "%s-%d>APTWR", config.digi_mycall, config.digi_ssid);
   tnc2Raw = String(strtmp);
-  if (config.digi_path[0] != 0)
+  if (config.digi_path < 5)
+  {
+    if (config.digi_path > 0)
+      tnc2Raw += "-" + String(config.digi_path);
+  }
+  else
   {
     tnc2Raw += ",";
-    tnc2Raw += String(config.digi_path);
+    tnc2Raw += getPath(config.digi_path);
   }
   tnc2Raw += ":";
   tnc2Raw += String(loc);
@@ -2939,6 +2959,63 @@ void taskTNC(void *pvParameters)
   }
 }
 
+String getPath(int idx)
+{
+    String ret = "";
+    switch (idx)
+    {
+    case 0: // OFF
+        ret = "";
+        break;
+    case 1: // DST-TRACE1
+    case 2: // DST-TRACE2
+    case 3: // DST-TRACE3
+    case 4: // DST-TRACE4
+        ret = "DST" + String(idx);
+        break;
+    case 5: // TRACE1-1
+        ret = "TRACE1-1";
+        break;
+    case 6:
+        ret = "TRACE2-2";
+        break;
+    case 7:
+        ret = "TRACE3-3";
+        break;
+    case 8:
+        ret = "WIDE1-1";
+        break;
+    case 9:
+        ret = "RFONLY";
+        break;
+    case 10:
+        ret = "RELAY";
+        break;
+    case 11:
+        ret = "GATE";
+        break;
+    case 12:
+        ret = "ECHO";
+        break;
+    case 13: // UserDefine1
+        ret = String(config.path[0]);
+        break;
+    case 14: // UserDefine2
+        ret = String(config.path[1]);
+        break;
+    case 15: // UserDefine3
+        ret = String(config.path[2]);
+        break;
+    case 16: // UserDefine4
+        ret = String(config.path[3]);
+        break;
+    default:
+        ret = "WIDE1-1";
+        break;
+    }
+    return ret;
+}
+
 long timeSlot;
 bool initInterval=true;
 void taskAPRS(void *pvParameters)
@@ -2956,7 +3033,7 @@ void taskAPRS(void *pvParameters)
 
   APRS_init();
   APRS_setCallsign(config.aprs_mycall, config.aprs_ssid);
-  APRS_setPath1(config.igate_path, 1);
+  //APRS_setPath1(config.igate_path, 1);
   APRS_setPreamble(300);
   APRS_setTail(0);
   sendTimer = millis() - (config.igate_interval * 1000) + 30000;

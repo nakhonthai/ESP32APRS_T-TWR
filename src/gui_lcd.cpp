@@ -12,6 +12,7 @@
 #include "esp_adc_cal.h"
 #include "AFSK.h"
 #include "qrcode.h"
+#include "webservice.h"
 
 #include <HTTPClient.h>
 #include <ESP32httpUpdate.h>
@@ -2006,10 +2007,10 @@ void on_igate_position_selected(MenuItem *p_menu_item)
 
 void on_igate_function_selected(MenuItem *p_menu_item)
 {
-    int max_sel = 6;
+    int max_sel = 5;
     MyTextBox txtBox;
     MyCheckBox chkBox[3];
-    MyComboBox cbBox[2];
+    MyComboBox cbBox;
     String str;
     // char ch[10];
     int x, i;
@@ -2033,10 +2034,10 @@ void on_igate_function_selected(MenuItem *p_menu_item)
     chkBox[1].y = 18;
     sprintf(chkBox[1].text, "INET2RF");
 
-    // chkBox[2].Checked = false;
-    // chkBox[2].x = 0;
-    // chkBox[2].y = 29;
-    // sprintf(chkBox[2].text, "TLM");
+    chkBox[2].Checked = false;
+    chkBox[2].x = 0;
+    chkBox[2].y = 29;
+    sprintf(chkBox[2].text, "TIME STAMP");
 
     // display.setCursor(35, 30);
     // display.print("INTERVAL");
@@ -2047,21 +2048,21 @@ void on_igate_function_selected(MenuItem *p_menu_item)
     // cbBox[0].char_max = 1800;
     // cbBox[0].SetIndex(0);
 
-    display.setCursor(0, 42);
+    display.setCursor(0, 40);
     display.print("PTH:");
-    cbBox[1].isValue = false;
-    cbBox[1].x = 20;
-    cbBox[1].y = 40;
-    cbBox[1].length = 13;
+    cbBox.isValue = false;
+    cbBox.x = 20;
+    cbBox.y = 38;
+    cbBox.length = 13;
     int sel = 0;
-    cbBox[1].maxItem(4);
-    for (i = 0; i < 4; i++)
+    cbBox.maxItem(PATH_LEN);
+    for (i = 0; i < PATH_LEN; i++)
     {
-        cbBox[1].AddItem(i, config.path[i]);
-        if (!strcmp(&config.igate_path[0], &config.path[i][0]))
-            sel = i;
+        cbBox.AddItem(i, PATH_NAME[i]);
+        //if (!strcmp(&config.igate_path[0], &config.path[i][0]))
+        //    sel = i;
     }
-    cbBox[1].SetIndex(sel);
+    cbBox.SetIndex(config.igate_path);
 
     display.setCursor(0, 54);
     display.print("TXT:");
@@ -2084,24 +2085,20 @@ void on_igate_function_selected(MenuItem *p_menu_item)
         {
             keyPrev = encoder0Pos;
 
-            for (i = 0; i < 2; i++)
+            for (i = 0; i < 3; i++)
                 chkBox[i].isSelect = false;
-            cbBox[0].isSelect = false;
-            cbBox[1].isSelect = false;
+            cbBox.isSelect = false;
             txtBox.isSelect = false;
 
             if (encoder0Pos < 3)
                 chkBox[encoder0Pos].isSelect = true;
             if (encoder0Pos == 3)
-                cbBox[0].isSelect = true;
+                cbBox.isSelect = true;
             if (encoder0Pos == 4)
-                cbBox[1].isSelect = true;
-            if (encoder0Pos == 5)
                 txtBox.isSelect = true;
-            for (i = 0; i < 2; i++)
+            for (i = 0; i < 3; i++)
                 chkBox[i].CheckBoxShow();
-            cbBox[0].Show();
-            cbBox[1].Show();
+            cbBox.Show();
             txtBox.TextBoxShow();
         }
         else
@@ -2120,29 +2117,22 @@ void on_igate_function_selected(MenuItem *p_menu_item)
             if ((millis() - currentTime) < 1500)
             {
                 i = encoder0Pos;
-                if (i == 5)
+                if (i == 4)
                 {
                     txtBox.TextBox();
                     strcpy(config.igate_comment, txtBox.text);
                     encoder0Pos = keyPrev;
                 }
-                else if (i == 4)
-                {
-                    cbBox[1].SelectItem();
-                    int n = cbBox[1].GetIndex();
-                    if (n < 4)
-                    {
-                        strcpy(config.igate_path, config.path[n]);
-                    }
-                    encoder0Pos = keyPrev;
-                    cbBox[1].Show();
-                }
                 else if (i == 3)
                 {
-                    cbBox[0].SelectValue(0, 1800, 60);
-                    // config.igate_tlm_interval = cbBox[0].GetValue();
+                    cbBox.SelectItem();
+                    int n = cbBox.GetIndex();
+                    if (n < PATH_LEN)
+                    {
+                        config.igate_path=n;
+                    }
                     encoder0Pos = keyPrev;
-                    cbBox[0].Show();
+                    cbBox.Show();
                 }
                 else
                 {
@@ -2156,7 +2146,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
                         config.inet2rf = chkBox[i].Checked;
                         break;
                     case 2:
-                        // config.igate_tlm = chkBox[i].Checked;
+                        config.igate_timestamp = chkBox[i].Checked;
                         break;
                     }
                     encoder0Pos = keyPrev;
@@ -2617,15 +2607,13 @@ void on_tracker_function_selected(MenuItem *p_menu_item)
     cbBox[1].x = 20;
     cbBox[1].y = 50;
     cbBox[1].length = 13;
-    cbBox[1].maxItem(4);
+    cbBox[1].maxItem(PATH_LEN);
     int sel = 0;
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < PATH_LEN; i++)
     {
-        cbBox[1].AddItem(i, config.path[i]);
-        if (!strcmp(&config.trk_path[0], &config.path[i][0]))
-            sel = i;
+        cbBox[1].AddItem(i, PATH_NAME[i]);
     }
-    cbBox[1].SetIndex(sel);
+    cbBox[1].SetIndex(config.trk_path);
 
     display.display();
     encoder0Pos = 0;
@@ -2676,9 +2664,9 @@ void on_tracker_function_selected(MenuItem *p_menu_item)
                 {
                     cbBox[1].SelectItem();
                     int n = cbBox[1].GetIndex();
-                    if (n < 4)
+                    if (n < PATH_LEN)
                     {
-                        strcpy(config.trk_path, config.path[n]);
+                        config.trk_path=n;
                     }
                     encoder0Pos = keyPrev;
                     cbBox[1].Show();
@@ -3127,15 +3115,13 @@ void on_digi_function_selected(MenuItem *p_menu_item)
     cbBox[1].x = 20;
     cbBox[1].y = 51;
     cbBox[1].length = 13;
-    cbBox[2].maxItem(4);
+    cbBox[1].maxItem(PATH_LEN);
     int sel = 0;
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < PATH_LEN; i++)
     {
-        cbBox[1].AddItem(i, config.path[i]);
-        if (strcmp(config.digi_path, config.path[i]) == 0)
-            sel = i;
+        cbBox[1].AddItem(i, PATH_NAME[i]);
     }
-    cbBox[1].SetIndex(sel);
+    cbBox[1].SetIndex(config.digi_path);
 
     display.display();
     encoder0Pos = 0;
@@ -3186,9 +3172,10 @@ void on_digi_function_selected(MenuItem *p_menu_item)
                 {
                     cbBox[1].SelectItem();
                     int n = cbBox[1].GetIndex();
-                    if (n < 4)
+                    if (n < PATH_LEN)
                     {
-                        strcpy(config.digi_path, config.path[n]);
+                        config.digi_path=n;
+                        //strcpy(config.digi_path, config.path[n]);
                     }
                     encoder0Pos = keyPrev;
                     cbBox[1].Show();
