@@ -153,21 +153,6 @@ typedef struct Config_Struct
 	uint32_t bt_pin;
 	char bt_power;
 
-	//--RF Module
-	bool rf_en;
-	uint8_t rf_type;
-	float freq_rx;
-	float freq_tx;
-	int offset_rx;
-	int offset_tx;
-	int tone_rx;
-	int tone_tx;
-	uint8_t band;
-	uint8_t sql_level;
-	bool rf_power;
-	uint8_t volume;
-	uint8_t mic;
-
 	// IGATE
 	bool igate_en;
 	bool rf2inet;
