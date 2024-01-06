@@ -38,6 +38,7 @@
 #include "XPowersLib.h"
 
 #include "cppQueue.h"
+#include "sa868.h"
 
 #define keyA ENCODER_B_PIN
 #define keyB ENCODER_A_PIN
@@ -156,6 +157,7 @@ const menuListName menuList[MAX_MENU] PROGMEM = {
 const uint8_t bluetooth_icon[] = {0x10, 0x5c, 0x38, 0x10, 0x38, 0x5c, 0x10};
 
 extern Adafruit_SSD1306 display;
+extern SA868 sa868;
 extern cppQueue dispBuffer;
 extern int conStat;
 extern int conStatNetwork;
