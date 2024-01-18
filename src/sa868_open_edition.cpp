@@ -11,7 +11,7 @@ bool SA868_WriteAT1846Sreg(HardwareSerial * SerialRF, uint8_t reg, uint16_t valu
     String result;
     sprintf(str, "AT+POKE=%d,%d\r\n", reg, value);
     if (!SA868_WaitResponse(SerialRF, str, &result)) {
-        ESP_LOGD("SA8x8", "Error: reg: %02X <- val: %02X", reg, value);
+        ESP_LOGE("SA8x8", "Error: reg: %02X <- val: %02X", reg, value);
         return false;
     }
     
