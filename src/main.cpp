@@ -518,8 +518,8 @@ void defaultConfig()
   config.wifi_power = 44;
   config.wifi_ap_ch = 6;
   config.wifi_sta[0].enable = true;
-  sprintf(config.wifi_sta[0].wifi_ssid, "Nick_new");
-  sprintf(config.wifi_sta[0].wifi_pass, "nthtotyrj11a");
+  sprintf(config.wifi_sta[0].wifi_ssid, "APRSTH");
+  sprintf(config.wifi_sta[0].wifi_pass, "aprsthnetwork");
   for (int i = 1; i < 5; i++)
   {
     config.wifi_sta[i].enable = false;

@@ -31,6 +31,8 @@ typedef struct SA868_Version_Struct
     uint8_t revision;
 } SA868_Version;
 
+bool SA868_WaitResponse(HardwareSerial * SerialRF, const char * cmd, String * result);
+
 class SA868
 {
     public:
