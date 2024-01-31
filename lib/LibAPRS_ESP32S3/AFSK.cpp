@@ -270,7 +270,7 @@ void AFSK_init(Afsk *afsk)
       .size = FIR_LPF_N,
       .sampling_freq = SAMPLERATE,
       .pass_freq = 0,
-      .cutoff_freq = 1200,
+      .cutoff_freq = 1200+500,
   };
   int16_t *lpf_an, *bpf_an, *hpf_an;
   // LPF
@@ -465,7 +465,7 @@ static bool hdlcParse(Hdlc *hdlc, bool bit, FIFOBuffer *fifo)
       // on the RX LED.
 
       hdlc->receiving = true;
-      if (++hdlc_flag_count >= 3)
+      if (++hdlc_flag_count >= 2)
       {
         fifo_flush(fifo);
         LED_RX_ON();

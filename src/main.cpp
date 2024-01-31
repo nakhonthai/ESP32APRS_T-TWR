@@ -558,8 +558,8 @@ void defaultConfig()
   config.inet2rf = false;
   config.igate_loc2rf = false;
   config.igate_loc2inet = true;
-  config.rf2inetFilter=0xFFF;//All
-  config.inet2rfFilter=config.digiFilter=FILTER_OBJECT|FILTER_ITEM|FILTER_MESSAGE|FILTER_MICE|FILTER_POSITION|FILTER_WX;
+  config.rf2inetFilter = 0xFFF; // All
+  config.inet2rfFilter = config.digiFilter = FILTER_OBJECT | FILTER_ITEM | FILTER_MESSAGE | FILTER_MICE | FILTER_POSITION | FILTER_WX;
   //--APRS-IS
   config.aprs_ssid = 1;
   config.aprs_port = 14580;
@@ -596,7 +596,7 @@ void defaultConfig()
   config.digi_alt = 0;
   config.digi_interval = 600;
   config.digi_delay = 0;
-  config.digiFilter=FILTER_OBJECT|FILTER_ITEM|FILTER_MESSAGE|FILTER_MICE|FILTER_POSITION|FILTER_WX;
+  config.digiFilter = FILTER_OBJECT | FILTER_ITEM | FILTER_MESSAGE | FILTER_MICE | FILTER_POSITION | FILTER_WX;
   sprintf(config.digi_symbol, "/#");
   sprintf(config.digi_phg, "");
   sprintf(config.digi_comment, "DIGI MODE");
@@ -611,7 +611,7 @@ void defaultConfig()
   config.trk_ssid = 7;
   config.trk_timestamp = false;
   sprintf(config.trk_mycall, "NOCALL");
-  config.trk_path=2;
+  config.trk_path = 2;
 
   //--Position
   config.trk_gps = false;
@@ -652,7 +652,7 @@ void defaultConfig()
   config.dispRF = true;
   config.dispINET = false;
   config.filterDistant = 0;
-  config.dispFilter=FILTER_OBJECT|FILTER_ITEM|FILTER_MESSAGE|FILTER_MICE|FILTER_POSITION|FILTER_WX|FILTER_STATUS|FILTER_BUOY|FILTER_QUERY;
+  config.dispFilter = FILTER_OBJECT | FILTER_ITEM | FILTER_MESSAGE | FILTER_MICE | FILTER_POSITION | FILTER_WX | FILTER_STATUS | FILTER_BUOY | FILTER_QUERY;
   config.h_up = true;
   config.tx_display = true;
   config.rx_display = true;
@@ -917,10 +917,11 @@ uint16_t pkgType(const char *raw)
     break;
   case '}':
     type |= FILTER_THIRDPARTY;
-    ptr=strchr(raw,':');
-    if(ptr!=NULL){
-        ptr++;
-        type|=pkgType(ptr);
+    ptr = strchr(raw, ':');
+    if (ptr != NULL)
+    {
+      ptr++;
+      type |= pkgType(ptr);
     }
     break;
   case 'T':
@@ -972,16 +973,17 @@ int popTNC2Raw(int &ret)
 
 pkgListType getPkgList(int idx)
 {
-    pkgListType ret;
+  pkgListType ret;
 #ifdef BOARD_HAS_PSRAM
-    while (psramBusy)
-        delay(1);
-    psramBusy = true;
+  while (psramBusy)
+    delay(1);
+  psramBusy = true;
 #endif
-    memset(&ret,0,sizeof(pkgListType));
-    if(idx<PKGLISTSIZE) memcpy(&ret, &pkgList[idx], sizeof(pkgListType));
-    psramBusy = false;
-    return ret;
+  memset(&ret, 0, sizeof(pkgListType));
+  if (idx < PKGLISTSIZE)
+    memcpy(&ret, &pkgList[idx], sizeof(pkgListType));
+  psramBusy = false;
+  return ret;
 }
 
 int pkgListUpdate(char *call, char *raw, uint16_t type, bool channel)
@@ -1000,9 +1002,9 @@ int pkgListUpdate(char *call, char *raw, uint16_t type, bool channel)
   // strncpy(callsign, call, sz);
   memcpy(callsign, call, sz);
 #ifdef BOARD_HAS_PSRAM
-    while (psramBusy)
-        delay(1);
-    psramBusy = true;
+  while (psramBusy)
+    delay(1);
+  psramBusy = true;
 #endif
   int i = pkgList_Find(callsign, type);
   if (i > PKGLISTSIZE)
@@ -1012,7 +1014,7 @@ int pkgListUpdate(char *call, char *raw, uint16_t type, bool channel)
   }
   if (i > -1)
   { // Found call in old pkg
-    if ((channel==1)||(channel == pkgList[i].channel))
+    if ((channel == 1) || (channel == pkgList[i].channel))
     {
       pkgList[i].time = time(NULL);
       pkgList[i].pkg++;
@@ -1139,7 +1141,7 @@ bool pkgTxPush(const char *info, size_t len, int dly)
 void burstAfterVoice()
 {
   String rawData;
-  String cmn="";
+  String cmn = "";
   if (gps.location.isValid()) // TRACKER by GPS
   {
     rawData = trk_gps_postion(cmn);
@@ -1149,7 +1151,7 @@ void burstAfterVoice()
     rawData = trk_fix_position(cmn);
   }
   digitalWrite(POWER_PIN, config.rf_power); // RF Power LOW
-  digitalWrite(SA868_MIC_SEL, HIGH);          // Select = ESP2MIC
+  digitalWrite(SA868_MIC_SEL, HIGH);        // Select = ESP2MIC
   status.txCount++;
   log_d("Burst TX->RF: %s\n", rawData.c_str());
   APRS_setPreamble(10);
@@ -1184,7 +1186,7 @@ bool pkgTxSend()
         strcpy(info, txQueue[i].Info);
         psramBusy = false;
         digitalWrite(POWER_PIN, config.rf_power); // RF Power LOW
-        digitalWrite(SA868_MIC_SEL, HIGH);          // Select = ESP2MIC
+        digitalWrite(SA868_MIC_SEL, HIGH);        // Select = ESP2MIC
         status.txCount++;
         LED_Color(255, 0, 0);
         adcActive(false);
@@ -1346,25 +1348,28 @@ String SA868_getVERSION()
 
 String FRS_getVERSION()
 {
-    String data;
-    String version;
+  String data;
+  String version;
 
-    SerialRF.printf("AT+DMOVER\r\n");
-    if (SA868_waitResponse(data, "\r\n", 1000))
+  SerialRF.printf("AT+DMOVER\r\n");
+  if (SA868_waitResponse(data, "\r\n", 1000))
+  {
+    int st = data.indexOf("DMOVER:");
+    if (st > 0)
     {
-        int st=data.indexOf("DMOVER:");
-        if(st>0){
-            version = data.substring(st+7, data.indexOf("\r\n"));
-        }else{
-            version="Not found";
-        }
-        return version;
+      version = data.substring(st + 7, data.indexOf("\r\n"));
     }
     else
     {
-        // timeout or error
-        return "-";
+      version = "Not found";
     }
+    return version;
+  }
+  else
+  {
+    // timeout or error
+    return "-";
+  }
 }
 
 unsigned long SA818_Timeout = 0;
@@ -1376,32 +1381,40 @@ void RF_MODULE_SLEEP()
   // PMU.disableDC3();
 }
 
-
-String hexToString(String hex) {  //for String to HEX conversion
-  String text = "";    
-  for(int k=0;k< hex.length();k++) {
-    if(k%2!=0) {
+String hexToString(String hex)
+{ // for String to HEX conversion
+  String text = "";
+  for (int k = 0; k < hex.length(); k++)
+  {
+    if (k % 2 != 0)
+    {
       char temp[3];
-      sprintf(temp,"%c%c",hex[k-1],hex[k]);
+      sprintf(temp, "%c%c", hex[k - 1], hex[k]);
       int number = (int)strtol(temp, NULL, 16);
-      text+=char(number);
+      text += char(number);
     }
-  }  
+  }
   return text;
 }
 
-String ctcssToHex(unsigned int decValue, int section){  //use to convert the CTCSS reading which RF module needed
-  if(decValue == 7777){
+String ctcssToHex(unsigned int decValue, int section)
+{ // use to convert the CTCSS reading which RF module needed
+  if (decValue == 7777)
+  {
     return hexToString("FF");
   }
   String d1d0 = String(decValue);
-  if (decValue < 1000){
+  if (decValue < 1000)
+  {
     d1d0 = "0" + d1d0;
   }
-  if (section == 1) {
-    return hexToString(d1d0.substring(2,4));
-  }else{
-    return hexToString(d1d0.substring(0,2));
+  if (section == 1)
+  {
+    return hexToString(d1d0.substring(2, 4));
+  }
+  else
+  {
+    return hexToString(d1d0.substring(0, 2));
   }
 }
 
@@ -1419,7 +1432,7 @@ void RF_MODULE(bool boot)
   //! DC3 Radio & Pixels VDD , Don't change
   // PMU.setDC3Voltage(3400);
   // PMU.disableDC3();
-  pinMode(BUTTON_PTT_PIN,INPUT_PULLUP); //PTT BUTTON
+  pinMode(BUTTON_PTT_PIN, INPUT_PULLUP); // PTT BUTTON
 
   pinMode(SA868_MIC_SEL, OUTPUT); // MIC_SEL
   digitalWrite(SA868_MIC_SEL, LOW);
@@ -1901,7 +1914,7 @@ void setupPower()
   PMU.setChargeTargetVoltage(XPOWERS_AXP2101_CHG_VOL_4V2);
 
   // Disable the PMU long press shutdown function
-  //PMU.disableLongPressShutdown();
+  // PMU.disableLongPressShutdown();
   PMU.enableLongPressShutdown();
 
   // Get charging target current
@@ -1985,6 +1998,7 @@ void setup()
   // memset(TNC2Raw, 0, sizeof(TNC2Raw) * PKGTXSIZE);
 
   pinMode(ENCODER_OK_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_PTT_PIN, INPUT_PULLUP); // PTT BUTTON
 
   // Set up serial port
   Serial.begin(115200); // debug
@@ -2324,7 +2338,7 @@ String trk_gps_postion(String comment)
     aprs_symbol = config.trk_symbol[1];
   }
 
-  if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
+  if (gps.location.isValid() && (gps.hdop.hdop() < 10.0))
   {
     nowLat = gps.location.lat();
     nowLng = gps.location.lng();
@@ -2361,27 +2375,33 @@ String trk_gps_postion(String comment)
     if (config.trk_compress)
     { // Compress DATA
 
-      String compPosition = compress_position(nowLat, nowLng, gps.altitude.feet(), course, spdKnot, aprs_table, aprs_symbol, (gps.satellites.value()>3));
+      String compPosition = compress_position(nowLat, nowLng, gps.altitude.feet(), course, spdKnot, aprs_table, aprs_symbol, (gps.satellites.value() > 3));
       // ESP_LOGE("GPS", "Compress=%s", aprs_position);
       if (strlen(config.trk_item) >= 3)
       {
         char object[10];
         memset(object, 0x20, 10);
-        memcpy(object, config.trk_item,strlen(config.trk_item));
+        memcpy(object, config.trk_item, strlen(config.trk_item));
         object[9] = 0;
-        if(config.trk_timestamp){
-          String timeStamp=getTimeStamp();
+        if (config.trk_timestamp)
+        {
+          String timeStamp = getTimeStamp();
           sprintf(rawTNC, ";%s*%s%s", object, timeStamp, compPosition.c_str());
-        }else{
+        }
+        else
+        {
           sprintf(rawTNC, ")%s!%s", config.trk_item, compPosition.c_str());
         }
       }
       else
       {
-         if(config.trk_timestamp){
-          String timeStamp=getTimeStamp();
-          sprintf(rawTNC, "/%s%s",timeStamp, compPosition.c_str());
-        }else{
+        if (config.trk_timestamp)
+        {
+          String timeStamp = getTimeStamp();
+          sprintf(rawTNC, "/%s%s", timeStamp, compPosition.c_str());
+        }
+        else
+        {
           sprintf(rawTNC, "!%s", compPosition.c_str());
         }
       }
@@ -2407,21 +2427,27 @@ String trk_gps_postion(String comment)
       {
         char object[10];
         memset(object, 0x20, 10);
-        memcpy(object, config.trk_item,strlen(config.trk_item));
+        memcpy(object, config.trk_item, strlen(config.trk_item));
         object[9] = 0;
-        if(config.trk_timestamp){
-          String timeStamp=getTimeStamp();
-          sprintf(rawTNC, ";%s*%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", object,timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
-        }else{
+        if (config.trk_timestamp)
+        {
+          String timeStamp = getTimeStamp();
+          sprintf(rawTNC, ";%s*%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", object, timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
+        }
+        else
+        {
           sprintf(rawTNC, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", config.trk_item, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
         }
       }
       else
       {
-        if(config.trk_timestamp){
-          String timeStamp=getTimeStamp();
-          sprintf(rawTNC, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s",timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
-        }else{
+        if (config.trk_timestamp)
+        {
+          String timeStamp = getTimeStamp();
+          sprintf(rawTNC, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
+        }
+        else
+        {
           sprintf(rawTNC, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c%s", lat_dd, lat_mm, lat_ss, lat_ns, aprs_table, lon_dd, lon_mm, lon_ss, lon_ew, aprs_symbol, csd_spd);
         }
       }
@@ -2481,21 +2507,27 @@ String trk_fix_position(String comment)
     {
       char object[10];
       memset(object, 0x20, 10);
-      memcpy(object, config.trk_item,strlen(config.trk_item));
+      memcpy(object, config.trk_item, strlen(config.trk_item));
       object[9] = 0;
-      if(config.trk_timestamp){
-        String timeStamp=getTimeStamp();
+      if (config.trk_timestamp)
+      {
+        String timeStamp = getTimeStamp();
         sprintf(loc, ";%s*%s%s", object, timeStamp, compPosition.c_str());
-      }else{
+      }
+      else
+      {
         sprintf(loc, ")%s!%s", config.trk_item, compPosition.c_str());
       }
     }
     else
     {
-      if(config.trk_timestamp){
-        String timeStamp=getTimeStamp();
-        sprintf(loc, "/%s%s",timeStamp, compPosition.c_str());
-      }else{
+      if (config.trk_timestamp)
+      {
+        String timeStamp = getTimeStamp();
+        sprintf(loc, "/%s%s", timeStamp, compPosition.c_str());
+      }
+      else
+      {
         sprintf(loc, "!%s", compPosition.c_str());
       }
     }
@@ -2518,21 +2550,27 @@ String trk_fix_position(String comment)
     {
       char object[10];
       memset(object, 0x20, 10);
-      memcpy(object, config.trk_item,strlen(config.trk_item));
+      memcpy(object, config.trk_item, strlen(config.trk_item));
       object[9] = 0;
-      if(config.trk_timestamp){
-        String timeStamp=getTimeStamp();
-        sprintf(loc, ";%s*%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object,timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
-      }else{
+      if (config.trk_timestamp)
+      {
+        String timeStamp = getTimeStamp();
+        sprintf(loc, ";%s*%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object, timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
+      }
+      else
+      {
         sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", config.trk_item, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
       }
     }
     else
     {
-      if(config.trk_timestamp){
-        String timeStamp=getTimeStamp();
-        sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c",timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
-      }else{
+      if (config.trk_timestamp)
+      {
+        String timeStamp = getTimeStamp();
+        sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c", timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
+      }
+      else
+      {
         sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.trk_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.trk_symbol[1]);
       }
     }
@@ -2592,21 +2630,27 @@ String igate_position(double lat, double lon, double alt, String comment)
   {
     char object[10];
     memset(object, 0x20, 10);
-    memcpy(object, config.igate_object,strlen(config.igate_object));
+    memcpy(object, config.igate_object, strlen(config.igate_object));
     object[9] = 0;
-    if(config.igate_timestamp){
-      String timeStamp=getTimeStamp();
+    if (config.igate_timestamp)
+    {
+      String timeStamp = getTimeStamp();
       sprintf(loc, ";%s*%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c", object, timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
-    }else{
+    }
+    else
+    {
       sprintf(loc, ")%s!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", config.igate_object, lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
     }
   }
   else
   {
-    if(config.igate_timestamp){
-      String timeStamp=getTimeStamp();      
-      sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c",timeStamp.c_str(), lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
-    }else{
+    if (config.igate_timestamp)
+    {
+      String timeStamp = getTimeStamp();
+      sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c", timeStamp.c_str(), lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
+    }
+    else
+    {
       sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.igate_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.igate_symbol[1]);
     }
   }
@@ -2653,10 +2697,13 @@ String digi_position(double lat, double lon, double alt, String comment)
   {
     sprintf(strAltitude, "/A=%06d", (int)(alt * 3.28F));
   }
-  if(config.digi_timestamp){
-    String timeStamp=getTimeStamp();
-    sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c",timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.digi_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.digi_symbol[1]);
-  }else{
+  if (config.digi_timestamp)
+  {
+    String timeStamp = getTimeStamp();
+    sprintf(loc, "/%s%02d%02d.%02d%c%c%03d%02d.%02d%c%c", timeStamp, lat_dd, lat_mm, lat_ss, lat_ns, config.digi_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.digi_symbol[1]);
+  }
+  else
+  {
     sprintf(loc, "!%02d%02d.%02d%c%c%03d%02d.%02d%c%c", lat_dd, lat_mm, lat_ss, lat_ns, config.digi_symbol[0], lon_dd, lon_mm, lon_ss, lon_ew, config.digi_symbol[1]);
   }
   if (config.digi_ssid == 0)
@@ -2747,33 +2794,37 @@ void loop()
     }
   }
 
-  //PTT push to FM Voice
-  if (digitalRead(BUTTON_PTT_PIN) == LOW)
+  // PTT push to FM Voice
+  if (config.rf_en)
   {
-    pttStat=1;
-    //setTransmit(true);
-    AFSKInitAct = false;
-    delay(50);    
-    digitalWrite(POWER_PIN, config.rf_power); // RF Power
-    digitalWrite(SA868_MIC_SEL, LOW); // Select = MIC
-    digitalWrite(SA868_PTT_PIN,LOW); //PTT RF
-    delay(500);
-    LED_Color(100, 50, 0);
-    while(digitalRead(BUTTON_PTT_PIN)==LOW){
-      pttStat++;
-      delay(100);
-    }
-    pttStat=0;
-    burstAfterVoice();
-    char sts[50];
-    if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
+    if (digitalRead(BUTTON_PTT_PIN) == LOW)
+    {
+      pttStat = 1;
+      // setTransmit(true);
+      AFSKInitAct = false;
+      delay(50);
+      digitalWrite(POWER_PIN, config.rf_power); // RF Power
+      digitalWrite(SA868_MIC_SEL, LOW);         // Select = MIC
+      digitalWrite(SA868_PTT_PIN, LOW);         // PTT RF
+      delay(500);
+      LED_Color(100, 50, 0);
+      while (digitalRead(BUTTON_PTT_PIN) == LOW)
+      {
+        pttStat++;
+        delay(100);
+      }
+      pttStat = 0;
+      burstAfterVoice();
+      char sts[50];
+      if (gps.location.isValid() && (gps.hdop.hdop() < 10.0))
         sprintf(sts, "POSITION GPS\nSPD %dkPh/%d\n", SB_SPEED, SB_HEADING);
       else
         sprintf(sts, "POSITION GPS\nGPS INVALID\n");
-    pushTxDisp(TXCH_RF, "After Voice", sts);
-    LED_Color(0, 0, 0);
-    AFSKInitAct = true;
-    //setTransmit(false);
+      pushTxDisp(TXCH_RF, "After Voice", sts);
+      LED_Color(0, 0, 0);
+      AFSKInitAct = true;
+      // setTransmit(false);
+    }
   }
 
   if (digitalRead(0) == LOW)
@@ -2961,63 +3012,63 @@ void taskTNC(void *pvParameters)
 
 String getPath(int idx)
 {
-    String ret = "";
-    switch (idx)
-    {
-    case 0: // OFF
-        ret = "";
-        break;
-    case 1: // DST-TRACE1
-    case 2: // DST-TRACE2
-    case 3: // DST-TRACE3
-    case 4: // DST-TRACE4
-        ret = "DST" + String(idx);
-        break;
-    case 5: // TRACE1-1
-        ret = "TRACE1-1";
-        break;
-    case 6:
-        ret = "TRACE2-2";
-        break;
-    case 7:
-        ret = "TRACE3-3";
-        break;
-    case 8:
-        ret = "WIDE1-1";
-        break;
-    case 9:
-        ret = "RFONLY";
-        break;
-    case 10:
-        ret = "RELAY";
-        break;
-    case 11:
-        ret = "GATE";
-        break;
-    case 12:
-        ret = "ECHO";
-        break;
-    case 13: // UserDefine1
-        ret = String(config.path[0]);
-        break;
-    case 14: // UserDefine2
-        ret = String(config.path[1]);
-        break;
-    case 15: // UserDefine3
-        ret = String(config.path[2]);
-        break;
-    case 16: // UserDefine4
-        ret = String(config.path[3]);
-        break;
-    default:
-        ret = "WIDE1-1";
-        break;
-    }
-    return ret;
+  String ret = "";
+  switch (idx)
+  {
+  case 0: // OFF
+    ret = "";
+    break;
+  case 1: // DST-TRACE1
+  case 2: // DST-TRACE2
+  case 3: // DST-TRACE3
+  case 4: // DST-TRACE4
+    ret = "DST" + String(idx);
+    break;
+  case 5: // TRACE1-1
+    ret = "TRACE1-1";
+    break;
+  case 6:
+    ret = "TRACE2-2";
+    break;
+  case 7:
+    ret = "TRACE3-3";
+    break;
+  case 8:
+    ret = "WIDE1-1";
+    break;
+  case 9:
+    ret = "RFONLY";
+    break;
+  case 10:
+    ret = "RELAY";
+    break;
+  case 11:
+    ret = "GATE";
+    break;
+  case 12:
+    ret = "ECHO";
+    break;
+  case 13: // UserDefine1
+    ret = String(config.path[0]);
+    break;
+  case 14: // UserDefine2
+    ret = String(config.path[1]);
+    break;
+  case 15: // UserDefine3
+    ret = String(config.path[2]);
+    break;
+  case 16: // UserDefine4
+    ret = String(config.path[3]);
+    break;
+  default:
+    ret = "WIDE1-1";
+    break;
+  }
+  return ret;
 }
 
 long timeSlot;
-bool initInterval=true;
+bool initInterval = true;
 void taskAPRS(void *pvParameters)
 {
   char sts[50];
@@ -3033,7 +3084,7 @@ void taskAPRS(void *pvParameters)
 
   APRS_init();
   APRS_setCallsign(config.aprs_mycall, config.aprs_ssid);
-  //APRS_setPath1(config.igate_path, 1);
+  // APRS_setPath1(config.igate_path, 1);
   APRS_setPreamble(300);
   APRS_setTail(0);
   sendTimer = millis() - (config.igate_interval * 1000) + 30000;
@@ -3048,7 +3099,7 @@ void taskAPRS(void *pvParameters)
   unsigned long timeAprsOld = millis();
   unsigned long gpsTimeout;
 
-  initInterval=true;
+  initInterval = true;
   tx_interval = config.trk_interval;
   tx_counter = tx_interval - 10;
   log_d("Task APRS has been start");
@@ -3056,9 +3107,10 @@ void taskAPRS(void *pvParameters)
   for (;;)
   {
     unsigned long now = millis();
-    if(initInterval){
+    if (initInterval)
+    {
       tickInterval = DiGiInterval = iGatetickInterval = millis() + 15000;
-      initInterval=false;
+      initInterval = false;
     }
     timeAprs = now - timeAprsOld;
     timeAprsOld = now;
@@ -3111,8 +3163,8 @@ void taskAPRS(void *pvParameters)
         tickInterval = millis() + 1000;
 
         tx_counter++;
-        //log_d("TRACKER tx_counter=%d\t INTERVAL=%d\n", tx_counter, tx_interval);
-        // Check interval timeout
+        // log_d("TRACKER tx_counter=%d\t INTERVAL=%d\n", tx_counter, tx_interval);
+        //  Check interval timeout
         if (config.trk_smartbeacon && config.trk_gps)
         {
           if (tx_counter > tx_interval)
@@ -3134,7 +3186,7 @@ void taskAPRS(void *pvParameters)
           tx_interval = config.trk_interval;
         }
 
-        if (config.trk_gps && gps.speed.isValid() && gps.location.isValid() && gps.course.isValid() && (gps.hdop.hdop()<10.0) && (gps.satellites.value()>3))
+        if (config.trk_gps && gps.speed.isValid() && gps.location.isValid() && gps.course.isValid() && (gps.hdop.hdop() < 10.0) && (gps.satellites.value() > 3))
         {
           SB_SPEED_OLD = SB_SPEED;
           if (gps.speed.isUpdated())
@@ -3168,7 +3220,7 @@ void taskAPRS(void *pvParameters)
         String rawData;
         String cmn = "";
         if (config.trk_sat)
-          cmn += "SAT:" + String(gps.satellites.value())+",HDOP:"+String(gps.hdop.hdop(),1);
+          cmn += "SAT:" + String(gps.satellites.value()) + ",HDOP:" + String(gps.hdop.hdop(), 1);
         if (config.trk_bat)
         {
           if (config.trk_sat)
@@ -3193,7 +3245,7 @@ void taskAPRS(void *pvParameters)
 
         if (config.trk_gps)
         {
-          if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
+          if (gps.location.isValid() && (gps.hdop.hdop() < 10.0))
             sprintf(sts, "POSITION GPS\nSPD %dkPh/%d\nINTERVAL %ds", SB_SPEED, SB_HEADING, tx_interval);
           else
             sprintf(sts, "POSITION GPS\nGPS INVALID\nINTERVAL %ds", tx_interval);
@@ -3334,7 +3386,7 @@ void taskAPRS(void *pvParameters)
           String rawData = "";
           if (config.igate_gps)
           { // IGATE Send GPS position
-            if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
+            if (gps.location.isValid() && (gps.hdop.hdop() < 10.0))
               rawData = igate_position(gps.location.lat(), gps.location.lng(), gps.altitude.meters(), "");
           }
           else
@@ -3409,7 +3461,7 @@ void taskAPRS(void *pvParameters)
           String rawData;
           if (config.digi_gps)
           { // DIGI Send GPS position
-            if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
+            if (gps.location.isValid() && (gps.hdop.hdop() < 10.0))
               rawData = digi_position(gps.location.lat(), gps.location.lng(), gps.altitude.meters(), "");
           }
           else
@@ -3477,7 +3529,7 @@ void taskAPRS(void *pvParameters)
                 // else if (digiCount > 0)
                 //   digiDelay = random(1500);
                 // else
-                  digiDelay = random(100);
+                digiDelay = random(100);
               }
               else
               {
@@ -3509,6 +3561,7 @@ WiFiMulti wifiMulti;
 
 // WiFi connect timeout per AP. Increase when connecting takes longer.
 const uint32_t connectTimeoutMs = 10000;
+uint8_t APStationNum=0;
 
 // void Wifi_connected(WiFiEvent_t event, WiFiEventInfo_t info){
 //   log_d("Successfully connected to Access Point");
@@ -3573,7 +3626,7 @@ void taskNetwork(void *pvParameters)
     Serial.print("Access point running. IP address: ");
     Serial.print(WiFi.softAPIP());
     Serial.println("");
-    webService();
+    //webService();
   }
 
   if (wifiMulti.run() == WL_CONNECTED)
@@ -3588,18 +3641,34 @@ void taskNetwork(void *pvParameters)
   pingTimeout = millis() + 10000;
   unsigned long timeNetworkOld = millis();
   timeNetwork = 0;
+  if (config.wifi_mode & WIFI_AP_STA_FIX) webService();
   for (;;)
   {
     unsigned long now = millis();
     timeNetwork = now - timeNetworkOld;
     timeNetworkOld = now;
     // wdtNetworkTimer = millis();
+    serviceHandle();
     vTaskDelay(10 / portTICK_PERIOD_MS);
+
+    if (config.wifi_mode & WIFI_AP_FIX)
+    {
+      APStationNum = WiFi.softAPgetStationNum();
+      if (APStationNum > 0)
+      {
+        if (WiFi.isConnected() == false)
+        {
+          vTaskDelay(9 / portTICK_PERIOD_MS);
+          continue;
+        }
+      }
+    }
+
     // if (WiFi.status() == WL_CONNECTED)
     if (wifiMulti.run(connectTimeoutMs) == WL_CONNECTED)
     {
-      webService();
-      serviceHandle();
+      // webService();
+      // serviceHandle();
 
       if (millis() > NTP_Timeout)
       {
@@ -3770,8 +3839,10 @@ void taskNetwork(void *pvParameters)
           }
         }
       }
-    }else if (config.wifi_mode & WIFI_AP_FIX){ // WiFi connected
+    }
+    else if (config.wifi_mode & WIFI_AP_FIX)
+    { // WiFi connected
       serviceHandle();
     }
-  }   // for loop
+  } // for loop
 }
