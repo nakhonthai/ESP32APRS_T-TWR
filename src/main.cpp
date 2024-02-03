@@ -514,7 +514,7 @@ void defaultConfig()
   config.timeZone = 7;
   config.tx_timeslot = 2000; // ms
 
-  config.wifi_mode = WIFI_STA_FIX;
+  config.wifi_mode = WIFI_AP_STA_FIX;
   config.wifi_power = 44;
   config.wifi_ap_ch = 6;
   config.wifi_sta[0].enable = true;
@@ -539,6 +539,21 @@ void defaultConfig()
   sprintf(config.bt_name, "ESP32APRS");
   config.bt_pin = 0;
 
+  //--RF Module
+  config.rf_en = true;
+  config.rf_type = RF_SA868_VHF;
+  config.freq_rx = 144.3900;
+  config.freq_tx = 144.3900;
+  config.offset_rx = 0;
+  config.offset_tx = 0;
+  config.tone_rx = 0;
+  config.tone_tx = 0;
+  config.band = 0;
+  config.sql_level = 1;
+  config.rf_power = LOW;
+  config.volume = 6;
+  config.mic = 8;
+
   // IGATE
   config.igate_bcn = false;
   config.igate_en = false;
@@ -551,7 +566,7 @@ void defaultConfig()
   //--APRS-IS
   config.aprs_ssid = 1;
   config.aprs_port = 14580;
-  sprintf(config.aprs_mycall, "LZ1ADJ");
+  sprintf(config.aprs_mycall, "NOCALL");
   sprintf(config.aprs_host, "aprs.dprns.com");
   sprintf(config.aprs_passcode, "");
   sprintf(config.aprs_moniCall, "%s-%d", config.aprs_mycall, config.aprs_ssid);
@@ -590,19 +605,19 @@ void defaultConfig()
   sprintf(config.digi_comment, "DIGI MODE");
 
   // Tracker
-  config.trk_en = true;
+  config.trk_en = false;
   config.trk_loc2rf = true;
   config.trk_loc2inet = false;
   config.trk_bat = false;
   config.trk_sat = false;
   config.trk_dx = false;
-  config.trk_ssid = 2;
+  config.trk_ssid = 7;
   config.trk_timestamp = false;
   sprintf(config.trk_mycall, "NOCALL");
-  config.trk_path=2;
+  config.trk_path = 2;
 
   //--Position
-  config.trk_gps = true;
+  config.trk_gps = false;
   config.trk_lat = 13.7555;
   config.trk_lon = 100.4930;
   config.trk_alt = 0;
@@ -623,6 +638,8 @@ void defaultConfig()
   sprintf(config.trk_symmove, "/>");
   sprintf(config.trk_symstop, "\\>");
   // sprintf(config.trk_btext, "");
+  sprintf(config.trk_mycall, "NOCALL");
+  sprintf(config.trk_comment, "TRACKER MODE");
   sprintf(config.trk_item, "");
   // sprintf(config.trk_item, "");
 
@@ -1137,7 +1154,7 @@ void burstAfterVoice()
     rawData = trk_fix_position(cmn);
   }
   digitalWrite(POWER_PIN, config.rf_power); // RF Power LOW
-  digitalWrite(SA868_MIC_SEL, HIGH);          // Select = ESP2MIC
+  digitalWrite(SA868_MIC_SEL, HIGH);        // Select = ESP2MIC
   status.txCount++;
   log_d("Burst TX->RF: %s\n", rawData.c_str());
   APRS_setPreamble(10);
@@ -1149,6 +1166,7 @@ void burstAfterVoice()
       break;
     delay(50); // TOT 5sec
   }
+  digitalWrite(SA868_PWR_PIN, 0); // set RF Power Low
 }
 
 bool pkgTxSend()
@@ -1170,18 +1188,22 @@ bool pkgTxSend()
         memset(info, 0, sizeof(info));
         strcpy(info, txQueue[i].Info);
         psramBusy = false;
-        digitalWrite(POWER_PIN, config.rf_power); // RF Power LOW
-        digitalWrite(SA868_MIC_SEL, HIGH);          // Select = ESP2MIC
+        // digitalWrite(POWER_PIN, config.rf_power); // RF Power LOW
+
+        digitalWrite(SA868_MIC_SEL, HIGH); // Select = ESP2MIC
         status.txCount++;
         LED_Color(255, 0, 0);
         adcActive(false);
         setOLEDLock(true);
-        sa868.TxOn();
-        delay(1000);
+        if (config.rf_type == RF_SA8x8_OpenEdit)
+        {
+          sa868.setLowPower();
+          sa868.TxOn();
+          delay(10);
+        }
         APRS_setPreamble(config.preamble * 100);
         APRS_sendTNC2Pkt(String(info)); // Send packet to RF
-        delay(1000);
-        sa868.TxOff();
+
         log_d("TX->RF: %s\n", info);
 
         for (int i = 0; i < 100; i++)
@@ -1190,7 +1212,13 @@ bool pkgTxSend()
             break;
           delay(50); // TOT 5sec
         }
-
+        if (config.rf_type == RF_SA8x8_OpenEdit)
+        {
+          sa868.TxOff();
+          sa868.setLowPower();
+          delay(1000);
+          sa868.RxOn();
+        }
         // delay(2000);
         LED_Color(0, 0, 0);
         adcActive(true);
@@ -1301,12 +1329,31 @@ int SA868_getRSSI()
 
 String SA868_getVERSION()
 {
-  SA868_Version version = sa868.Version();
+  String data;
+  int rssi;
 
-  char str[15];
-  sprintf(str, "%d.%d.%d.%d", version.major, version.minor, version.patch, version.revision);
-  
-  return str;
+  if (config.rf_type == RF_SA8x8_OpenEdit)
+  {
+    SA868_Version version = sa868.Version();
+    char str[15];
+    sprintf(str, "%d.%d.%d.%d", version.major, version.minor, version.patch, version.revision);
+    return String(str);
+  }
+  else
+  {
+    SerialRF.printf("AT+VERSION\r\n");
+    if (SA868_waitResponse(data, "\r\n", 1000))
+    {
+      String version = data.substring(0, data.indexOf("\r\n"));
+      return version;
+    }
+    else
+    {
+      // timeout or error
+      return "-";
+    }
+  }
+  return "-";
 }
 
 String FRS_getVERSION()
@@ -1339,7 +1386,10 @@ unsigned long SA818_Timeout = 0;
 
 void RF_MODULE_SLEEP()
 {
-  sa868.setLowPower();
+  if (config.rf_type == RF_SA8x8_OpenEdit)
+    sa868.setLowPower();
+  else
+    digitalWrite(POWER_PIN, LOW);
   digitalWrite(PULLDOWN_PIN, LOW);
   // PMU.disableDC3();
 }
@@ -1385,14 +1435,14 @@ void RF_MODULE(bool boot)
 {
   String data;
   // todo find out what is config.rf_en
-  // if (config.rf_en == false)
-  // {
-  //   RF_MODULE_SLEEP();
-  //   return;
-  // }
-  // if (config.rf_type == RF_NONE)
-  //   return;
-  // log_d("RF Module %s Init", RF_TYPE[config.rf_type]);
+  if (config.rf_en == false)
+  {
+    RF_MODULE_SLEEP();
+    return;
+  }
+  if (config.rf_type == RF_NONE)
+    return;
+  log_d("RF Module %s Init", RF_TYPE[config.rf_type]);
   //! DC3 Radio & Pixels VDD , Don't change
   // PMU.setDC3Voltage(3400);
   // PMU.disableDC3();
@@ -1404,8 +1454,8 @@ void RF_MODULE(bool boot)
   pinMode(SA868_PD_PIN, OUTPUT);
   digitalWrite(SA868_PD_PIN, HIGH); // PWR HIGH
 
-  // pinMode(SA868_PWR_PIN, OUTPUT);
-  // digitalWrite(SA868_PWR_PIN, LOW); // RF POWER LOW
+  pinMode(SA868_PWR_PIN, OUTPUT);
+  digitalWrite(SA868_PWR_PIN, LOW); // RF POWER LOW
 
   pinMode(SA868_PTT_PIN, OUTPUT);
   digitalWrite(SA868_PTT_PIN, HIGH); // PTT HIGH
@@ -1423,38 +1473,147 @@ void RF_MODULE(bool boot)
   // digitalWrite(PTT_PIN, HIGH);
   // digitalWrite(PULLDOWN_PIN, HIGH);
   // delay(500);
-  // if (boot)
-  // {
-  //   SerialRF.begin(9600, SERIAL_8N1, SA868_RX_PIN, SA868_TX_PIN);
-  // }
+  if (boot)
+  {
+    SerialRF.begin(9600, SERIAL_8N1, SA868_RX_PIN, SA868_TX_PIN);
+  }
 
   delay(1500);
-  sa868.init();
-  
-  // SerialRF.write("\r\n");
-  // char str[200];
-  // String rsp = "\r\n";
+  if (config.rf_type == RF_SA8x8_OpenEdit)
+  {
+    sa868.init();
+    sa868.setRxFrequency((uint32_t)(config.freq_rx * 1000000));
+    sa868.setTxFrequency((uint32_t)(config.freq_tx * 1000000));
+    sa868.setVolume(config.volume);
+    // sa868.setBandwidth(config.band);
+    delay(200);
+    sa868.TxOff();
+    sa868.setLowPower();
+    delay(1000);
+    sa868.RxOn();
+  }
+  else
+  {
+    SerialRF.write("\r\n");
 
-  // SerialRF.printf("AT+DMOCONNECT\r\n");
-  // if (SA868_waitResponse(data, rsp, 1000))
-  //   log_d("%s", data.c_str());
-  // SerialRF.printf("AT+DMOCONNECT\r\n");
-  // if (SA868_waitResponse(data, rsp, 1000))
-  //   log_d("%s", data.c_str());
-  // sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%04d,%01d,%04d\r\n", config.band, config.freq_tx, config.freq_rx, config.tone_tx, config.sql_level, config.tone_rx);
-  // SerialRF.print(str);
-  // log_d("Write to SA868: %s", str);
-  // if (SA868_waitResponse(data, rsp, 2000))
-  //   log_d("%s", data.c_str());
-  // SerialRF.printf("AT+SETTAIL=0\r\n");
-  // if (SA868_waitResponse(data, rsp, 1000))
-  //   log_d("%s", data.c_str());
-  // SerialRF.printf("AT+SETFILTER=1,1,1\r\n");
-  // if (SA868_waitResponse(data, rsp, 1000))
-  //   log_d("%s", data.c_str());
-  // SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
-  // if (SA868_waitResponse(data, rsp, 1000))
-  //   log_d("%s", data.c_str());
+    char str[200];
+    String rsp = "\r\n";
+    if (config.sql_level > 8)
+      config.sql_level = 8;
+    if ((config.rf_type == RF_SR_1WV) || (config.rf_type == RF_SR_1WU) || (config.rf_type == RF_SR_1W350))
+    {
+      SerialRF.printf("AT+DMOCONNECT\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%d,%01d,%d,0", config.band, config.freq_tx + ((float)config.offset_tx / 1000000), config.freq_rx + ((float)config.offset_rx / 1000000), config.tone_rx, config.sql_level, config.tone_tx);
+      SerialRF.println(str);
+      log_d("Write to SR_FRS: %s", str);
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      // Module auto power save setting
+      SerialRF.printf("AT+DMOAUTOPOWCONTR=1\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOSETVOX=0\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOSETMIC=6,0\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+    }
+    else if ((config.rf_type == RF_SA868_VHF) || (config.rf_type == RF_SA868_UHF) || (config.rf_type == RF_SA868_350))
+    {
+      SerialRF.printf("AT+DMOCONNECT\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOCONNECT\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      sprintf(str, "AT+DMOSETGROUP=%01d,%0.4f,%0.4f,%04d,%01d,%04d\r\n", config.band, config.freq_tx, config.freq_rx, config.tone_tx, config.sql_level, config.tone_rx);
+      SerialRF.print(str);
+      log_d("Write to SA868: %s", str);
+      if (SA868_waitResponse(data, rsp, 2000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+SETTAIL=0\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+SETFILTER=1,1,1\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOSETVOLUME=%d\r\n", config.volume);
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+    }
+    else if ((config.rf_type == RF_SR_2WVS) || (config.rf_type == RF_SR_2WUS))
+    {
+      uint8_t flag = 0;  // Bit0:busy lock 0:OFF,1:ON Bit1:band 0:Wide,1:Narrow
+      uint8_t flag1 = 0; // Bit0: Hi/Lo 0:2W,1:0.5W  Bit1:Middle 0:2W/0.5W 1:1W
+      RF_VERSION = FRS_getVERSION();
+      log_d("RF Module Version %s", RF_VERSION.c_str());
+
+      String tone_rx, tone_tx;
+
+      if (config.tone_rx > 0)
+      {
+        int idx = config.tone_rx;
+        if (idx < sizeof(ctcss))
+        {
+          int tone = (int)(ctcss[config.tone_rx] * 10.0F);
+          tone_rx = ctcssToHex(tone, 1);
+          tone_rx += ctcssToHex(tone, 2);
+          log_d("Tone RX[%d] rx=%0X %0X", tone, tone_rx.charAt(0), tone_rx.charAt(1));
+        }
+      }
+      else
+      {
+        tone_rx = ctcssToHex(7777, 1);
+        tone_rx += ctcssToHex(7777, 2);
+      }
+
+      if (config.tone_tx > 0)
+      {
+        int idx = config.tone_tx;
+        if (idx < sizeof(ctcss))
+        {
+          int tone = (int)(ctcss[config.tone_tx] * 10.0F);
+          tone_tx = ctcssToHex(tone, 1);
+          tone_tx += ctcssToHex(tone, 2);
+          log_d("Tone RX[%d] tx=%0X %0X", tone, tone_tx.charAt(0), tone_tx.charAt(1));
+        }
+      }
+      else
+      {
+        tone_tx = ctcssToHex(7777, 1);
+        tone_tx += ctcssToHex(7777, 2);
+      }
+
+      if (config.band == 0)
+        flag |= 0x02;
+      if (config.rf_power == 0)
+        flag1 |= 0x02;
+      sprintf(str, "AT+DMOGRP=%0.5f,%0.5f,%s,%s,%d,%d\r\n", config.freq_rx, config.freq_tx, tone_rx.c_str(), tone_tx.c_str(), flag, flag1);
+      log_d("Write to SR_FRS_2W: %s", str);
+      SerialRF.print(str);
+
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOSAV=1\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOVOL=%d\r\n", config.volume);
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOVOX=0\r\n");
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+      SerialRF.printf("AT+DMOFUN=%d,5,1,0,0\r\n", config.sql_level);
+      if (SA868_waitResponse(data, rsp, 1000))
+        log_d("%s", data.c_str());
+    }
+  }
 }
 
 void RF_MODULE_CHECK()
@@ -1470,13 +1629,15 @@ void RF_MODULE_CHECK()
     {
       SA818_Timeout = millis();
       // Serial.println(SerialRF.readString());
-      // log_d("RF Module %s Activate", RF_TYPE[config.rf_type]);
+      log_d("RF Module %s Activate", RF_TYPE[config.rf_type]);
     }
   }
   else
   {
-    // log_d("RF Module %s sleep", RF_TYPE[config.rf_type]);
-    sa868.setLowPower();
+    log_d("RF Module %s sleep", RF_TYPE[config.rf_type]);
+    if (config.rf_type == RF_SA8x8_OpenEdit)
+      sa868.setLowPower();
+    digitalWrite(POWER_PIN, LOW);
     digitalWrite(PULLDOWN_PIN, LOW);
     delay(500);
     RF_MODULE(true);
@@ -2665,33 +2826,48 @@ void loop()
     }
   }
 
-  //PTT push to FM Voice
+  // PTT push to FM Voice
   if (digitalRead(BUTTON_PTT_PIN) == LOW)
   {
-    pttStat=1;
-    //setTransmit(true);
+    pttStat = 1;
+    // setTransmit(true);
     AFSKInitAct = false;
-    delay(50);    
+    delay(50);
+
     digitalWrite(POWER_PIN, config.rf_power); // RF Power
+    // sa868.setTxPower(sa868._config.rf_power);
     digitalWrite(SA868_MIC_SEL, LOW); // Select = MIC
-    digitalWrite(SA868_PTT_PIN,LOW); //PTT RF
+    digitalWrite(SA868_PTT_PIN, LOW); // PTT RF
+    if (config.rf_type == RF_SA8x8_OpenEdit)
+    {
+      sa868.TxOn();
+    }
     delay(500);
     LED_Color(100, 50, 0);
-    while(digitalRead(BUTTON_PTT_PIN)==LOW){
+    while (digitalRead(BUTTON_PTT_PIN) == LOW)
+    {
       pttStat++;
       delay(100);
     }
-    pttStat=0;
+    pttStat = 0;
     burstAfterVoice();
     char sts[50];
-    if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
-        sprintf(sts, "POSITION GPS\nSPD %dkPh/%d\n", SB_SPEED, SB_HEADING);
-      else
-        sprintf(sts, "POSITION GPS\nGPS INVALID\n");
+    if (gps.location.isValid() && (gps.hdop.hdop() < 10.0))
+      sprintf(sts, "POSITION GPS\nSPD %dkPh/%d\n", SB_SPEED, SB_HEADING);
+    else
+      sprintf(sts, "POSITION GPS\nGPS INVALID\n");
     pushTxDisp(TXCH_RF, "After Voice", sts);
     LED_Color(0, 0, 0);
     AFSKInitAct = true;
-    //setTransmit(false);
+    if (config.rf_type == RF_SA8x8_OpenEdit)
+    {
+      delay(200);
+      sa868.TxOff();
+      sa868.setLowPower();
+      delay(1000);
+      sa868.RxOn();
+    }
+    // setTransmit(false);
   }
 
   if (digitalRead(0) == LOW)
@@ -2818,8 +2994,7 @@ void sendIsPkgMsg(char *raw)
   String tnc2Raw = String(str);
   if (aprsClient.connected())
     aprsClient.println(tnc2Raw); // Send packet to Inet
-  // if (config.rf_en && config.digi_en)
-  if (config.digi_en)
+  if (config.rf_en && config.digi_en)
     pkgTxPush(str, strlen(str), 0);
   // APRS_sendTNC2Pkt(tnc2Raw); // Send packet to RF
 }
@@ -2872,10 +3047,10 @@ void taskTNC(void *pvParameters)
   {
     // timer=micros();
     if (AFSKInitAct == true)
-      AFSK_Poll(true, HIGH);
+      AFSK_Poll(true, config.rf_power);
     // result=micros()-timer;
     // log_d("AFSK_Poll timer = %.2f mS",(float)result/1000);
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(5 / portTICK_PERIOD_MS);
   }
 }
 
@@ -2951,6 +3126,8 @@ void taskAPRS(void *pvParameters)
 
   PacketBuffer.clean();
 
+  afskSetDCOffset(1740);
+  afskSetADCAtten(3);
   APRS_init();
   APRS_setCallsign(config.aprs_mycall, config.aprs_ssid);
   // APRS_setPath1(config.igate_path, 1);
@@ -2994,34 +3171,37 @@ void taskAPRS(void *pvParameters)
       continue;
     }
 
-    // if (config.rf_en)
-    if (true== true)
+    if (config.rf_en)
     { // RF Module enable
       // SEND RF in time slot
       if (now > (timeSlot + 10))
       {
         // Transmit in timeslot if enabled
-        if (config.gpio_sql_pin > -1)
-        { // Set SQL pin
-          if (!digitalRead(config.gpio_sql_pin))
-          { // RX State Fail
-            if (pkgTxSend())
-              timeSlot = millis() + config.tx_timeslot; // Tx Time Slot >2sec.
-            else
-              timeSlot = millis() + 3000;
-          }
-          else
-          {
-            timeSlot = millis() + 1500;
-          }
-        }
+        // if (config.gpio_sql_pin > -1)
+        // { // Set SQL pin
+        //   if (!digitalRead(config.gpio_sql_pin))
+        //   { // RX State Fail
+        //     if (pkgTxSend())
+        //       timeSlot = millis() + config.tx_timeslot; // Tx Time Slot >2sec.
+        //     else
+        //       timeSlot = millis() + 3000;
+        //   }
+        //   else
+        //   {
+        //     timeSlot = millis() + 1500;
+        //   }
+        // }
+        // else
+        // {
+        //   if (pkgTxSend())
+        //     timeSlot = millis() + config.tx_timeslot; // Tx Time Slot > 2sec.
+        //   else
+        //     timeSlot = millis() + 3000;
+        // }
+        if (pkgTxSend())
+          timeSlot = millis() + config.tx_timeslot; // Tx Time Slot > 2sec.
         else
-        {
-          if (pkgTxSend())
-            timeSlot = millis() + config.tx_timeslot; // Tx Time Slot > 2sec.
-          else
-            timeSlot = millis() + 3000;
-        }
+          timeSlot = millis() + 3000;
       }
     }
 
@@ -3297,12 +3477,11 @@ void taskAPRS(void *pvParameters)
           String rawData;
           if (config.digi_gps)
           { // DIGI Send GPS position
-            if (gps.location.isValid() && (gps.hdop.hdop()<10.0))
+            if (gps.location.isValid() && (gps.hdop.hdop() < 10.0))
               rawData = digi_position(gps.location.lat(), gps.location.lng(), gps.altitude.meters(), "");
           }
           else
           { // DIGI Send fix position
-            log_d("TEST 2");
             rawData = digi_position(config.digi_lat, config.digi_lon, config.digi_alt, "");
           }
           if (rawData != "")
@@ -3398,7 +3577,7 @@ WiFiMulti wifiMulti;
 
 // WiFi connect timeout per AP. Increase when connecting takes longer.
 const uint32_t connectTimeoutMs = 10000;
-uint8_t APStationNum=0;
+uint8_t APStationNum = 0;
 
 // void Wifi_connected(WiFiEvent_t event, WiFiEventInfo_t info){
 //   log_d("Successfully connected to Access Point");
@@ -3463,7 +3642,7 @@ void taskNetwork(void *pvParameters)
     Serial.print("Access point running. IP address: ");
     Serial.print(WiFi.softAPIP());
     Serial.println("");
-    //webService();
+    // webService();
   }
 
   if (wifiMulti.run() == WL_CONNECTED)
@@ -3478,7 +3657,8 @@ void taskNetwork(void *pvParameters)
   pingTimeout = millis() + 10000;
   unsigned long timeNetworkOld = millis();
   timeNetwork = 0;
-  if (config.wifi_mode & WIFI_AP_STA_FIX) webService();
+  if (config.wifi_mode & WIFI_AP_STA_FIX)
+    webService();
   for (;;)
   {
     unsigned long now = millis();
@@ -3612,8 +3792,7 @@ void taskNetwork(void *pvParameters)
                   }
 
                   // INET2RF affter filter
-                  // if (config.rf_en && config.inet2rf) todo find out
-                  if (config.inet2rf)
+                  if (config.rf_en && config.inet2rf)
                   {
                     if (type & config.inet2rfFilter)
                     {

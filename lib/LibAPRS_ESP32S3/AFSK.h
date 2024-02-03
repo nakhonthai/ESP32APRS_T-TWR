@@ -292,8 +292,10 @@ void adcActive(bool sts);
 esp_err_t adc_init();
 void afskSetHPF(bool val);
 void afskSetBPF(bool val);
+void afskSetDCOffset(int val);
 // int IRAM_ATTR
 int read_adc_dma(uint32_t *ret_num, uint8_t *result);
 void setTransmit(bool val);
+void afskSetADCAtten(uint8_t val);
 
 #endif

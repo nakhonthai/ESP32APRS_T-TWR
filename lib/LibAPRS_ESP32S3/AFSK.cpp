@@ -38,14 +38,30 @@ static filter_t bpf;
 static filter_t lpf;
 static filter_t hpf;
 
+uint8_t adc_atten;
+
 Afsk *AFSK_modem;
+
+adc_atten_t cfg_adc_atten=ADC_ATTEN_DB_0;
+void afskSetADCAtten(uint8_t val){
+  adc_atten=val;
+  if(adc_atten==0){
+    cfg_adc_atten=ADC_ATTEN_DB_0;
+  }else if(adc_atten==1){
+    cfg_adc_atten=ADC_ATTEN_DB_2_5;
+  }else if(adc_atten==2){
+    cfg_adc_atten=ADC_ATTEN_DB_6;
+  }else if(adc_atten==3){
+    cfg_adc_atten=ADC_ATTEN_DB_11;
+  }
+}
 
 #define ADC_RESULT_BYTE 4
 #define ADC_CONV_LIMIT_EN 0
 
 static bool check_valid_data(const adc_digi_output_data_t *data);
 
-#define TIMES 1920
+#define TIMES 3840
 #define GET_UNIT(x) ((x >> 3) & 0x1)
 static uint16_t adc1_chan_mask = BIT(0);
 static uint16_t adc2_chan_mask = 0;
@@ -222,6 +238,8 @@ void afskSetBPF(bool val)
 uint32_t ret_num;
 uint8_t *resultADC;
 
+esp_adc_cal_characteristics_t adc_chars;
+
 void AFSK_hw_init(void)
 {
   // Set up ADC
@@ -235,6 +253,7 @@ void AFSK_hw_init(void)
   digitalWrite(17, HIGH);
   digitalWrite(PTT_PIN, HIGH); // PTT not active
 
+  esp_adc_cal_characterize(ADC_UNIT_1, cfg_adc_atten, ADC_WIDTH_BIT_12, 3300, &adc_chars);
   resultADC = (uint8_t *)malloc(TIMES * sizeof(uint8_t));
 
   adc_init();
@@ -463,15 +482,15 @@ static bool hdlcParse(Hdlc *hdlc, bool bit, FIFOBuffer *fifo)
       // the buffer and indicate that we are now
       // receiving data. For bling we also turn
       // on the RX LED.
-
-      hdlc->receiving = true;
-      if (++hdlc_flag_count >= 2)
+      
+      if (++hdlc_flag_count > 2)
       {
+        hdlc->receiving = true;
         fifo_flush(fifo);
         LED_RX_ON();
         sync_flage = true;
-      }
-      fifo_push(fifo, HDLC_FLAG);
+        fifo_push(fifo, HDLC_FLAG);
+      }      
     }
     else
     {
@@ -623,6 +642,8 @@ static bool hdlcParse(Hdlc *hdlc, bool bit, FIFOBuffer *fifo)
 static int delayed[DELAYED_N];
 static int delay_idx = 0;
 
+extern void APRS_poll();
+
 void AFSK_adc_isr(Afsk *afsk, int16_t currentSample)
 {
   /*
@@ -732,7 +753,7 @@ void AFSK_adc_isr(Afsk *afsk, int16_t currentSample)
     // We also check the return of the Link Control parser
     // to check if an error occured.
 
-    if (!hdlcParse(&afsk->hdlc, !TRANSITION_FOUND(afsk->actualBits), &afsk->rxFifo))
+    if (hdlcParse(&afsk->hdlc, !TRANSITION_FOUND(afsk->actualBits), &afsk->rxFifo))
     {
       afsk->status |= 1;
       if (fifo_isfull(&afsk->rxFifo))
@@ -743,6 +764,7 @@ void AFSK_adc_isr(Afsk *afsk, int16_t currentSample)
         Serial.println("FIFO IS FULL");
 #endif
       }
+      APRS_poll();
     }
   }
 }
@@ -751,10 +773,14 @@ void AFSK_adc_isr(Afsk *afsk, int16_t currentSample)
 int16_t abufPos = 0;
 // extern TaskHandle_t taskSensorHandle;
 
-extern void APRS_poll();
 uint8_t poll_timer = 0;
 // int adc_count = 0;
-int offset_new = 0, offset = 2090, offset_count = 0;
+//int offset_new = 0, offset = 2090, offset_count = 0;
+int offset_new = 0, offset = 1740, offset_count = 0;
+int dc_offset=1740;
+void afskSetDCOffset(int val){
+  dc_offset=offset=val;
+}
 
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 double sinwave;
@@ -812,22 +838,45 @@ void AFSK_Poll(bool SA818, bool RFPower)
         if (check_valid_data(p))
         {
           // if(i<100) log_d("ret%x i=%d  Unit: %d,_Channel: %d, Value: %d\n",ret, i, p->type2.unit, p->type2.channel, p->type2.data);
-          adcVal = p->type2.data;
+          //adcVal = p->type2.data;
+          /* Converts Raw ADC Reading To Calibrated Value & Return the results in mV */         
+          adcVal = (int)esp_adc_cal_raw_to_voltage((int)p->type2.data, &adc_chars); //Read ADC 
           offset_new += adcVal;
           offset_count++;
+          // if (offset_count >= ADC_SAMPLES_COUNT) // 192
+          // {
+          //   offset = offset_new / offset_count;
+          //   offset_count = 0;
+          //   offset_new = 0;
+          //   if (offset > 3000 || offset < 1000) // Over dc offset to default
+          //     offset = 2090;
+          // }
           if (offset_count >= ADC_SAMPLES_COUNT) // 192
           {
             offset = offset_new / offset_count;
             offset_count = 0;
             offset_new = 0;
-            if (offset > 3000 || offset < 1000) // Over dc offset to default
-              offset = 2090;
+            if(adc_atten==0){
+              if(offset<100 || offset>950) offset=dc_offset;            
+            }else if(adc_atten==1){
+              if(offset<100 || offset>1250) offset=dc_offset;            
+            }else if(adc_atten==2){
+              if(offset<150 || offset>1750) offset=dc_offset;            
+            }else if(adc_atten==3){
+              if(offset<150 || offset>2450) offset=dc_offset;            
+            } 
           }
           adcVal -= offset; // Convert unsinewave to sinewave, offset=1.762V ,raw=2090
 
+          // if (sync_flage == true)
+          // {
+          //   mV = (int)((float)adcVal / 1.1862F); // ADC_RAW ADC_ATTEN_DB_11 to mV
+          //   mVsum += powl(mV, 2);                // VRMS = √(1/n)(V1^2 +V2^2 + … + Vn^2)
+          //   mVsumCount++;
+          // }
           if (sync_flage == true)
           {
-            mV = (int)((float)adcVal / 1.1862F); // ADC_RAW ADC_ATTEN_DB_11 to mV
+            mV = adcVal;
             mVsum += powl(mV, 2);                // VRMS = √(1/n)(V1^2 +V2^2 + … + Vn^2)
             mVsumCount++;
           }
@@ -842,8 +891,8 @@ void AFSK_Poll(bool SA818, bool RFPower)
           }
 
           AFSK_adc_isr(AFSK_modem, (int16_t)adcVal); // Process signal IIR
-          if (i % PHASE_BITS == 0)
-            APRS_poll(); // Poll check every 1 bit
+          //if (i % PHASE_BITS == 0)
+            //APRS_poll(); // Poll check every 1 bit
         }
       }
       // Get mVrms on Sync affter flage 0x7E

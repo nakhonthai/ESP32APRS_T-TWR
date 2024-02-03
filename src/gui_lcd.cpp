@@ -4549,7 +4549,7 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
     display.print(str);
     display.setTextColor(WHITE);
 
-    chkBoxRF.Checked = true;
+    chkBoxRF.Checked = config.rf_en;
     chkBoxRF.x = 0;
     chkBoxRF.y = 18;
     sprintf(chkBoxRF.text, "RF_ENABLE");
@@ -4562,7 +4562,7 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
     txtBox[0].y = 28;
     txtBox[0].length = 8;
     txtBox[0].type = 1;
-    sprintf(txtBox[0].text, "%.4f", sa868.settings().freq_tx / 1000);
+    sprintf(txtBox[0].text, "%.4f", config.freq_tx);
     display.setCursor(0, 40);
     display.print("FREQ_RX:");
     display.setCursor(110, 40);
@@ -4571,7 +4571,7 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
     txtBox[1].y = 38;
     txtBox[1].length = 8;
     txtBox[1].type = 1;
-    sprintf(txtBox[1].text, "%.4f", sa868.settings().freq_rx / 1000);
+    sprintf(txtBox[1].text, "%.4f", config.freq_rx);
 
     display.setCursor(0, 54);
     display.print("SEQ:");
@@ -4581,7 +4581,7 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
     cbBox[0].length = 1;
     cbBox[0].maxItem(8);
     cbBox[0].char_max = 8;
-    cbBox[0].SetIndex(sa868.settings().sql_level);
+    cbBox[0].SetIndex(config.sql_level);
 
     display.setCursor(60, 54);
     display.print("PWR:");
@@ -4592,7 +4592,7 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
     cbBox[1].AddItem(0, "LOW");
     cbBox[1].AddItem(1, "HI");
     cbBox[1].maxItem(2);
-    cbBox[1].SetIndex(sa868.isHighPower());
+    cbBox[1].SetIndex(config.rf_power);
 
     display.display();
     encoder0Pos = 0;
@@ -4647,7 +4647,7 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
                 if (encoder0Pos == 0)
                 {
                     cbBox[0].SelectValue(0, 8, 1);
-                    sa868.setSqlThresh((uint8_t)cbBox[0].GetValue());
+                    config.sql_level = cbBox[0].GetValue();
                     encoder0Pos = keyPrev + 1;
                     cbBox[1].Show();
                 }
@@ -4655,18 +4655,14 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
                 {
                     // cbBox[1].SelectValue(0, 1, 1);
                     cbBox[1].SelectItem();
-                    if (cbBox[1].GetIndex()) {
-                        sa868.setHighPower();
-                    } else {
-                        sa868.setLowPower();
-                    }
+                    config.rf_power = cbBox[1].GetIndex();
                     encoder0Pos = keyPrev + 1;
                     cbBox[1].Show();
                 }
                 else if (encoder0Pos == 2) // Focus Check Box Enable
                 {
                     chkBoxRF.Toggle();
-                    // config.rf_en = chkBoxRF.Checked;
+                    config.rf_en = chkBoxRF.Checked;
                     encoder0Pos = keyPrev;
                     chkBoxRF.CheckBoxShow();
                 }
@@ -4674,7 +4670,7 @@ void on_rfconfig_selected(MenuItem *p_menu_item)
                 {
                     txtBox[0].TextBox();
                     // strcpy(config.freq_tx, txtBox.text);
-                    sa868.setTxFrequency((uint32_t)atoi(txtBox[0].text));
+                    config.freq_tx = atof(txtBox[0].text);
                     encoder0Pos = keyPrev;
                     txtBox[0].TextBoxShow();
                 }
@@ -4995,7 +4991,7 @@ void on_information_selected(MenuItem *p_menu_item)
     display.printf("ESP32 Model: %s\n", ESP.getChipModel());
     display.printf("ID:%s\n", strCID);
     display.printf("Flash: %dMB\n", ESP.getFlashChipSize() / 1000000);
-    display.printf("RF Type: %s\n", "SA868_VHF");
+    display.printf("RF Type: %s\n", RF_TYPE[config.rf_type]);
     display.display();
     if (p_menu_item != NULL)
     {
@@ -6188,11 +6184,11 @@ void mainDisp(void *pvParameters)
                 display.print("FM VOICE");
                 display.setFont(NULL);
                 display.setCursor(30, 20);
-                display.printf("%d MHz",(sa868.settings().freq_tx / 1000000));
+                display.printf("%.4f MHz",config.freq_tx);
                 display.setCursor(30, 30);
-                display.printf("%d MHz",(sa868.settings().freq_rx / 1000000));
+                display.printf("%.4f MHz",config.freq_rx);
                 display.setCursor(30, 40);
-                if(sa868.isHighPower())
+                if(config.rf_power)
                     display.printf("PWR: HIGH");
                 else
                     display.printf("PWR: LOW");

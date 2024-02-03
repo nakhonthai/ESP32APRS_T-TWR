@@ -198,15 +198,15 @@ void handle_dashboard()
 	webString += "</tr>\n";
 	webString += "<tr>\n";
 	webString += "<td>Freq TX</td>\n";
-	webString += "<td style=\"background: #ffffff;\">" + String(sa868.settings().freq_tx, 10) + " KHz</td>\n";
+	webString += "<td style=\"background: #ffffff;\">" + String(config.freq_tx, 4) + " MHz</td>\n";
 	webString += "</tr>\n";
 	webString += "<tr>\n";
 	webString += "<td>Freq RX</td>\n";
-	webString += "<td style=\"background: #ffffff;\">" + String(sa868.settings().freq_rx, 10) + " KHz</td>\n";
+	webString += "<td style=\"background: #ffffff;\">" + String(config.freq_rx, 4) + " MHz</td>\n";
 	webString += "</tr>\n";
 	webString += "<tr>\n";
 	webString += "<td>H/L</td>\n";
-	if (sa868.isHighPower())
+	if (config.rf_power)
 		webString += "<td>HIGH</td>\n";
 	else
 		webString += "<td>LOW</td>\n";
@@ -823,7 +823,7 @@ void handle_radio()
 				{
 					if (isValidNumber(server.arg(i)))
 					{
-						sa868.setBandwidth((uint8_t)server.arg(i).toInt());
+						config.band = server.arg(i).toInt();
 					}
 				}
 			}
@@ -833,7 +833,7 @@ void handle_radio()
 				if (server.arg(i) != "")
 				{
 					if (isValidNumber(server.arg(i)))
-						sa868.setVolume((uint8_t)server.arg(i).toInt());
+						config.volume = server.arg(i).toInt();
 				}
 			}
 
@@ -844,9 +844,9 @@ void handle_radio()
 					if (isValidNumber(server.arg(i)))
 					{
 						if (server.arg(i).toInt())
-							sa868.setHighPower();
+							config.rf_power = true;
 						else
-							sa868.setLowPower();
+							config.rf_power = false;
 					}
 				}
 			}
@@ -856,7 +856,7 @@ void handle_radio()
 				if (server.arg(i) != "")
 				{
 					if (isValidNumber(server.arg(i)))
-						sa868.setSqlThresh((uint8_t)server.arg(i).toInt());
+						config.sql_level = server.arg(i).toInt();
 				}
 			}
 
@@ -865,7 +865,7 @@ void handle_radio()
 				if (server.arg(i) != "")
 				{
 					if (isValidNumber(server.arg(i)))
-						sa868.setTxFrequency((uint32_t)server.arg(i).toInt());
+						config.freq_tx = server.arg(i).toFloat();
 				}
 			}
 			if (server.argName(i) == "rx_freq")
@@ -873,7 +873,24 @@ void handle_radio()
 				if (server.arg(i) != "")
 				{
 					if (isValidNumber(server.arg(i)))
-						sa868.setRxFrequency((uint32_t)server.arg(i).toInt());
+						config.freq_rx = server.arg(i).toFloat();
+				}
+			}
+
+			if (server.argName(i) == "tx_offset")
+			{
+				if (server.arg(i) != "")
+				{
+					if (isValidNumber(server.arg(i)))
+						config.offset_tx = server.arg(i).toInt();
+				}
+			}
+			if (server.argName(i) == "rx_offset")
+			{
+				if (server.arg(i) != "")
+				{
+					if (isValidNumber(server.arg(i)))
+						config.offset_rx = server.arg(i).toInt();
 				}
 			}
 
@@ -882,7 +899,7 @@ void handle_radio()
 				if (server.arg(i) != "")
 				{
 					if (isValidNumber(server.arg(i)))
-						sa868.setTxTone(server.arg(i).toInt());
+						config.tone_tx = server.arg(i).toInt();
 				}
 			}
 			if (server.argName(i) == "rx_ctcss")
@@ -890,21 +907,21 @@ void handle_radio()
 				if (server.arg(i) != "")
 				{
 					if (isValidNumber(server.arg(i)))
-						sa868.setRxTone(server.arg(i).toInt());
+						config.tone_rx = server.arg(i).toInt();
 				}
 			}
-			// if (server.argName(i) == "rf_type")
-			// {
-			// 	if (server.arg(i) != "")
-			// 	{
-			// 		if (isValidNumber(server.arg(i)))
-			// 			config.rf_type = server.arg(i).toInt();
-			// 	}
-			// }
+			if (server.argName(i) == "rf_type")
+			{
+				if (server.arg(i) != "")
+				{
+					if (isValidNumber(server.arg(i)))
+						config.rf_type = server.arg(i).toInt();
+				}
+			}
 		}
 		// config.noise=noiseEn;
 		// config.agc=agcEn;
-		// config.rf_en = radioEnable;
+		config.rf_en = radioEnable;
 		String html = "OK";
 		server.send(200, "text/html", html); // send to someones browser when asked
 		saveEEPROM();
@@ -1023,63 +1040,65 @@ void handle_radio()
 		html += "<th colspan=\"2\"><span><b>RF Analog Module</b></span></th>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>Enable:</b></td>\n";
-		String radioEnFlag = "checked";
+		String radioEnFlag = "";
+		if (config.rf_en)
+			radioEnFlag = "checked";
 		html += "<td style=\"text-align: left;\"><label class=\"switch\"><input type=\"checkbox\" name=\"radioEnable\" value=\"OK\" " + radioEnFlag + "><span class=\"slider round\"></span></label></td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>Module Type:</b></td>\n";
 		html += "<td style=\"text-align: left;\">\n";
-		// html += "<select name=\"rf_type\" id=\"rf_type\" onchange=\"rfType()\">\n";
-		// for (int i = 0; i < 9; i++)
-		// {
-		// 	if (config.rf_type == i)
-		// 		html += "<option value=\"" + String(i) + "\" selected>" + String(RF_TYPE[i]) + "</option>\n";
-		// 	else
-		// 		html += "<option value=\"" + String(i) + "\" >" + String(RF_TYPE[i]) + "</option>\n";
-		// }
-		// html += "</select>\n";
+		html += "<select name=\"rf_type\" id=\"rf_type\" onchange=\"rfType()\">\n";
+		for (int i = 0; i < 10; i++)
+		{
+			if (config.rf_type == i)
+				html += "<option value=\"" + String(i) + "\" selected>" + String(RF_TYPE[i]) + "</option>\n";
+			else
+				html += "<option value=\"" + String(i) + "\" >" + String(RF_TYPE[i]) + "</option>\n";
+		}
+		html += "</select>\n";
 		html += "</td>\n";
-		uint32_t freqMin = 134000000;
-		uint32_t freqMax = 174000000;
-		// switch (config.rf_type)
-		// {
-		// case RF_SA868_VHF:
-		// 	freqMin = 134.0F;
-		// 	freqMax = 174.0F;
-		// 	break;
-		// case RF_SR_1WV:
-		// case RF_SR_2WVS:
-		// 	freqMin = 136.0F;
-		// 	freqMax = 174.0F;
-		// 	break;
-		// case RF_SA868_350:
-		// 	freqMin = 320.0F;
-		// 	freqMax = 400.0F;
-		// 	break;
-		// case RF_SR_1W350:
-		// 	freqMin = 350.0F;
-		// 	freqMax = 390.0F;
-		// 	break;
-		// case RF_SA868_UHF:
-		// case RF_SR_1WU:
-		// case RF_SR_2WUS:
-		// 	freqMin = 400.0F;
-		// 	freqMax = 470.0F;
-		// 	break;
-		// default:
-		// 	freqMin = 134.0F;
-		// 	freqMax = 500.0F;
-		// 	break;
-		// }
+		float freqMin = 0;
+		float freqMax = 0;
+		switch (config.rf_type)
+		{
+		case RF_SA868_VHF:
+			freqMin = 134.0F;
+			freqMax = 174.0F;
+			break;
+		case RF_SR_1WV:
+		case RF_SR_2WVS:
+			freqMin = 136.0F;
+			freqMax = 174.0F;
+			break;
+		case RF_SA868_350:
+			freqMin = 320.0F;
+			freqMax = 400.0F;
+			break;
+		case RF_SR_1W350:
+			freqMin = 350.0F;
+			freqMax = 390.0F;
+			break;
+		case RF_SA868_UHF:
+		case RF_SR_1WU:
+		case RF_SR_2WUS:
+			freqMin = 400.0F;
+			freqMax = 470.0F;
+			break;
+		default:
+			freqMin = 134.0F;
+			freqMax = 500.0F;
+			break;
+		}
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>TX Frequency:</b></td>\n";
 		html += "<td style=\"text-align: left;\"><input type=\"number\" id=\"tx_freq\" name=\"tx_freq\" min=\"" + String(freqMin, 4) + "\" max=\"" + String(freqMax, 4) + "\"\n";
-		html += "step=\"0.0001\" value=\"" + String(sa868.settings().freq_tx, 10) + "\" /> Hz</td>\n";
+		html += "step=\"0.0001\" value=\"" + String(config.freq_tx, 4) + "\" /> MHz</td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>RX Frequency:</b></td>\n";
 		html += "<td style=\"text-align: left;\"><input type=\"number\" id=\"rx_freq\" name=\"rx_freq\" min=\"" + String(freqMin, 4) + "\" max=\"" + String(freqMax, 4) + "\"\n";
-		html += "step=\"0.0001\" value=\"" + String(sa868.settings().freq_rx, 10) + "\" /> Hz</td>\n";
+		html += "step=\"0.0001\" value=\"" + String(config.freq_rx, 4) + "\" /> Mhz</td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>TX CTCSS:</b></td>\n";
@@ -1087,7 +1106,7 @@ void handle_radio()
 		html += "<select name=\"tx_ctcss\" id=\"tx_ctcss\">\n";
 		for (int i = 0; i < 39; i++)
 		{
-			if (sa868.settings().tone_tx == i)
+			if (config.tone_tx == i)
 				html += "<option value=\"" + String(i) + "\" selected>" + String(ctcss[i], 1) + "</option>\n";
 			else
 				html += "<option value=\"" + String(i) + "\" >" + String(ctcss[i], 1) + "</option>\n";
@@ -1102,7 +1121,7 @@ void handle_radio()
 		html += "<option value=\"0\" selected>0.0</option>\n";
 		for (int i = 0; i < 39; i++)
 		{
-			if (sa868.settings().tone_rx == i)
+			if (config.tone_rx == i)
 				html += "<option value=\"" + String(i) + "\" selected>" + String(ctcss[i], 1) + "</option>\n";
 			else
 				html += "<option value=\"" + String(i) + "\" >" + String(ctcss[i], 1) + "</option>\n";
@@ -1116,7 +1135,7 @@ void handle_radio()
 		html += "<select name=\"nw_band\" id=\"nw_band\">\n";
 		String cmSelNWT = "";
 		String cmSelNWF = "";
-		if (sa868.settings().band)
+		if (config.band)
 		{
 			cmSelNWT = "selected";
 		}
@@ -1135,7 +1154,7 @@ void handle_radio()
 		html += "<select name=\"rf_power\" id=\"rf_power\">\n";
 		String cmRfPwrF = "";
 		String cmRfPwrT = "";
-		if (sa868.settings().rf_power)
+		if (config.rf_power)
 		{
 			cmRfPwrT = "selected";
 		}
@@ -1151,12 +1170,12 @@ void handle_radio()
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>VOLUME:</b></td>\n";
 		html += "<td style=\"text-align: left;\"><input id=\"sliderVolume\" name=\"volume\" type=\"range\"\n";
-		html += "min=\"1\" max=\"8\" value=\"" + String(sa868.settings().volume) + "\" /><b><span style=\"font-size: 14pt;\" id=\"volShow\">" + String(sa868.settings().volume) + "</span></b></td>\n";
+		html += "min=\"1\" max=\"8\" value=\"" + String(config.volume) + "\" /><b><span style=\"font-size: 14pt;\" id=\"volShow\">" + String(config.volume) + "</span></b></td>\n";
 		html += "</tr>\n";
 		html += "<tr>\n";
 		html += "<td align=\"right\"><b>SQL Level:</b></td>\n";
 		html += "<td style=\"text-align: left;\"><input id=\"sliderSql\" name=\"sql_level\" type=\"range\"\n";
-		html += "min=\"0\" max=\"8\" value=\"" + String(sa868.settings().sql_level) + "\" /><b><span style=\"font-size: 14pt;\" id=\"sqlShow\">" + String(sa868.settings().sql_level) + "</span></b></td>\n";
+		html += "min=\"0\" max=\"8\" value=\"" + String(config.sql_level) + "\" /><b><span style=\"font-size: 14pt;\" id=\"sqlShow\">" + String(config.sql_level) + "</span></b></td>\n";
 		html += "</tr>\n";
 		html += "</table>\n";
 		html += "<div class=\"form-group\">\n";
@@ -4417,7 +4436,7 @@ void handle_about()
 	// webString += "<tr><th width=\"200\"><span><b>Name</b></span></th><th><span><b>Information</b></span></th></tr>";
 	webString += "<tr><td align=\"right\"><b>Hardware Version: </b></td><td align=\"left\"> LILYGO T-TWR Plus </td></tr>";
 	webString += "<tr><td align=\"right\"><b>Firmware Version: </b></td><td align=\"left\"> V" + String(VERSION) + String(VERSION_BUILD) + "</td></tr>\n";
-	// webString += "<tr><td align=\"right\"><b>RF Analog Module: </b></td><td align=\"left\"> MODEL: " + String(RF_TYPE[config.rf_type]) + "</td></tr>\n";
+	webString += "<tr><td align=\"right\"><b>RF Analog Module: </b></td><td align=\"left\"> MODEL: " + String(RF_TYPE[config.rf_type]) + "</td></tr>\n";
 	webString += "<tr><td align=\"right\"><b>ESP32 Model: </b></td><td align=\"left\"> " + String(ESP.getChipModel()) + "</td></tr>";
 	webString += "<tr><td align=\"right\"><b>Chip ID: </b></td><td align=\"left\"> " + String(strCID) + "</td></tr>";
 	webString += "<tr><td align=\"right\"><b>Revision: </b></td><td align=\"left\"> " + String(ESP.getChipRevision()) + "</td></tr>";

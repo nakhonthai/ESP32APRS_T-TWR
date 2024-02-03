@@ -3,7 +3,7 @@
 #include "main.h"
 #include "sa868.h"
 
-#ifdef SA868_OPEN_EDITION
+//#ifdef SA868_OPEN_EDITION
 
 bool SA868_WriteAT1846Sreg(HardwareSerial * SerialRF, uint8_t reg, uint16_t value)
 {
@@ -88,8 +88,8 @@ SA868::SA868(HardwareSerial * SerialRF, uint8_t RX_PIN, uint8_t TX_PIN)
   _config.tone_tx = 0;
   _config.band = 0;
   _config.sql_level = 80;
-  _config.rf_power = true;
-  _config.volume = 20;
+  _config.rf_power = false;
+  _config.volume = 7;
   _config.mic = 8;
   _config.mode = SA868_Mode::OFF;
 }
@@ -190,7 +190,7 @@ void SA868::init() {
     SA868_WriteAT1846Sreg(_SerialRF, 0x41, 0x4431);
     SA868_WriteAT1846Sreg(_SerialRF, 0x42, 0x10F0);
     SA868_WriteAT1846Sreg(_SerialRF, 0x43, 0x00A9);
-    SA868_WriteAT1846Sreg(_SerialRF, 0x58, 0xBC05);   // Bit 0  = 1: CTCSS LPF badwidth to 250Hz
+    SA868_WriteAT1846Sreg(_SerialRF, 0x58, 0xBC80);   // Bit 0  = 1: CTCSS LPF badwidth to 250Hz
                                     // Bit 3  = 0: enable CTCSS HPF
                                     // Bit 4  = 0: enable CTCSS LPF
                                     // Bit 5  = 0: enable voice LPF
@@ -199,14 +199,17 @@ void SA868::init() {
                                     // Bit 11 = 1: bypass VOX HPF
                                     // Bit 12 = 1: bypass VOX LPF
                                     // Bit 13 = 1: bypass RSSI LPF
-    SA868_WriteAT1846Sreg(_SerialRF, 0x44, SA868_maskSetValue(0x06FF, 0x00F0, ((int16_t)_config.volume) << 8));
+    //SA868_WriteAT1846Sreg(_SerialRF, 0x44, SA868_maskSetValue(0x06FF, 0x00F0, ((int16_t)_config.volume) << 8));
+    //SA868_WriteAT1846Sreg(_SerialRF, 0x44,_config.volume*2 | (((int16_t)_config.volume*2) << 4));
+    SA868_WriteAT1846Sreg(_SerialRF, 0x44,0x00FF);
     SA868_WriteAT1846Sreg(_SerialRF, 0x40, 0x0030);
 
     SA868_maskSetRegister(_SerialRF, 0x57, 0x0001, 0x00);     // Audio feedback off
     SA868_maskSetRegister(_SerialRF, 0x3A, 0x7000, 0x4000);   // Select voice channel
 
     setSqlThresh();
-    SA868_maskSetRegister(_SerialRF, 0x30, 0x0004, 0x0004);   // SQ ON
+    //SA868_maskSetRegister(_SerialRF, 0x30, 0x0004, 0x0004);   // SQ ON
+    SA868_maskSetRegister(_SerialRF, 0x30, 0x0008, 0x0000);   // SQ ON
     setPower();
 }
 
@@ -276,7 +279,9 @@ void SA868::updateBandwidth()
 void SA868::setVolume(uint8_t value)
 {
     _config.volume = value;
-    SA868_maskSetRegister(_SerialRF, 0x44, 0x00F0, ((int16_t)_config.volume) << 8);
+    uint16_t volume1 = ((((int16_t)_config.volume)*2)-1) << 4;
+    uint16_t volume2 = (((int16_t)_config.volume)*2)-1;
+    SA868_maskSetRegister(_SerialRF, 0x44, 0x00F0, volume1 | volume2);
 }
 
 int16_t SA868::getRSSI()
@@ -324,8 +329,10 @@ void SA868::setSqlThresh(uint8_t value)
 
 void SA868::setSqlThresh()
 {
-    SA868_WriteAT1846Sreg(_SerialRF, 0x49, static_cast< uint16_t >(_config.sql_level));
-    SA868_WriteAT1846Sreg(_SerialRF, 0x48, static_cast< uint16_t >(_config.sql_level));
+    // SA868_WriteAT1846Sreg(_SerialRF, 0x49, static_cast< uint16_t >(_config.sql_level));
+    // SA868_WriteAT1846Sreg(_SerialRF, 0x48, static_cast< uint16_t >(_config.sql_level));
+    SA868_WriteAT1846Sreg(_SerialRF, 0x49, 0);
+    SA868_WriteAT1846Sreg(_SerialRF, 0x48, 0);
 }
 
 void SA868::RxOn()
@@ -387,4 +394,4 @@ void SA868::setPower()
     }
 }
 
-#endif
+//#endif

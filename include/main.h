@@ -12,7 +12,7 @@
 #define MAIN_H
 
 #define VERSION "0.3"
-#define VERSION_BUILD 'c'
+#define VERSION_BUILD 'd'
 
 // #define DEBUG
 
@@ -105,6 +105,7 @@
 #define RF_SR_1W350 6  // SUNRISE SR350P 350 band frequency：350-390MHz
 #define RF_SR_2WVS 7   // SUNRISE SR120V,SR_2WVS VHF band 136~174 MHz
 #define RF_SR_2WUS 8   // SUNRISE SR120U,SR_2WUS UHF band 400~470 MHz
+#define RF_SA8x8_OpenEdit 9
 
 #include <Arduino.h>
 #include <FS.h>
@@ -152,6 +153,21 @@ typedef struct Config_Struct
 	char bt_name[20];
 	uint32_t bt_pin;
 	char bt_power;
+
+	//--RF Module
+	bool rf_en;
+	uint8_t rf_type;
+	float freq_rx;
+	float freq_tx;
+	int offset_rx;
+	int offset_tx;
+	int tone_rx;
+	int tone_tx;
+	uint8_t band;
+	uint8_t sql_level;
+	bool rf_power;
+	uint8_t volume;
+	uint8_t mic;
 
 	// IGATE
 	bool igate_en;
@@ -368,7 +384,7 @@ const char EQNS[] = {"EQNS.0,1,0,0,1,0,0,1,0,0,1,0,0,1,0"};
 const float ctcss[] = {0, 67, 71.9, 74.4, 77, 79.7, 82.5, 85.4, 88.5, 91.5, 94.8, 97.4, 100, 103.5, 107.2, 110.9, 114.8, 118.8, 123, 127.3, 131.8, 136.5, 141.3, 146.2, 151.4, 156.7, 162.2, 167.9, 173.8, 179.9, 186.2, 192.8, 203.5, 210.7, 218.1, 225.7, 233.6, 241.8, 250.3};
 const float wifiPwr[12][2] = {{-4, -1}, {8, 2}, {20, 5}, {28, 7}, {34, 8.5}, {44, 11}, {52, 13}, {60, 15}, {68, 17}, {74, 18.5}, {76, 19}, {78, 19.5}};
 
-const char RF_TYPE[9][11] = {"NONE", "SA868_VHF", "SA868_UHF", "SA868_350", "SR110V_VHF", "SR110U_UHF", "SR350P", "SR120V_VHF", "SR120U_UHF"};
+const char RF_TYPE[10][11] = {"NONE", "SA868_VHF", "SA868_UHF", "SA868_350", "SR110V_VHF", "SR110U_UHF", "SR350P", "SR120V_VHF", "SR120U_UHF","SA8x8_Open"};
 
 uint8_t checkSum(uint8_t *ptr, size_t count);
 void saveEEPROM();
