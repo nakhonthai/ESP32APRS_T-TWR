@@ -884,8 +884,7 @@ void AFSK_Poll(bool SA818, bool RFPower)
           if (input_HPF)
           {
             adcVal = (int)filter(&hpf, (int16_t)adcVal);
-          }
-          if (input_BPF)
+          }else if (input_BPF)
           {
             adcVal = (int)filter(&bpf, (int16_t)adcVal);
           }
