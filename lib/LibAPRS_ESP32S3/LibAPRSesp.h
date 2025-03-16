@@ -1,8 +1,9 @@
+#ifndef _LIBAPRSESP_H
+#define _LIBAPRSESP_H
 #include "Arduino.h"
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "FIFO.h"
 #include "CRC-CCIT.h"
 #include "HDLC.h"
 #include "AFSK.h"
@@ -33,11 +34,14 @@ void APRS_sendPkt(void *_buffer, size_t length);
 void APRS_sendLoc(void *_buffer, size_t length);
 void APRS_sendMsg(void *_buffer, size_t length);
 void APRS_msgRetry();
+void APRS_sendRawPkt(uint8_t *raw, size_t length);
 
 void APRS_printSettings();
-void APRS_sendTNC2Pkt(String raw);
+void APRS_sendTNC2Pkt(const uint8_t *raw, size_t length);
 
 void base91encode(long ltemp,char *s);
 long semicircles(char *degstr, char hemi);
+void telemetry_base91(char *cdata, char *output, size_t outputsize);
 
 int freeMemory();
+#endif

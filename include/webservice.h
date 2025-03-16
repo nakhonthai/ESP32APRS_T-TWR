@@ -15,11 +15,12 @@
 #include <Update.h>
 #include <WiFi.h>
 #include <WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include <HTTPClient.h>
 #include <time.h>
 #include <TimeLib.h>
 #include <TinyGPSPlus.h>
-#include "sa868.h"
+#include "LITTLEFS.h"
 
 typedef struct timeZoneName
 {
@@ -70,18 +71,26 @@ const timeZoneName tzList[40] PROGMEM= {
 	{+14.00, "(GMT +14:00) Line Islands, Tokelau"},
 };
 
+const char ADC_ATTEN[5][19] = {"0dB (100-950mV)", "2.5dB (100-1250mV)", "6dB (150-1750mV)", "11dB (150-2450mV)", "12dB (150-3300mV)"};
+
+#define SYSTEM_LEN 6
+#define SYSTEM_BIT_LEN 9
 #define PATH_LEN 17
+const char SYSTEM_NAME[SYSTEM_LEN][20] = {"NONE", "All Count", "RF2INET", "INET2RF","DIGI","All Drop"};
+const char SYSTEM_BITS_NAME[9][20] = {"NONE", "IGATE Mode", "DIGI Mode", "WEATHER Mode","SAT Status","INET Status","VPN Status","GSM Status","FX.25"};
 const char PATH_NAME[PATH_LEN][15] = {"OFF", "DST-TRACE 1", "DST-TRACE 2", "DST-TRACE 3", "DST-TRACE 4", "TRACE1-1", "TRACE2-2", "TRACE3-3", "WIDE1-1","RFONLY","RELAY","GATE","ECHO","UserDefine 1","UserDefine 2","UserDefine 3","UserDefine 4"};
 
+
 // ใช้ตัวแปรโกลบอลในไฟล์ main.cpp
-extern SA868 sa868;
 extern statusType status;
 extern digiTLMType digiTLM;
 extern Configuration config;
 extern TaskHandle_t taskNetworkHandle;
 extern TaskHandle_t taskAPRSHandle;
-extern TaskHandle_t taskTNCHandle;
-extern TaskHandle_t taskGpsHandle;
+extern TaskHandle_t taskAPRSPollHandle;
+extern TaskHandle_t taskSerialHandle;
+extern TaskHandle_t taskGPSHandle;
+extern TaskHandle_t taskSensorHandle;
 extern time_t systemUptime;
 extern String RF_VERSION;
 extern pkgListType *pkgList;
@@ -89,16 +98,26 @@ extern TinyGPSPlus gps;
 extern float vbat;
 extern WiFiClient aprsClient;
 extern bool initInterval;
+extern bool webServiceBegin;
+extern fs::LITTLEFSFS LITTLEFS;
+extern double VBat;
+extern double TempNTC;
+extern bool lastHeard_Flag;
+extern SensorData sen[SENSOR_NUMBER];
+extern uint16_t TLM_SEQ;
+extern uint16_t IGATE_TLM_SEQ;
+extern uint16_t DIGI_TLM_SEQ;
+extern unsigned int StandByTick;
 
-// #ifdef __cplusplus
-// extern "C"
-// {
-// #endif
-// 	uint8_t temprature_sens_read();
-// #ifdef __cplusplus
-// }
-// #endif
-// uint8_t temprature_sens_read();
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+	uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
+uint8_t temprature_sens_read();
 
 void serviceHandle();
 void setHTML(byte page);
@@ -108,14 +127,12 @@ void handle_service();
 void handle_system();
 void handle_firmware();
 void handle_default();
-#ifdef SDCRAD
-void handle_storage();
-void handle_download();
-void handle_delete();
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
-#endif
 void webService();
 void handle_radio();
 extern void RF_MODULE(bool boot);
+void handle_ws(String Raw,uint16_t mVrms);
+void handle_ws_gnss(char *nmea);
+void handle_ws_gnss(char *nmea, size_t size);
+void event_lastHeard();
 
 #endif

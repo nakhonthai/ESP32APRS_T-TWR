@@ -4,9 +4,9 @@
 // extern "C" {
 // //#include "user_interface.h"
 // }uint32_t freemem = system_get_free_heap_size();
-Afsk modem;
+//Afsk modem;
 AX25Ctx AX25;
-extern void aprs_msg_callback(struct AX25Msg *msg);
+//extern void aprs_msg_callback(struct AX25Msg *msg);
 
 #define countof(a) sizeof(a) / sizeof(a[0])
 
@@ -94,15 +94,42 @@ void base91encode(long ltemp,char *s)
 	}
 }
 
+void telemetry_base91(char *cdata, char *output, size_t outputsize)
+{
+    int x, d1, d2;
+    int i = 0;
+    // Returns first token
+    char *token = strtok(cdata, ",");
+    output[i++] = '|';
+    // Keep printing tokens while one of the
+    // delimiters present in str[].
+    while (token != NULL)
+    {
+        // printf(" % s\n", token);
+        x = atoi(token);
+        if (x > 8280)
+            x = 8280;
+        if (x < 0)
+            x = 0;
+        d1 = int(x / 91);
+        d2 = x % 91;
+        output[i++] = d1 + 33;
+        output[i++] = d2 + 33;
+        token = strtok(NULL, ",");
+    }
+    output[i++] = '|';
+    outputsize = i;
+}
+
 void APRS_init()
 {
-    AFSK_init(&modem);
-    ax25_init(&AX25, aprs_msg_callback);
+    //AFSK_init();
+    //Ax25Init();
 }
 
 void APRS_poll(void)
 {
-    ax25_poll(&AX25);
+    //ax25_poll(&AX25);
 }
 
 void APRS_setCallsign(char *call, int ssid)
@@ -369,15 +396,33 @@ void APRS_sendPkt(void *_buffer, size_t length)
     path[2] = path1;
     path[3] = path2;
 
-    ax25_sendVia(&AX25, path, countof(path), buffer, length);
+    //ax25_sendVia(&AX25, path, countof(path), buffer, length);
 }
 
-void APRS_sendTNC2Pkt(String raw)
+void APRS_sendTNC2Pkt(const uint8_t *raw, size_t length)
 {
+    uint8_t data[300];
+    int size=0;
     ax25frame frame;
-    // Serial.println(raw);
-    ax25_encode(frame, (char *)raw.c_str(), raw.length());
-    ax25sendFrame(&AX25, &frame);
+    ax25_encode(frame, (char *)raw, length);
+    size=hdlcFrame(data, 300, &AX25, &frame);
+    log_d("TX HDLC Fram size=%d",size);
+    void *handle = NULL;
+    if(size>0){
+        if(NULL == (handle = Ax25WriteTxFrame(data,size))){
+            log_e("Failed to write frame to transmit buffer");   
+        }
+    }
+}
+
+void APRS_sendRawPkt(uint8_t *raw, size_t length)
+{
+    void *handle = NULL;
+    if(length>0){
+        if(NULL == (handle = Ax25WriteTxFrame(raw,length))){
+            log_e("Failed to write frame to transmit buffer");   
+        }
+    }
 }
 
 // Dynamic RAM usage of this function is 30 bytes

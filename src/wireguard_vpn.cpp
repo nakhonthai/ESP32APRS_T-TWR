@@ -67,7 +67,7 @@ void wireguard_setup()
 {
     struct wireguardif_init_data wg;
     struct wireguardif_peer peer;
-
+    
     if(strlen(config.wg_public_key)!=44) return;
     if(strlen(config.wg_private_key)!=44) return;
     ip_addr_t ipaddr;
@@ -86,11 +86,13 @@ void wireguard_setup()
     wg.bind_netif = NULL; // NB! not working on ESP32 even if set!
 
     if(wg_netif==NULL){
-    // Register the new WireGuard network interface with lwIP
-    wg_netif = netif_add(&wg_netif_struct, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gateway), &wg, &wireguardif_init, &ip_input);
+        TCP_MUTEX_LOCK();
+        // Register the new WireGuard network interface with lwIP
+        wg_netif = netif_add(&wg_netif_struct, ip_2_ip4(&ipaddr), ip_2_ip4(&netmask), ip_2_ip4(&gateway), &wg, &wireguardif_init, &ip_input);
 
-    // Mark the interface as administratively up, link up flag is set automatically when peer connects
-    netif_set_up(wg_netif);
+        // Mark the interface as administratively up, link up flag is set automatically when peer connects
+        netif_set_up(wg_netif);
+        TCP_MUTEX_UNLOCK();
     }
 
     // Initialise the first WireGuard peer structure
@@ -113,7 +115,7 @@ void wireguard_setup()
     {
         // Start outbound connection to peer
         wireguardif_connect(wg_netif, wireguard_peer_index_local);
-    }
+    }    
 }
 
 #ifdef __cplusplus

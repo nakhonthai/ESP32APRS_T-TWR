@@ -11,8 +11,8 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#define VERSION "0.3"
-#define VERSION_BUILD 'd'
+#define VERSION "0.4"
+#define VERSION_BUILD 'a'
 
 // #define DEBUG
 
@@ -36,8 +36,8 @@
 
 #define BATTERY_ADC_PIN (-1)
 #define OLED_POWER_PIN (-1)
-#define I2C_SDA (8)
-#define I2C_SCL (9)
+#define I2C_SDA_SYS (8)
+#define I2C_SCL_SYS (9)
 #define PMU_IRQ (4)
 
 #define SPI_MOSI (11)
@@ -54,6 +54,8 @@
 
 #define ESP2SA868_MIC (18)
 #define SA8682ESP_AUDIO (1)
+
+#define BLUETOOTH
 
 #define OLED
 #define SDCARD
@@ -83,6 +85,13 @@
 #define PKGTXSIZE 10
 #endif
 
+#define LOG_NONE 0
+#define LOG_TRACKER (1 << 0)
+#define LOG_IGATE (1 << 1)
+#define LOG_DIGI (1 << 2)
+#define LOG_WX (1 << 3)
+#define LOG_STATUS (1 << 4)
+
 #define FILTER_ALL 0				// Packet is disable all packet
 #define FILTER_OBJECT (1 << 0)		// packet is an object
 #define FILTER_ITEM (1 << 1)		// packet is an item
@@ -107,7 +116,19 @@
 #define RF_SR_2WUS 8   // SUNRISE SR120U,SR_2WUS UHF band 400~470 MHz
 #define RF_SA8x8_OpenEdit 9
 
+#define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
+
+#define TXCH_TCP 0
+#define TXCH_RF 1
+#define TXCH_DIGI 2
+#define TXCH_3PTY 3
+
+#define RF_CHANNEL	(1<<0)
+#define INET_CHANNEL	(1<<1)
+#define TNC_CHANNEL	(1<<2)
+
 #include <Arduino.h>
+#include "config.h"
 #include <FS.h>
 #include <SD.h>
 #include <SPIFFS.h>
@@ -116,192 +137,6 @@
 #include "HardwareSerial.h"
 #include "EEPROM.h"
 
-typedef struct wifi_struct
-{
-	bool enable;
-	char wifi_ssid[32];
-	char wifi_pass[63];
-} wifiSTA;
-
-typedef struct Config_Struct
-{
-	float timeZone;
-	bool synctime;
-	bool title;
-
-	// WiFi/BT/RF
-	char wifi_mode; // WIFI_AP,WIFI_STA,WIFI_AP_STA,WIFI_OFF
-	char wifi_power;
-	//--WiFi Client
-	wifiSTA wifi_sta[5];
-	// bool wifi_client;
-	// char wifi_ssid[32];
-	// char wifi_pass[63];
-	//--WiFi AP
-	// bool wifi_ap;
-	char wifi_ap_ch;
-	char wifi_ap_ssid[32];
-	char wifi_ap_pass[63];
-
-	//--Blue Tooth
-	bool bt_slave;
-	bool bt_master;
-	char bt_mode;
-	char bt_uuid[37];
-	char bt_uuid_rx[37];
-	char bt_uuid_tx[37];
-	char bt_name[20];
-	uint32_t bt_pin;
-	char bt_power;
-
-	//--RF Module
-	bool rf_en;
-	uint8_t rf_type;
-	float freq_rx;
-	float freq_tx;
-	int offset_rx;
-	int offset_tx;
-	int tone_rx;
-	int tone_tx;
-	uint8_t band;
-	uint8_t sql_level;
-	bool rf_power;
-	uint8_t volume;
-	uint8_t mic;
-
-	// IGATE
-	bool igate_en;
-	bool rf2inet;
-	bool inet2rf;
-	bool igate_loc2rf;
-	bool igate_loc2inet;
-	uint16_t rf2inetFilter;
-	uint16_t inet2rfFilter;
-	//--APRS-IS
-	uint8_t aprs_ssid;
-	uint16_t aprs_port;
-	char aprs_mycall[10];
-	char aprs_host[20];
-	char aprs_passcode[6];
-	char aprs_moniCall[10];
-	char aprs_filter[30];
-	//--Position
-	bool igate_bcn;
-	bool igate_gps;
-	bool igate_timestamp;
-	float igate_lat;
-	float igate_lon;
-	float igate_alt;
-	uint16_t igate_interval;
-	char igate_symbol[3] = "N&";
-	char igate_object[10];
-	char igate_phg[8];
-	uint8_t igate_path;
-	char igate_comment[50];
-	//--Filter
-
-	// DIGI REPEATER
-	bool digi_en;
-	bool digi_loc2rf;
-	bool digi_loc2inet;
-	bool digi_timestamp;
-	uint8_t digi_ssid;
-	char digi_mycall[10];
-	uint8_t digi_path;
-	uint16_t digi_delay; // ms
-	uint16_t digiFilter;
-	//--Position
-	bool digi_bcn;
-	bool digi_compress = false;
-	bool digi_altitude = false;
-	bool digi_gps;
-	float digi_lat;
-	float digi_lon;
-	float digi_alt;
-	uint16_t digi_interval;
-	char digi_symbol[3] = "N&";
-	char digi_phg[8];
-	char digi_comment[50];
-
-	// TRACKER
-	bool trk_en;
-	bool trk_loc2rf;
-	bool trk_loc2inet;
-	bool trk_timestamp;
-	uint8_t trk_ssid;
-	char trk_mycall[10];
-	uint8_t trk_path;
-	//--Position
-	bool trk_gps;
-	float trk_lat;
-	float trk_lon;
-	float trk_alt;
-	uint16_t trk_interval = 60;
-	bool trk_smartbeacon = false;
-	bool trk_compress = false;
-	bool trk_altitude = false;
-	bool trk_cst = false;
-	bool trk_bat = false;
-	bool trk_sat = false;
-	bool trk_dx = false;
-	uint16_t trk_hspeed = 120;
-	uint8_t trk_lspeed = 2;
-	uint8_t trk_maxinterval = 15;
-	uint8_t trk_mininterval = 5;
-	uint8_t trk_minangle = 25;
-	uint16_t trk_slowinterval = 600;
-	char trk_symbol[3] = "\\>";
-	char trk_symmove[3] = "/>";
-	char trk_symstop[3] = "\\>";
-	// char trk_btext[17] = "";
-	char trk_comment[50];
-	char trk_item[10] = "";
-	// char trk_object[10];
-	//--Filter
-
-	// OLED DISPLAY
-	bool oled_enable;
-	int oled_timeout;
-	unsigned char dim;
-	unsigned char contrast;
-	unsigned char startup;
-
-	// Display
-	unsigned int dispDelay;
-	unsigned int filterDistant;
-	bool h_up = true;
-	bool tx_display = true;
-	bool rx_display = true;
-	uint16_t dispFilter;
-	bool dispRF;
-	bool dispINET;
-
-	// AFSK,TNC
-	bool audio_hpf;
-	bool audio_bpf;
-	uint8_t preamble;
-	uint16_t tx_timeslot;
-	char ntp_host[20];
-
-	// VPN wiregurad
-	bool vpn;
-	bool modem;
-	uint16_t wg_port;
-	char wg_peer_address[16];
-	char wg_local_address[16];
-	char wg_netmask_address[16];
-	char wg_gw_address[16];
-	char wg_public_key[45];
-	char wg_private_key[45];
-
-	char http_username[32];
-	char http_password[64];
-
-	char path[4][72];
-
-	uint8_t gpio_sql_pin = -1;
-
-} Configuration;
 
 typedef struct igateTLM_struct
 {
@@ -319,13 +154,19 @@ typedef struct
 {
 	time_t time;
 	char calsign[11];
+	char object[10];
 	char ssid[5];
 	bool channel;
 	unsigned int pkg;
 	uint16_t type;
 	uint8_t symbol;
 	int16_t audio_level;
-	char raw[500];
+	float rssi;
+	float snr;
+	float freqErr;
+	char *raw;
+	size_t length;
+	//char raw[256];
 } pkgListType;
 
 typedef struct statisticStruct
@@ -355,6 +196,19 @@ typedef struct digiTLM_struct
 	unsigned char ErPkts;
 } digiTLMType;
 
+typedef struct dataTLM_struct
+{
+	unsigned int Sequence;
+	unsigned long ParmTimeout;
+	unsigned long TeleTimeout;
+	uint8_t A1;
+	uint8_t A2;
+	uint8_t A3;
+	uint8_t A4;
+	uint8_t A5;
+	uint8_t BITS;
+} dataTLMType;
+
 typedef struct Telemetry_struct
 {
 	time_t time;
@@ -372,40 +226,52 @@ typedef struct Telemetry_struct
 typedef struct txQueue_struct
 {
 	bool Active;
+	uint8_t Channel;
 	long timeStamp;
 	int Delay;
+	size_t length;
 	char Info[500];
 } txQueueType;
 
-const char PARM[] = {"PARM.RF->INET,INET->RF,TxPkts,RxPkts,IGateDropRx"};
+const char PARM[] = {"PARM.RF->INET,INET->RF,DigiRpt,TX2RF,DropRx"};
 const char UNIT[] = {"UNIT.Pkts,Pkts,Pkts,Pkts,Pkts"};
 const char EQNS[] = {"EQNS.0,1,0,0,1,0,0,1,0,0,1,0,0,1,0"};
 
 const float ctcss[] = {0, 67, 71.9, 74.4, 77, 79.7, 82.5, 85.4, 88.5, 91.5, 94.8, 97.4, 100, 103.5, 107.2, 110.9, 114.8, 118.8, 123, 127.3, 131.8, 136.5, 141.3, 146.2, 151.4, 156.7, 162.2, 167.9, 173.8, 179.9, 186.2, 192.8, 203.5, 210.7, 218.1, 225.7, 233.6, 241.8, 250.3};
 const float wifiPwr[12][2] = {{-4, -1}, {8, 2}, {20, 5}, {28, 7}, {34, 8.5}, {44, 11}, {52, 13}, {60, 15}, {68, 17}, {74, 18.5}, {76, 19}, {78, 19.5}};
-
 const char RF_TYPE[10][11] = {"NONE", "SA868_VHF", "SA868_UHF", "SA868_350", "SR110V_VHF", "SR110U_UHF", "SR350P", "SR120V_VHF", "SR120U_UHF","SA8x8_Open"};
+const unsigned long baudrate[] = {2400, 4800, 9600, 19200, 2880, 38400, 57600, 76800, 115200, 230400, 460800, 576000, 921600};
+const char GNSS_PORT[5][6] = {"NONE", "UART0", "UART1", "UART2", "TCP"};
+const char TNC_PORT[4][6] = {"NONE", "UART0", "UART1", "USB"};
+const char TNC_MODE[4][6] = {"NONE", "KISS", "TNC2", "YAESU"};
+const char WX_PORT[7][11] = {"NONE", "UART0_CSV", "UART1_CSV", "UART2_CSV", "MODBUS","SENSOR","TCP/UDP"};
+const char MODEM_TYPE[4][17] = {"AFSK_300", "AFSK_1200","AFSK_1200v23","GFSK9600(G3RUH)"};
+const char FX25_MODE[3][6] = {"NONE","RX","RX+TX"};
+const char PWR_MODE[3][10] = {"MODE A", "MODE B","MODE C"};
+const char WX_SENSOR[23][19]={"Wind Course","Wind Speed","Wind Gust","Temperature","Rain 1hr","Rain 24hr","Rain Midnight","Humidity","Barometric","Luminosity","Snow","Soil Temperature","Soil Humidity","Water Temperature","Water TDS","Water Level","PM 2.5","PM 10","Co2","CH2O","TVOC","UV","SOUND"};
 
 uint8_t checkSum(uint8_t *ptr, size_t count);
 void saveEEPROM();
 void defaultConfig();
 String getValue(String data, char separator, int index);
 boolean isValidNumber(String str);
+void taskSerial(void *pvParameters);
 void taskGPS(void *pvParameters);
 void taskAPRS(void *pvParameters);
+void taskAPRSPoll(void *pvParameters);
 void taskNetwork(void *pvParameters);
 void taskTNC(void *pvParameters);
 void sort(pkgListType a[], int size);
 void sortPkgDesc(pkgListType a[], int size);
-int processPacket(String &tnc2);
+//int processPacket(String &tnc2);
 int digiProcess(AX25Msg &Packet);
 void printTime();
-bool pkgTxPush(const char *info, size_t len, int dly);
+bool pkgTxPush(const char *info, size_t len, int dly, uint8_t Ch);
 int popTNC2Raw(int &ret);
 int pushTNC2Raw(int raw);
-int pkgListUpdate(char *call, char *raw, uint16_t type);
+int pkgListUpdate(char *call, char *raw, uint16_t type, bool channel, uint16_t audioLvl);
 pkgListType getPkgList(int idx);
-String myBeacon(String Path);
+//String myBeacon(String Path);
 int tlmList_Find(char *call);
 int tlmListOld();
 TelemetryType getTlmList(int idx);
@@ -413,9 +279,11 @@ void powerSave();
 void powerWakeup();
 bool powerStatus();
 int packet2Raw(String &tnc2, AX25Msg &Packet);
-bool waitResponse(String &data, String rsp = "\r\n", uint32_t timeout = 1000);
-String sendIsAckMsg(String toCallSign, char *msgId);
+bool SA868_waitResponse(String &data, String rsp, uint32_t timeout);
+//String sendIsAckMsg(String toCallSign, char *msgId);
 String trk_gps_postion(String comment);
 String trk_fix_position(String comment);
 String getPath(int idx);
+bool waitPSRAM(bool state);
+void convertSecondsToDHMS(char *dmhs,unsigned long totalSeconds);
 #endif

@@ -177,7 +177,7 @@ extern unsigned int tx_counter; // Incremented every second
 extern char send_aprs_table;
 extern char send_aprs_symbol;
 extern ParseAPRS aprsParse;
-extern float vbat;
+extern double VBat;
 extern time_t systemUptime;
 extern bool initInterval;
 extern uint16_t pttStat;

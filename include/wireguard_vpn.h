@@ -11,6 +11,23 @@
 extern "C" {
 #endif // __cplusplus
 
+#include "lwip/tcpip.h"
+
+#ifdef CONFIG_LWIP_TCPIP_CORE_LOCKING
+  #define TCP_MUTEX_LOCK()                                \
+    if (!sys_thread_tcpip(LWIP_CORE_LOCK_QUERY_HOLDER)) { \
+      LOCK_TCPIP_CORE();                                  \
+    }
+
+  #define TCP_MUTEX_UNLOCK()                             \
+    if (sys_thread_tcpip(LWIP_CORE_LOCK_QUERY_HOLDER)) { \
+      UNLOCK_TCPIP_CORE();                               \
+    }
+#else // CONFIG_LWIP_TCPIP_CORE_LOCKING
+  #define TCP_MUTEX_LOCK()
+  #define TCP_MUTEX_UNLOCK()
+#endif // CONFIG_LWIP_TCPIP_CORE_LOCKING
+
 //==============================================================================
 //  Includes
 //==============================================================================

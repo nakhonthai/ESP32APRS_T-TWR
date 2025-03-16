@@ -1873,7 +1873,7 @@ int ParseAPRS::parse_aprs(struct pbuf_t *pb)
 		return 1; // okay at digi?
 
 		// the packettype is never '}'
-		case '}':
+	case '}':
 		pb->packettype |= T_THIRDPARTY;
 		return 1; // 3rd-party is okay at digi
 

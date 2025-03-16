@@ -9,7 +9,7 @@
 */
 
 #include "gui_lcd.h"
-#include "esp_adc_cal.h"
+//#include "esp_adc_cal.h"
 #include "AFSK.h"
 #include "qrcode.h"
 #include "webservice.h"
@@ -19,7 +19,11 @@
 #include "AiEsp32RotaryEncoder.h"
 #include "sa868.h"
 
+#include "config.h"
+
 #define SerialLOG Serial
+
+extern bool i2c_busy;
 
 unsigned long dimTimeout = 0;
 unsigned long currentTime;
@@ -976,7 +980,7 @@ MyRenderer my_renderer;
 //     msgBox("KEY EXIT");
 //     while (digitalRead(keyPush) == LOW)
 //         ;
-//     saveEEPROM();
+//     saveConfiguration("/default.cfg", config);
 // }
 
 void on_smartbeacon_selected(MenuItem *p_menu_item)
@@ -1164,7 +1168,7 @@ void on_smartbeacon_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 }
 
 void on_wifi_AP_selected(MenuItem *p_menu_item)
@@ -1810,7 +1814,7 @@ void on_aprsserver_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
     // client.flush();
     // client.clearWriteError();
     // delay(500);
@@ -2002,7 +2006,7 @@ void on_igate_position_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
     initInterval=true;
 }
 
@@ -2165,7 +2169,7 @@ void on_igate_function_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 }
 
 void on_igate_beacon_selected(MenuItem *p_menu_item)
@@ -2333,7 +2337,7 @@ void on_igate_beacon_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
     initInterval=true;
 }
 
@@ -2540,7 +2544,7 @@ void on_tracker_position_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
     initInterval=true;
 }
 
@@ -2718,7 +2722,7 @@ void on_tracker_function_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
     initInterval=true;
 }
 
@@ -2870,7 +2874,7 @@ void on_tracker_option_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
     initInterval=true;
 }
 
@@ -3058,7 +3062,7 @@ void on_digi_position_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
     initInterval=true;
 }
 
@@ -3221,7 +3225,7 @@ void on_digi_function_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
     initInterval=true;
 }
 
@@ -3364,7 +3368,7 @@ void on_digi_option_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 }
 
 void on_filter_selected(MenuItem *p_menu_item)
@@ -3582,7 +3586,7 @@ void on_filter_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 }
 
 void on_filter_display_selected(MenuItem *p_menu_item)
@@ -3793,7 +3797,7 @@ void on_filter_display_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 }
 
 void on_filter_digi_selected(MenuItem *p_menu_item)
@@ -3978,7 +3982,7 @@ void on_filter_digi_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 }
 
 void on_filter_inet2rf_selected(MenuItem *p_menu_item)
@@ -4163,7 +4167,7 @@ void on_filter_inet2rf_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 }
 
 void on_filter_rf2inet_selected(MenuItem *p_menu_item)
@@ -4348,7 +4352,7 @@ void on_filter_rf2inet_selected(MenuItem *p_menu_item)
     msgBox("KEY EXIT");
     while (digitalRead(keyPush) == LOW)
         ;
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 }
 // void on_tncconfig_selected(MenuItem *p_menu_item)
 // {
@@ -5002,7 +5006,7 @@ void on_information_selected(MenuItem *p_menu_item)
 
 void on_save_selected(MenuItem *p_menu_item)
 {
-    saveEEPROM();
+    saveConfiguration("/default.cfg", config);
 
     display.clearDisplay();
     display.setCursor(52, 4);
@@ -5134,7 +5138,7 @@ void on_txbeacon_selected(MenuItem *p_menu_item)
 {
     String str;
     int x;
-    String rawTNC = myBeacon(String(",WIDE1-1"));
+    String rawTNC; // = myBeacon(String(",WIDE1-1"));
     // sprintf(cstr, "=%s%c%s%c%s%s\r\n", config.mylat, config.mysymbol[0], config.mylon, config.mysymbol[1], config.myphg, config.mycomment);
     display.clearDisplay();
     display.fillRect(0, 0, 128, 16, WHITE);
@@ -5361,7 +5365,7 @@ void qrcodeDisp()
             char wifiName[20];
             WiFi.SSID().toCharArray(wifiName, 20, 0);
             wifiName[19] = 0;
-            sprintf(msg, "SCAN QR TO OPEN\nWEB BROWSER\nCONFIGURATION\n\nWiFI STA SSID:\n%s", wifiName);
+            sprintf(msg, "SCAN QR TO OPEN\nWEB BROWSER\nCONFIGURATION\n\nWiFI STATION\nSSID:%s\nIP:%s", wifiName,ip.c_str());
             sprintf(link, "http://%s", ip.c_str());
             drawQrCode(link, msg);
         }
@@ -5373,7 +5377,7 @@ void qrcodeDisp()
                 char wifiName[20];
                 wifiName, WiFi.softAPSSID().toCharArray(wifiName, 20, 0);
                 wifiName[19] = 0;
-                sprintf(msg, "SCAN QR TO OPEN\nWEB BROWSER\nCONFIGURATION\n\nWiFI AP SSID:\n%s", wifiName);
+                sprintf(msg, "SCAN QR TO OPEN\nWEB BROWSER\nCONFIGURATION\n\nWiFI AP\nSSID:%s\nIP:%s", wifiName,ip.c_str());
                 sprintf(link, "http://%s", ip.c_str());
                 drawQrCode(link, msg);
             }
@@ -5645,8 +5649,8 @@ void systemDisp()
 
     display.setCursor(3, 53);
     display.print("VBAT:");
-    float vbat = (float)PMU.getBattVoltage() / 1000;
-    str = String(vbat, 2) + " V.";
+    float vbat_now = (float)PMU.getBattVoltage() / 1000;
+    str = String(vbat_now, 2) + " V.";
     // str = String(VERSION) + String(VERSION_BUILD);
     x = str.length() * 6;
     display.setCursor(126 - x, 53);
@@ -5790,18 +5794,17 @@ void msgBox(String msg)
     display.display();
 }
 
-uint32_t readADC_Cal(int ADC_Raw)
-{
-    esp_adc_cal_characteristics_t adc_chars;
+// uint32_t readADC_Cal(int ADC_Raw)
+// {
+//     // esp_adc_cal_characteristics_t adc_chars;
 
-    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
-    return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
-}
+//     // esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
+//     // return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
+//     return 0;
+// }
 
 void topBar(int ws)
 {
-    // int ang = analogRead(39);
-    //  float vbat;
     uint8_t vbatScal = 0;
     int wifiSignal = ws;
     uint8_t wifi = 0, i;
@@ -5839,7 +5842,7 @@ void topBar(int ws)
         display.print("DIS");
     }
 
-    vbat = (float)PMU.getBattVoltage() / 1000;
+    //VBat = (float)PMU.getBattVoltage() / 1000;
     // vbatScal=PMU.getBatteryPercent()/20; //100% -> 5 state
 
     x = 109;
@@ -5849,10 +5852,10 @@ void topBar(int ws)
     display.drawLine(2 + x, 0, 18 + x, 0, WHITE);
     display.drawLine(2 + x, 7, 18 + x, 7, WHITE);
     display.drawLine(18 + x, 1, 18 + x, 6, WHITE);
-    if (vbat < 3.3)
+    if (VBat < 3.3)
         vbatScal = 0;
     else
-        vbatScal = (uint8_t)ceil((vbat - 3.3) * 6);
+        vbatScal = (uint8_t)ceil((VBat - 3.3) * 6);
     //vbatScal += 1;
     if (vbatScal > 5)
         vbatScal = 5;
@@ -5865,7 +5868,7 @@ void topBar(int ws)
         x -= 2;
     }
     display.setCursor(104, 8);
-    display.print(vbat, 1);
+    display.print(VBat, 1);
     display.print("V");
     // Wifi Status
     // display.setCursor(15,0);
@@ -6162,8 +6165,10 @@ void mainDisp(void *pvParameters)
     unsigned long timeGuiOld = millis();
     timeGui = 0;
     saveTimeout = millis();
-    char curTabOld = 0;
+    char curTabOld = curTab+1;
     uint8_t menuSel = 0;
+    timeHalfSec=0;
+    raw_count=0;
 
     pttStat = 0;
     for (;;)
@@ -6171,11 +6176,20 @@ void mainDisp(void *pvParameters)
         unsigned long now = millis();
         timeGui = now - timeGuiOld;
         timeGuiOld = now;
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
         // Prevent RF interference with OLED
-        if (oledLock == true)
-            continue;
+        //if (oledLock == true)
+        //    continue;
+            uint8_t i2c_timeout = 0;
+            while (i2c_busy)
+            {
+                delay(10);
+                if (++i2c_timeout > 20)
+                    break;
+            }
+        
         if(pttStat>0){
+            i2c_busy = true;
             if(pttStat==1){
                 display.clearDisplay();
                 display.setTextSize(1);
@@ -6213,6 +6227,7 @@ void mainDisp(void *pvParameters)
                 display.printf("%.1f",(float)(pttStat)/100);
                 display.display();
             }
+            i2c_busy = false;
             delay(100);
             continue;
         }        
@@ -6223,6 +6238,7 @@ void mainDisp(void *pvParameters)
             continue;
         }
 
+        i2c_busy = true;
         if (millis() > (saveTimeout + 300000))
         {
             powerSave();
@@ -6534,6 +6550,7 @@ void mainDisp(void *pvParameters)
             }
             // ms.display();
         }
+        i2c_busy=false;
     }
 }
 

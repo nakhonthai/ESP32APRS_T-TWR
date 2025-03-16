@@ -1,6 +1,7 @@
-
 #ifndef SA_868_H
 #define SA_868_H
+
+#include <Arduino.h>
 
 enum class SA868_Mode: uint8_t
 {
