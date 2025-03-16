@@ -12,26 +12,27 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 ## Feature
 
 * Supported hardware: LILYGO T-TWR Plus V2.0 (No modifications required)
-* Supported RF: SA868 T-TWR Plus VHF/UHF/350 model (Do not OpenEdition)
+* Supported RF: SA868 T-TWR Plus VHF/UHF/350 model
 * Support APRS internet gateway (IGATE)
 * Support APRS digital repeater (DIGI)
 * Support APRS tracker (TRACKER)
-* Support GNSS External mod select UART0-2 and TCP Client
+* Support APRS weather (WX)
+* Support APRS telemetry (TLM) and with compress data
+* Support GNSS External mod select UART0-1 and TCP Client
 * Support APRS tracker with fix position or smartbeacon mode from GNSS
 * Using ESP-Arduino development on Visual studio code + Platform IO
-* Support Bell202 1200bps AFSK (It has a very good sine wave signal.)
 * Implementing software modem, decoding and encoding
-* Support BLE:Bluetooth TNC2/KISS Mode
 * Support monitor display menu icon and configuration
 * Support Wi-Fi multi station or WiFi Access point
 * Support rotary swich for select and key config overall
 * support Web Service config and control system
 * support filter packet rx/tx on igate,digi,tracker,display
-* support audio filter BPF,HPF
+* support audio filter and AGC
 * support status battery,wifi,gnss,bluetooth
 * support VPN wireguard
 * support global time zone
 * support web service auth login
+* support sensor interface bus i2c,modbus,1-wire,uart,logic couter
 * support BLE(Bluetooth Low Energy) KISS/TNC2 Mode with [APRSdroid(NA7Q)](https://na7q.com/aprsdroid-osm/?fbclid=IwY2xjawIhgSVleHRuA2FlbQIxMQABHRQCvMBlIVgr3EFNOUWQwSHeb92zqSsc0nVapMTjQFS5q56OpT-tyniDbw_aem_TE9iBC3Ly3KSyMbv-zyuVg) version compatible
 * display received and transmit packet on the LED and display OLED
 * Multiple modems: credit coding from project [vp-digi](https://github.com/sq8vps/vp-digi)
