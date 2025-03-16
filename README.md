@@ -32,7 +32,7 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 * support VPN wireguard
 * support global time zone
 * support web service auth login
-* support sd card
+* support BLE(Bluetooth Low Energy) KISS/TNC2 Mode with [APRSdroid(NA7Q)](https://na7q.com/aprsdroid-osm/?fbclid=IwY2xjawIhgSVleHRuA2FlbQIxMQABHRQCvMBlIVgr3EFNOUWQwSHeb92zqSsc0nVapMTjQFS5q56OpT-tyniDbw_aem_TE9iBC3Ly3KSyMbv-zyuVg) version compatible
 * display received and transmit packet on the LED and display OLED
 * Multiple modems: credit coding from project [vp-digi](https://github.com/sq8vps/vp-digi)
   * 1200 Bd AFSK Bell 202 (VHF standard)
