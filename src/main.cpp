@@ -16,12 +16,8 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
-// #include <BLEDevice.h>
-// #include <BLEServer.h>
-// #include <BLEUtils.h>
-// #include <BLE2902.h>
-// #include <BLESecurity.h>
 #include <LITTLEFS.h>
+#include <esp_task_wdt.h>
 #include "main.h"
 #include "XPowersLib.h"
 #include "cppQueue.h"
@@ -35,6 +31,7 @@
 #include "ESP32Ping.h"
 #include "webservice.h"
 #include "LibAPRSesp.h"
+#include "modem.h"
 
 #include "time.h"
 
@@ -70,7 +67,7 @@ bool i2c_busy = false;
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel *strip;
 
-#define BOOT_PIN 0
+//#define BOOT_PIN 0
 
 #define SCREEN_WIDTH 128    // OLED display width, in pixels
 #define SCREEN_HEIGHT 64    // OLED display height, in pixels
@@ -167,6 +164,8 @@ Configuration config;
 pkgListType *pkgList;
 
 TelemetryType *Telemetry;
+
+long timeSleep = 0;
 
 RTC_DATA_ATTR double VBat;
 // RTC_DATA_ATTR double TempNTC;
@@ -503,6 +502,46 @@ double distance(double lon0, double lat0, double lon1, double lat1)
   c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
   return c * 6366.71; /* in kilometers */
+}
+
+void PowerOn()
+{
+#ifdef ST7735_LED_K_Pin
+    ledcWrite(0, (uint32_t)config.disp_brightness);
+#endif
+    // Power ON
+    if(config.pwr_gpio>-1){
+      if (config.pwr_active)
+      {
+          pinMode(config.pwr_gpio, OUTPUT);
+          digitalWrite(config.pwr_gpio, HIGH);
+      }
+      else
+      {
+          pinMode(config.pwr_gpio, OUTPUT_OPEN_DRAIN);
+          digitalWrite(config.pwr_gpio, LOW);
+      }
+    }
+}
+
+void PowerOff()
+{
+#ifdef ST7735_LED_K_Pin
+    ledcWrite(0, 0);
+#endif
+    // Power OFF
+    if(config.pwr_gpio>-1){
+      if (config.pwr_active)
+      {
+          pinMode(config.pwr_gpio, OUTPUT);
+          digitalWrite(config.pwr_gpio, LOW);
+      }
+      else
+      {
+          pinMode(config.pwr_gpio, OUTPUT_OPEN_DRAIN);
+          digitalWrite(config.pwr_gpio, HIGH);
+      }
+    }
 }
 
 // SmartBeaconing(tm) algorithm adapted from HamHUD
@@ -2330,6 +2369,19 @@ bool pkgTxDuplicate(AX25Msg ax25)
   return false;
 }
 
+int pkgTxCount()
+{
+    int count = 0;
+    for (int i = 0; i < PKGTXSIZE; i++)
+    {
+        if (txQueue[i].Active)
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
 bool pkgTxPush(const char *info, size_t len, int dly, uint8_t Ch)
 {
   char *ecs = strstr(info, ">");
@@ -2701,10 +2753,11 @@ void RF_MODULE(bool boot)
     delay(100);
     digitalWrite(SA868_PD_PIN, HIGH); // PWR ON
     delay(1000);
-    if (config.rf_type == RF_SA8x8_OpenEdit)
-    {
-     sa868.init();
-    }
+    // if (config.rf_type == RF_SA8x8_OpenEdit)
+    // {
+    //   delay(2000);
+    //   sa868.init();
+    // }
   }
   // else
   // {
@@ -2715,16 +2768,18 @@ void RF_MODULE(bool boot)
 
   if (config.rf_type == RF_SA8x8_OpenEdit)
   {
-    sa868.setBandwidth(config.band);
-    sa868.setRxFrequency((uint32_t)(config.freq_rx * 1000000));
-    sa868.setTxFrequency((uint32_t)(config.freq_tx * 1000000));
-    sa868.setVolume(config.volume);
-    sa868.setSqlThresh(config.sql_level);
-    delay(100);
-    sa868.TxOff();
-    sa868.setLowPower();
-    delay(100);
-    sa868.RxOn();
+    if(sa868.init()){
+      sa868.setBandwidth(config.band);
+      sa868.setRxFrequency((uint32_t)(config.freq_rx * 1000000));
+      sa868.setTxFrequency((uint32_t)(config.freq_tx * 1000000));
+      sa868.setVolume(config.volume);
+      sa868.setSqlThresh(config.sql_level);
+      delay(100);
+      sa868.TxOff();
+      sa868.setLowPower();
+      delay(100);
+      sa868.RxOn();
+    }
   }
   else
   {
@@ -3281,6 +3336,7 @@ void setup()
   pinMode(BOOT_PIN, INPUT_PULLUP);
   pinMode(ENCODER_OK_PIN, INPUT_PULLUP);
   pinMode(BUTTON_PTT_PIN, INPUT_PULLUP); // PTT BUTTON
+  LED_init(-1,-1,42);
 
   // setCpuFrequencyMhz(160);
   Serial.begin(115200);
@@ -3324,16 +3380,17 @@ void setup()
 
   // Setup Power PMU AXP2101
   setupPower();
-  delay(500);
+  //delay(500);
   // setupSDCard();
-  // strip = new Adafruit_NeoPixel(1, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
-  // strip->begin();
-  LED_init(-1,-1,-1);
+  //strip = new Adafruit_NeoPixel(1, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
+  //strip->begin();
+
 
   i2c_busy = true;
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false); // initialize with the I2C addr 0x3C (for the 128x64)
   // Initialising the UI will init the display too.
+
   // clear the display
   display.clearDisplay();
   display.setTextSize(1);
@@ -3604,6 +3661,16 @@ void setup()
 
   delay(1000);
   upTimeStamp = millis() / 1000;
+  esp_task_wdt_config_t twdt_config = {
+    .timeout_ms = 30000, // 30 seconds
+    .idle_core_mask = (1 << portNUM_PROCESSORS) - 1,    // Bitmask of all cores
+    .trigger_panic = false,
+  };
+esp_task_wdt_init(&twdt_config);
+printf("TWDT initialized\n");
+esp_task_wdt_add(NULL);
+esp_task_wdt_status(NULL);
+StandByTick = millis() + (config.pwr_stanby_delay * 1000);
 }
 
 int pkgCount = 0;
@@ -4577,13 +4644,21 @@ long sendTimer = 0;
 int btn_count = 0;
 long timeCheck = 0;
 bool afterVoice = false;
+long int sleep_timer = 0;
+bool save_mode = false;
+bool save_act = false;
 
 bool ptt_stat_old = false;
 
 void loop()
 {
   vTaskDelay(10 / portTICK_PERIOD_MS);
-
+  if(getDCD())
+  {
+    StandByTick = millis() + (config.pwr_stanby_delay * 1000);
+    if (save_mode)
+      save_act = true;
+  }
   // if (ESP.getFreeHeap() < 60000)
   //   ESP.restart();
 
@@ -4738,7 +4813,49 @@ void loop()
     // log_d("taskAPRS: %d mS\ttaskNetwork: %d mS\ttaskGUI: %d mS\n", timeAprs, timeNetwork, timeGui);
     timeCheck = millis() + 10000;
     VBat = (float)PMU.getBattVoltage() / 1000;
-    LED_Status(0, 0, 0);
+    if (!((WiFi.isConnected() == true) || (WiFi.softAPgetStationNum() > 0)))
+        {
+            Sleep_Activate &= ~ACTIVATE_WIFI;
+        }
+
+        if ((config.pwr_mode == MODE_B) && config.gnss_enable) // expand sleep delay from GPS moving
+        {
+            if ((gps.satellites.value() > 3) && (gps.hdop.hdop() < 5) && (gps.speed.kmph() > 10))
+            {
+                if (config.trk_en)
+                {
+                    if (config.trk_gps)
+                    {
+                        if (SB_SPEED > 10)
+                            StandByTick = millis() + (config.trk_slowinterval * 1000);
+                    }
+                    else
+                    {
+                        StandByTick = millis() + (config.trk_interval * 1000) + 1000;
+                        if (save_mode)
+                            save_act = true;
+                    }
+                }
+                else if (config.igate_en)
+                {
+                    if (config.igate_gps)
+                    {
+                        StandByTick = millis() + (config.igate_interval * 1000) + 1000;
+                        if (save_mode)
+                            save_act = true;
+                    }
+                }
+                else if (config.digi_en)
+                {
+                    if (config.digi_gps)
+                    {
+                        StandByTick = millis() + (config.digi_interval * 1000) + 1000;
+                        if (save_mode)
+                            save_act = true;
+                    }
+                }
+            }
+        }
     // log_d( "Task Name\tStatus\tPrio\tHWM\tTask\tAffinity");
     // char stats_buffer[1024];
     // vTaskList(stats_buffer);
@@ -4780,6 +4897,263 @@ void loop()
     //     }
     // }
   }
+  if (millis() > timeSleep)
+    {
+        esp_task_wdt_reset();
+        timeSleep = millis() + 1000;
+
+        if (config.pwr_en)
+        {
+            if (config.pwr_mode == MODE_A) // CPU and Radio active, power down control
+            {
+#if defined(XPOWERS_CHIP_AXP2101)
+                if (PMU.isCharging())
+                {
+                    StandByTick = millis() + (config.pwr_stanby_delay * 1000);
+                }
+#endif
+                if (((millis() > StandByTick) || (save_act)) && (pkgTxCount() == 0))
+                {
+                    save_act = false;
+                    if (save_mode == false)
+                    {
+                        save_mode = true;
+                        log_d("System to save mode A %d Sec", config.pwr_sleep_interval);
+                        StandByTick = millis() + (config.pwr_sleep_interval * 1000);
+                        vTaskSuspend(taskSensorHandle);
+                        display.clearDisplay();
+                        display.display();
+                        // Power OFF
+                        PowerOff();
+
+#if defined(XPOWERS_CHIP_AXP2101)
+                        PMU.disableDC5();
+                        PMU.disableALDO1(); // QMC6310,BME280,OLED
+                        // PMU.disableALDO3(); //LoRa
+                        PMU.disableBLDO2();
+                        PMU.disableALDO2();
+                        // PMU.disableALDO4(); //GNSS,
+                        PMU.disableBLDO1(); // TF Card
+                        PMU.disableDC3();
+#endif
+                        setCpuFrequencyMhz(80);
+                        esp_task_wdt_reset();
+                        delay(100);
+                    }
+                    else
+                    {
+                        // Wakeup
+                        save_mode = false;
+                        log_d("System to Wakeup save mode A %d Sec", config.pwr_sleep_interval);
+                        // sleep_timer = millis() + (config.pwr_sleep_interval * 1000);
+                        StandByTick = millis() + (config.pwr_stanby_delay * 1000);
+#if defined(__XTENSA__)
+                        setCpuFrequencyMhz(240);
+#else
+                        setCpuFrequencyMhz(160);
+#endif
+                        PowerOn();
+                        sensorInit(false);
+                        delay(100);
+                        vTaskResume(taskSensorHandle);
+#if defined(XPOWERS_CHIP_AXP2101)
+                        PMU.enableDC5();
+                        PMU.enableALDO1();
+                        PMU.enableALDO3();
+                        PMU.enableBLDO2();
+                        PMU.enableALDO2();
+                        PMU.enableALDO4();
+                        PMU.enableBLDO1();
+                        PMU.enableDC3();
+#endif
+                    }
+                }
+            }
+            else if (config.pwr_mode == MODE_B) // Wake up and wait for delay time to sleepp
+            {
+              #if defined(XPOWERS_CHIP_AXP2101)
+                if (PMU.isCharging())
+                {
+                    StandByTick = millis() + (config.pwr_stanby_delay * 1000);
+                }
+#endif
+                if (((millis() > StandByTick) || (save_act)) && (pkgTxCount() == 0))
+                {
+                    save_act = false;
+                    if (!save_mode)
+                    {
+                        save_mode = true;
+                        log_d("System to light sleep Mode B %d Sec", config.pwr_sleep_interval);
+                        // sleep_timer = millis() + (config.pwr_sleep_interval * 1000);
+                        StandByTick = millis() + (config.pwr_sleep_interval * 1000);
+                        vTaskDelete(taskSensorHandle);
+                        display.clearDisplay();
+                        display.display();
+                        PowerOff();
+                        // adc_power_off();
+                        vTaskDelete(taskNetworkHandle);
+                        WiFi.disconnect(true); // Disconnect from the network
+                        WiFi.persistent(false);
+                        WiFi.mode(WIFI_OFF); // Switch WiFi off
+
+                        // vTaskSuspend(taskNetworkHandle);
+                        // delay(100);
+                        setCpuFrequencyMhz(80);
+                        // esp_task_wdt_deinit();
+                        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+                        #if defined(XPOWERS_CHIP_AXP2101)
+                        PMU.disableDC5();
+                        PMU.disableALDO1(); // QMC6310,BME280,OLED
+                        // PMU.disableALDO3(); //LoRa
+                        PMU.disableBLDO2();
+                        PMU.disableALDO2();
+                        PMU.disableALDO4(); // GNSS,
+                        PMU.disableBLDO1(); // TF Card
+                        PMU.disableDC3();
+                        // esp_sleep_enable_ext0_wakeup((gpio_num_t)PMU_IRQ, LOW);
+                        gpio_wakeup_enable((gpio_num_t)PMU_IRQ, GPIO_INTR_LOW_LEVEL);
+#else
+#if defined(__XTENSA__)
+                        esp_sleep_enable_ext0_wakeup((gpio_num_t)config.rf_dio1_gpio, HIGH);
+                        // gpio_wakeup_enable ((gpio_num_t)config.rf_dio1_gpio, GPIO_INTR_HIGH_LEVEL);
+#else
+                        // esp_sleep_enable_ext1_wakeup(0x200, ESP_EXT1_WAKEUP_ALL_LOW);
+                        esp_deep_sleep_enable_gpio_wakeup((1 << config.rf_dio1_gpio), ESP_GPIO_WAKEUP_GPIO_HIGH);
+#endif
+#endif
+
+                        delay(100);
+#ifdef __XTENSA__
+                        //esp_sleep_enable_ext1_wakeup(0x1, ESP_EXT1_WAKEUP_ALL_LOW);
+                        gpio_wakeup_enable ((gpio_num_t)0, GPIO_INTR_LOW_LEVEL);
+#else
+                        // esp_deep_sleep_enable_gpio_wakeup((1<<9), ESP_GPIO_WAKEUP_GPIO_LOW);
+                        gpio_wakeup_enable((gpio_num_t)9, GPIO_INTR_LOW_LEVEL);
+#endif
+                        esp_sleep_enable_timer_wakeup((uint64_t)config.pwr_sleep_interval * uS_TO_S_FACTOR);
+                        esp_sleep_enable_gpio_wakeup();
+                        esp_light_sleep_start();
+                        save_mode = true;
+                        save_act = true;
+                        StandByTick = millis() + (config.pwr_stanby_delay * 1000);
+                    }
+                    else
+                    {
+                        // Wakeup
+                        save_mode = false;
+                        log_d("System to wakeup sleep Mode B %d Sec", config.pwr_sleep_interval);
+                        // sleep_timer = millis() + (config.pwr_sleep_interval * 1000);
+                        StandByTick = millis() + (config.pwr_stanby_delay * 1000);
+#if defined(__XTENSA__)
+                        setCpuFrequencyMhz(240);
+#else
+                        setCpuFrequencyMhz(160);
+#endif
+                        esp_task_wdt_reset();
+                        // esp_task_wdt_init(WDT_TIMEOUT, true); // enable panic so ESP32 restarts
+                        // esp_task_wdt_add(NULL);               // add current thread to WDT watch
+                        // esp_task_wdt_reset();
+                        // adc_power_on();
+                        // WiFi.disconnect(false);  // Reconnect the network
+                        // WiFi.mode(WIFI_STA);    // Switch WiFi off
+                        PowerOn();
+                        sensorInit(false);
+                        delay(100);
+                        vTaskResume(taskSensorHandle);
+#ifdef __XTENSA__
+                        xTaskCreatePinnedToCore(
+                            taskNetwork,        /* Function to implement the task */
+                            "taskNetwork",      /* Name of the task */
+                            12000,              /* Stack size in words */
+                            NULL,               /* Task input parameter */
+                            0,                  /* Priority of the task */
+                            &taskNetworkHandle, /* Task handle. */
+                            1);                 /* Core where the task should run */
+                        xTaskCreatePinnedToCore(
+                            taskSensor,        /* Function to implement the task */
+                            "taskSensor",      /* Name of the task */
+                            4096,              /* Stack size in words */
+                            NULL,              /* Task input parameter */
+                            1,                 /* Priority of the task */
+                            &taskSensorHandle, /* Task handle. */
+                            1);                /* Core where the task should run */
+#else
+                        xTaskCreatePinnedToCore(
+                            taskNetwork,        /* Function to implement the task */
+                            "taskNetwork",      /* Name of the task */
+                            12000,              /* Stack size in words */
+                            NULL,               /* Task input parameter */
+                            1,                  /* Priority of the task */
+                            &taskNetworkHandle, /* Task handle. */
+                            0);                 /* Core where the task should run */
+                        xTaskCreatePinnedToCore(
+                            taskSensor,        /* Function to implement the task */
+                            "taskSensor",      /* Name of the task */
+                            4096,              /* Stack size in words */
+                            NULL,              /* Task input parameter */
+                            4,                 /* Priority of the task */
+                            &taskSensorHandle, /* Task handle. */
+                            0);                /* Core where the task should run */
+#endif
+                        // vTaskResume(taskNetworkHandle);
+                        #if defined(XPOWERS_CHIP_AXP2101)
+                        PMU.enableDC5();
+                        PMU.enableALDO1();
+                        PMU.enableALDO3();
+                        PMU.enableBLDO2();
+                        PMU.enableALDO2();
+                        PMU.enableALDO4();
+                        PMU.enableBLDO1();
+                        PMU.enableDC3();
+#endif
+                    }
+                }
+            }
+            else if (config.pwr_mode == MODE_C) // Wake up and wait for event to sleep
+            {
+                if ((Sleep_Activate == ACTIVATE_OFF) && (millis() > StandByTick) && (pkgTxCount() == 0))
+                {
+                    log_d("System to SLEEP Mode %d Sec", config.pwr_sleep_interval);
+                    // radioSleep();
+                    // esp_deep_sleep_enable_gpio_wakeup(BIT(DEFAULT_WAKEUP_PIN), DEFAULT_WAKEUP_LEVEL));
+                    display.clearDisplay();
+                    display.display();
+                    PowerOff();
+                    // delay(100);
+                    // esp_sleep_enable_ext0_wakeup(GPIO_NUM_14,LOW);
+                    if(config.rf_en)
+                    {
+                      digitalWrite(config.rf_pd_gpio, LOW); // RF Power
+                    }
+                    //radioSleep();
+                    #if defined(XPOWERS_CHIP_AXP2101)
+                    PMU.disableDC5();
+                    PMU.disableALDO1();
+                    PMU.disableALDO3();
+                    PMU.disableBLDO2();
+                    PMU.disableALDO2();
+                    PMU.disableALDO4();
+                    PMU.disableBLDO1();
+                    PMU.disableDC3();
+#endif
+
+                    delay(100);
+#ifdef __XTENSA__
+                    //esp_sleep_enable_ext1_wakeup(0x1, ESP_EXT1_WAKEUP_ALL_LOW);
+                    esp_sleep_enable_ext1_wakeup(0x0, ESP_EXT1_WAKEUP_ALL_LOW);
+#else
+                    esp_deep_sleep_enable_gpio_wakeup((1 << 9), ESP_GPIO_WAKEUP_GPIO_LOW);
+#endif
+                    esp_sleep_enable_timer_wakeup((uint64_t)config.pwr_sleep_interval * uS_TO_S_FACTOR);
+                    esp_deep_sleep_start();
+                }
+            }
+        }
+        // if (ESP.getFreeHeap() < 60000)
+        //     esp_restart();
+        // Serial.println(String(ESP.getFreeHeap()));
+    }
+
 }
 
 String sendIsAckMsg(String toCallSign, int msgId)
@@ -5714,6 +6088,7 @@ long timeSlot;
 unsigned long iGatetickInterval;
 unsigned long WxInterval;
 bool initInterval = true;
+bool RF_INIT = true;
 void taskAPRS(void *pvParameters)
 {
   //	long start, stop;
@@ -5730,11 +6105,7 @@ void taskAPRS(void *pvParameters)
   log_d("RF Module config");
  
   afskSetModem(config.modem_type, config.audio_lpf, config.tx_timeslot, config.preamble * 100,config.fx25_mode);
-  
-  if (config.rf_en)
-    RF_MODULE(true);
-  
-  setPtt(false);
+   
   // afskSetDCOffset(config.adc_dc_offset);
   afskSetADCAtten(config.adc_atten);
   APRS_setCallsign(config.aprs_mycall, config.aprs_ssid);
@@ -5757,6 +6128,13 @@ void taskAPRS(void *pvParameters)
 
   for (;;)
   {
+    if(RF_INIT){
+      if (config.rf_en){
+        RF_MODULE(true);
+        setPtt(false);        
+      }
+      RF_INIT=false;
+    }
 
     if (adcEn == 1)
     {

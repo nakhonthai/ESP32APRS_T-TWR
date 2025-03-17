@@ -38,7 +38,7 @@ class SA868
 {
     public:
         SA868(HardwareSerial * SerialRF, uint8_t RX_PIN, uint8_t TX_PIN);
-        void init();
+        bool init();
         SA868_Version Version();
         int16_t getRSSI();
         void RxOn();

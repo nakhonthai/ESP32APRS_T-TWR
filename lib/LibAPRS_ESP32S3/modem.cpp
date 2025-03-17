@@ -306,6 +306,11 @@ enum ModemPrefilter ModemGetFilterType(uint8_t modem)
 	return demodState[modem].prefilter;
 }
 
+bool getDCD(void)
+{
+	return dcd;
+}
+
 /**
  * @brief Set DCD LED
  * @param[in] state False - OFF, true - ON

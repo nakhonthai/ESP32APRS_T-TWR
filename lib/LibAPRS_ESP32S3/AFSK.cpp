@@ -87,6 +87,8 @@ extern float markFreq;  // mark frequency
 extern float spaceFreq; // space freque
 extern float baudRate;  // baudrate
 
+
+
 void LED_init(int8_t led_tx_pin, int8_t led_rx_pin, int8_t led_strip_pin)
 {
   _led_tx_pin = led_tx_pin;
@@ -94,7 +96,8 @@ void LED_init(int8_t led_tx_pin, int8_t led_rx_pin, int8_t led_strip_pin)
   _led_strip_pin = led_strip_pin;
   if (led_strip_pin > -1)
   {
-    strip = new Adafruit_NeoPixel(1, led_strip_pin, NEO_GRB + NEO_KHZ800);
+    rgbTimeout = millis() + 50;
+    strip = new Adafruit_NeoPixel(1, _led_strip_pin, NEO_GRB + NEO_KHZ800);
     strip->begin();
     strip->show();
   }
@@ -113,7 +116,7 @@ void LED_init(int8_t led_tx_pin, int8_t led_rx_pin, int8_t led_strip_pin)
 portMUX_TYPE ledMux = portMUX_INITIALIZER_UNLOCKED;
 void LED_Status(uint8_t red, uint8_t green, uint8_t blue)
 {
-  portENTER_CRITICAL_ISR(&ledMux); // ISR start
+  //portENTER_CRITICAL_ISR(&ledMux); // ISR start
   if (red == r_old && green == g_old && blue == b_old)
   {
     rgbTimeout = millis() + 50;
@@ -128,11 +131,11 @@ void LED_Status(uint8_t red, uint8_t green, uint8_t blue)
       b_old = blue;
       if (_led_strip_pin > -1 && strip != NULL)
       {
-        if (strip->canShow())
-        {
+        //if (strip->canShow())
+        //{
           strip->setPixelColor(0, strip->Color(red, green, blue));
           strip->show();
-        }
+        //}
       }
       else
       {
@@ -153,7 +156,7 @@ void LED_Status(uint8_t red, uint8_t green, uint8_t blue)
       }
     }
   }
-  portEXIT_CRITICAL_ISR(&ledMux);
+  //portEXIT_CRITICAL_ISR(&ledMux);
 }
 
 /**

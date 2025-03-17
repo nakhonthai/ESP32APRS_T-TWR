@@ -27,7 +27,7 @@ Has been designed to be easy to use,By displaying results on the screen Configur
 * Support rotary swich for select and key config overall
 * support Web Service config and control system
 * support filter packet rx/tx on igate,digi,tracker,display
-* support audio filter and AGC
+* support audio deemphasis and AGC
 * support status battery,wifi,gnss,bluetooth
 * support VPN wireguard
 * support global time zone

@@ -12,7 +12,7 @@
 #define MAIN_H
 
 #define VERSION "0.4"
-#define VERSION_BUILD 'a'
+#define VERSION_BUILD 'b'
 
 // #define DEBUG
 
@@ -126,6 +126,8 @@
 #define RF_CHANNEL	(1<<0)
 #define INET_CHANNEL	(1<<1)
 #define TNC_CHANNEL	(1<<2)
+
+#define XPOWERS_CHIP_AXP2101
 
 #include <Arduino.h>
 #include "config.h"

@@ -5,7 +5,7 @@
 bool SA868_WaitResponse(HardwareSerial * SerialRF, const char * cmd, String * result)
 {
     uint32_t startMillis = millis();
-    uint32_t timeout=100;
+    uint32_t timeout=200;
     result->clear();
 
     //ESP_LOGD("SA8x8", "Command '%s'", cmd);
@@ -22,7 +22,7 @@ bool SA868_WaitResponse(HardwareSerial * SerialRF, const char * cmd, String * re
                 //ESP_LOGD("SA8x8", "Response '%s'", result);
                 return true;
             }
-            delay(10);
+            delay(20);
         }
     } while (millis() - startMillis < timeout);
 
@@ -109,8 +109,8 @@ SA868::SA868(HardwareSerial * SerialRF, uint8_t RX_PIN, uint8_t TX_PIN)
 , _RX_PIN {RX_PIN}
 , _TX_PIN {TX_PIN}
 {
-  _config.freq_rx = 144800000;
-  _config.freq_tx = 144800000;
+  _config.freq_rx = 144390000;
+  _config.freq_tx = 144390000;
   _config.tone_rx = 0;
   _config.tone_tx = 0;
   _config.band = 0;
@@ -152,10 +152,11 @@ void SA868::setRxTone(uint32_t tone)
     _config.tone_rx = tone;
 }
 
-void SA868::init() {
+bool SA868::init() {
     //_SerialRF->begin(9600, SERIAL_8N1, _RX_PIN, _TX_PIN);
 
-    SA868_WriteAT1846Sreg(_SerialRF, 0x30, 0x0001);   // Soft reset
+    if(SA868_WriteAT1846Sreg(_SerialRF, 0x30, 0x0001))   // Soft reset
+    {
     delay(100);
     SA868_WriteAT1846Sreg(_SerialRF, 0x30, 0x0004);   // Chip enable
     SA868_WriteAT1846Sreg(_SerialRF, 0x04, 0x0FD0);   // 26MHz crystal frequency
@@ -234,9 +235,11 @@ void SA868::init() {
     SA868_maskSetRegister(_SerialRF, 0x57, 0x0001, 0x00);     // Audio feedback off
     SA868_maskSetRegister(_SerialRF, 0x3A, 0x7000, 0x4000);   // Select voice channel
 
-    SA868_maskSetRegister(_SerialRF, 0x30, 0x0008, 0x0000);   // SQ OFF
-
+    SA868_maskSetRegister(_SerialRF, 0x30, 0x0008, 0x0000);   // SQ OFF    
     setPower();
+    return true;
+    }
+    return false;
 }
 
 void SA868::setBandwidth(uint8_t value)

@@ -147,5 +147,6 @@ void ModemInit(void);
 
 void MODEM_DECODE(int16_t sample,uint16_t mVrms);
 uint8_t MODEM_BAUDRATE_TIMER_HANDLER(void);
+bool getDCD(void);
 
 #endif

@@ -27,6 +27,7 @@ String webString;
 
 extern int8_t adcEn;
 extern int8_t dacEn;
+extern bool RF_INIT;
 
 bool defaultSetting = false;
 
@@ -1415,8 +1416,9 @@ void handle_radio(AsyncWebServerRequest *request)
 		String html = "OK";
 		request->send(200, "text/html", html); // send to someones browser when asked
 		saveConfiguration("/default.cfg", config);
-		delay(500);
-		RF_MODULE(false);
+		RF_INIT = true;
+		//delay(500);
+		//RF_MODULE(false);
 	}
 	else if (request->hasArg("commitTNC"))
 	{
@@ -8943,9 +8945,12 @@ void webService()
 				else
 				{
 					adcEn=-1;
-					delay(100);
-					disableLoopWDT();
-					disableCore0WDT();
+					dacEn=-1;
+					delay(500);
+					//adcEn=-1;
+					//delay(100);
+					//disableLoopWDT();
+					//disableCore0WDT();
 					// disableCore1WDT();
 					//  vTaskSuspend(taskAPRSPollHandle);
 					//  vTaskSuspend(taskAPRSHandle);
