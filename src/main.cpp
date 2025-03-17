@@ -1356,7 +1356,7 @@ void defaultConfig()
   config.rf_pd_active = 1;
   config.rf_pwr_active = 1;
   config.rf_ptt_active = 1;
-  config.adc_atten = 0;
+  config.adc_atten = 4;
   config.adc_dc_offset = 600;
   config.rf_baudrate = 9600;
 
@@ -1413,7 +1413,7 @@ void defaultConfig()
   memset(config.digi_phg, 0, sizeof(config.digi_phg));
   sprintf(config.digi_comment, "");
   sprintf(config.digi_status, "DIGI MODE");
-  config.digi_sts_interval = 1800;
+  config.digi_sts_interval = 0;
 
   // Tracker
   config.trk_en = false;
@@ -1452,7 +1452,7 @@ void defaultConfig()
   sprintf(config.trk_mycall, "NOCALL");
   sprintf(config.trk_comment, "TRACKER MODE");
   sprintf(config.trk_item, "");
-  config.trk_sts_interval = 1800;
+  config.trk_sts_interval = 0;
 
   // WX
   config.wx_en = false;
@@ -2734,6 +2734,8 @@ void RF_MODULE(bool boot)
   {
     //SerialRF.begin(9600, SERIAL_8N1, SA868_RX_PIN, SA868_TX_PIN);
     //pinMode(BUTTON_PTT_PIN, INPUT_PULLUP); // PTT BUTTON
+    pinMode(SA868_PWR_PIN, OUTPUT);
+    digitalWrite(SA868_PWR_PIN, LOW); // RF POWER LOW
 
     pinMode(SA868_MIC_SEL, OUTPUT); // MIC_SEL
     digitalWrite(SA868_MIC_SEL, LOW);
@@ -2742,8 +2744,13 @@ void RF_MODULE(bool boot)
     digitalWrite(SA868_PD_PIN, LOW); // PWR OFF
     setupPowerRF(false);
 
-    pinMode(SA868_PWR_PIN, OUTPUT);
-    digitalWrite(SA868_PWR_PIN, LOW); // RF POWER LOW
+    digitalWrite(SA868_PTT_PIN,LOW);
+    
+    // pinMode(config.rf_tx_gpio,OUTPUT);
+    // pinMode(config.rf_rx_gpio,OUTPUT);
+    // digitalWrite(config.rf_tx_gpio, LOW);
+    // digitalWrite(config.rf_rx_gpio, LOW);
+    
 
     //pinMode(SA868_PTT_PIN, OUTPUT);
     //digitalWrite(SA868_PTT_PIN, HIGH); // PTT HIGH
@@ -2752,12 +2759,12 @@ void RF_MODULE(bool boot)
     setupPowerRF(true);
     delay(100);
     digitalWrite(SA868_PD_PIN, HIGH); // PWR ON
+    //SerialRF.begin(config.rf_baudrate,SERIAL_8N1,config.rf_rx_gpio,config.rf_tx_gpio);
     delay(1000);
-    // if (config.rf_type == RF_SA8x8_OpenEdit)
-    // {
-    //   delay(2000);
-    //   sa868.init();
-    // }
+    if (config.rf_type == RF_SA8x8_OpenEdit)
+    {
+      sa868.init();
+    }
   }
   // else
   // {
@@ -2768,7 +2775,6 @@ void RF_MODULE(bool boot)
 
   if (config.rf_type == RF_SA8x8_OpenEdit)
   {
-    if(sa868.init()){
       sa868.setBandwidth(config.band);
       sa868.setRxFrequency((uint32_t)(config.freq_rx * 1000000));
       sa868.setTxFrequency((uint32_t)(config.freq_tx * 1000000));
@@ -2779,7 +2785,6 @@ void RF_MODULE(bool boot)
       sa868.setLowPower();
       delay(100);
       sa868.RxOn();
-    }
   }
   else
   {
@@ -6126,11 +6131,16 @@ void taskAPRS(void *pvParameters)
   initInterval = true;
   AFSKInitAct = true;
 
+  if (config.rf_en){
+    RF_MODULE(true);
+    setPtt(false);        
+  }
+  RF_INIT = false;
   for (;;)
   {
     if(RF_INIT){
       if (config.rf_en){
-        RF_MODULE(true);
+        RF_MODULE(false);
         setPtt(false);        
       }
       RF_INIT=false;
