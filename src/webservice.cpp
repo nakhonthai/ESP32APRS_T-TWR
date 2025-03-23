@@ -862,7 +862,7 @@ void event_lastHeard()
 		if (pkg.time > 0)
 		{
 			line = String(pkg.raw);
-			// log_d("IDX=%d RAW:%s",i,line.c_str());
+			//log_d("pkgList IDX=%d RAW:%s",i,pkg.raw);
 			int packet = pkg.pkg;
 			int start_val = line.indexOf(">", 0); // หาตำแหน่งแรกของ >
 			if (start_val > 3)
@@ -1044,6 +1044,10 @@ void handle_storage(AsyncWebServerRequest *request)
 	}
 	StandByTick = millis() + (config.pwr_stanby_delay * 1000);
 
+	adcEn=-1;
+	dacEn=-1;
+	delay(500);
+
 	String dirname = "/";
 	char strTime[100];
 
@@ -1121,6 +1125,8 @@ void handle_storage(AsyncWebServerRequest *request)
 		// lastheard_events.send(info, "storage", millis(), 3000);
 		free(info);
 	}
+	adcEn=1;
+	dacEn=-1;
 }
 
 void handle_download(AsyncWebServerRequest *request)
@@ -4292,7 +4298,7 @@ void handle_system(AsyncWebServerRequest *request)
 
 		html += "<td align=\"center\">\n";
 		html += "<fieldset id=\"filterDispGrp\">\n";
-		html += "<legend>Filter popup display</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
+		html += "<legend>Filter OLED/DashBoard display</legend>\n<table style=\"text-align:unset;border-width:0px;background:unset\">";
 		html += "<tr style=\"background:unset;\">";
 
 		// html += "<td style=\"border:unset;\"><input class=\"field_checkbox\" id=\"dispTNC\" name=\"dispTNC\" type=\"checkbox\" value=\"OK\" " + rfFlageEn + "/>From RF</td>\n";

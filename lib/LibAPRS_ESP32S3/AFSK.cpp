@@ -10,7 +10,7 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
 // #endif
-#include "cppQueue.h"
+//#include "cppQueue.h"
 
 #include "driver/sdm.h"
 #include "driver/gptimer.h"
@@ -87,7 +87,61 @@ extern float markFreq;  // mark frequency
 extern float spaceFreq; // space freque
 extern float baudRate;  // baudrate
 
+/****************** Ring Buffer gen from DeepSeek *********************/
+#define BUFFER_SIZE 1500
+typedef struct {
+    int16_t buffer[BUFFER_SIZE]; // Buffer to store int16_t data
+    int head;                    // Index for the next write
+    int tail;                    // Index for the next read
+    int count;                   // Number of elements in the buffer
+} RingBuffer;
 
+// Initialize the ring buffer
+void RingBuffer_Init(RingBuffer *rb) {
+    rb->head = 0;
+    rb->tail = 0;
+    rb->count = 0;
+}
+
+// Check if the buffer is full
+bool RingBuffer_IsFull(const RingBuffer *rb) {
+    return rb->count == BUFFER_SIZE;
+}
+
+// Check if the buffer is empty
+bool RingBuffer_IsEmpty(const RingBuffer *rb) {
+    return rb->count == 0;
+}
+
+// Add an element to the buffer (push)
+bool RingBuffer_Push(RingBuffer *rb, int16_t data) {
+    if (RingBuffer_IsFull(rb)) {
+        return false; // Buffer is full
+    }
+    rb->buffer[rb->head] = data;
+    rb->head = (rb->head + 1) % BUFFER_SIZE; // Wrap around using modulo
+    rb->count++;
+    return true;
+}
+
+// Remove an element from the buffer (pop)
+bool RingBuffer_Pop(RingBuffer *rb, int16_t *data) {
+    if (RingBuffer_IsEmpty(rb)) {
+        return false; // Buffer is empty
+    }
+    *data = rb->buffer[rb->tail];
+    rb->tail = (rb->tail + 1) % BUFFER_SIZE; // Wrap around using modulo
+    rb->count--;
+    return true;
+}
+
+// Get the number of elements in the buffer
+int RingBuffer_Size(const RingBuffer *rb) {
+    return rb->count;
+}
+
+RingBuffer fifo; // Declare a ring buffer
+/******************************************************************** */
 
 void LED_init(int8_t led_tx_pin, int8_t led_rx_pin, int8_t led_strip_pin)
 {
@@ -350,11 +404,11 @@ uint16_t CountOnesFromInteger(uint16_t value)
 #define IMPLEMENTATION FIFO
 #define ADC_SAMPLES_COUNT (BLOCK_SIZE / 2)
 
-#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6)
-cppQueue adcq(sizeof(int16_t), 768, IMPLEMENTATION, true); // Instantiate queue
-#else
-cppQueue adcq(sizeof(int16_t), 768, IMPLEMENTATION, true); // Instantiate queue
-#endif
+// #if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C6)
+// cppQueue adcq(sizeof(int16_t), 768, IMPLEMENTATION, true); // Instantiate queue
+// #else
+// cppQueue adcq(sizeof(int16_t), 768, IMPLEMENTATION, true); // Instantiate queue
+// #endif
 
 static const char *TAG = "--(TAG ADC DMA)--";
 #if defined(CONFIG_IDF_TARGET_ESP32)
@@ -604,12 +658,19 @@ bool IRAM_ATTR s_conv_done_cb(adc_continuous_handle_t stAdcHandle, const adc_con
       continue;
     adcPush = (int16_t)p->type2.data;
 #endif
+fifo.buffer[fifo.head] = adcPush;
+fifo.head = (fifo.head + 1) % BUFFER_SIZE; // Wrap around using modulo
+fifo.count++;
+// if (!RingBuffer_Push(&fifo, adcPush)) {
+//   //printf("Buffer is full!\n");
+//   break;
+// }
     // if (adcq.isFull())
     // {
     //   adcq.flush();
     //   break;
     // }
-    adcq.push(&adcPush);
+    //adcq.push(&adcPush);
   }
   // if (adcq.isFull())
   //   adcq.flush();
@@ -791,6 +852,7 @@ void AFSK_hw_init(void)
   //  Initialize the I2S peripheral
   I2S_Init(I2S_MODE_DAC_BUILT_IN, I2S_BITS_PER_SAMPLE_16BIT);
 #else
+  RingBuffer_Init(&fifo);
   adc_continue_init();
   sigmadelta_init();
 
@@ -919,7 +981,8 @@ void AFSK_Poll(bool SA818, bool RFPower)
   {
     if (audio_buffer != NULL)
     {
-      while (adcq.getCount() >= BLOCK_SIZE)
+      //while (adcq.getCount() >= BLOCK_SIZE)
+      while(RingBuffer_Size(&fifo) >= BLOCK_SIZE)
       {
         // digitalWrite(2, HIGH);
         tcb_t *tp = &tcb;
@@ -928,7 +991,8 @@ void AFSK_Poll(bool SA818, bool RFPower)
         for (x = 0; x < BLOCK_SIZE; x++)
         {
           // while(adcq_lock) delay(1);
-          if (!adcq.pop(&adc)) // Pull queue buffer
+          //if (!adcq.pop(&adc)) // Pull queue buffer
+          if (!RingBuffer_Pop(&fifo, &adc))
             break;
 
           tp->avg_sum += adc - tp->avg_buf[tp->avg_idx];

@@ -20,7 +20,7 @@
 #include <esp_task_wdt.h>
 #include "main.h"
 #include "XPowersLib.h"
-#include "cppQueue.h"
+//#include "cppQueue.h"
 #include "digirepeater.h"
 #include "igate.h"
 #include "wireguardif.h"
@@ -7586,7 +7586,7 @@ void taskNetwork(void *pvParameters)
                     call[14] = 0;
                     memset(raw, 0, sizeof(raw));
                     memcpy(raw, line.c_str(), line.length());
-                    raw[sizeof(raw) - 1] = 0;
+                    raw[line.length() - 1] = 0;
                     // int idx = pkgListUpdate(call, raw, type, 1, 0);
                     // int cnt = 0;
                     // if (idx > -1)
