@@ -2450,28 +2450,29 @@ bool pkgTxSend()
     if (txQueue[i].Active)
     {
       int decTime = millis() - txQueue[i].timeStamp;
-      if (txQueue[i].Channel & INET_CHANNEL)
-      {
-        if (config.igate_en == false)
-        {
-          txQueue[i].Channel &= ~INET_CHANNEL;
-        }
-        else
-        {
-          if (aprsClient.connected())
-          {
-            // status.txCount++;
-            // aprsClient.printf("%s\r\n", txQueue[i].Info); // Send packet to Inet
-            aprsClient.write(txQueue[i].Info, txQueue[i].length); // Send binary frame packet to APRS-IS (aprsc)
-            aprsClient.write("\r\n");                             // Send CR LF the end frame packet
-            txQueue[i].Channel &= ~INET_CHANNEL;
-            log_d("TX->INET: %s", txQueue[i].Info);
-            continue;
-          }
-        }
-      }
       if (decTime > txQueue[i].Delay)
       {
+        if (txQueue[i].Channel & INET_CHANNEL)
+        {
+          if (config.igate_en == false)
+          {
+            txQueue[i].Channel &= ~INET_CHANNEL;
+          }
+          else
+          {
+            if (aprsClient.connected())
+            {
+              // status.txCount++;
+              // aprsClient.printf("%s\r\n", txQueue[i].Info); // Send packet to Inet
+              aprsClient.write(txQueue[i].Info, txQueue[i].length); // Send binary frame packet to APRS-IS (aprsc)
+              aprsClient.write("\r\n");                             // Send CR LF the end frame packet
+              txQueue[i].Channel &= ~INET_CHANNEL;
+              log_d("TX->INET: %s", txQueue[i].Info);
+              continue;
+            }
+          }
+        }
+
         if (txQueue[i].Channel & RF_CHANNEL)
         {
           psramBusy = false;
@@ -5809,32 +5810,50 @@ void taskGPS(void *pvParameters)
         }
       }
 
-      if (firstGpsTime && gps.time.isValid())
+      if (gps.time.isValid() && gps.time.isUpdated())
       {
-        if (gps.time.isUpdated())
+        time_t nowTime;
+        time_t timeGps = getGpsTime(); // Local gps time
+        time(&nowTime);
+        int tdiff = abs(timeGps - nowTime);
+        if (timeGps > 1700000000 && tdiff > 5) // && timeGps < 2347462800)
         {
-          time_t timeGps = getGpsTime(); // Local gps time
-          if (timeGps > 1700000000 && timeGps < 2347462800)
-          {
-            setTime(timeGps);
-            time_t rtc = timeGps;
-            timeval tv = {rtc, 0};
-            timezone tz = {TZ_SEC + DST_MN, 0};
-            settimeofday(&tv, &tz);
-#ifdef DEBUG
-            log_d("\nSET GPS Timestamp = %u Year=%d\n", timeGps, year());
-#endif
-            // firstGpsTime = false;
-            firstGpsTime = false;
-            if (startTime == 0)
-              startTime = now();
-          }
-          else
-          {
-            startTime = 0;
-          }
+          nowTime = timeGps;
+          setTime(nowTime);
+          time_t rtc = nowTime - (time_t)(config.timeZone * (float)SECS_PER_HOUR);
+          timeval tv = {rtc, 0};
+          timezone tz = {(int)(config.timeZone * (float)SECS_PER_HOUR), 0};
+          settimeofday(&tv, &tz);
         }
       }
+
+//       if (firstGpsTime && gps.time.isValid())
+//       {
+//         if (gps.time.isUpdated())
+//         {
+//           time_t timeGps = getGpsTime(); // Local gps time
+//           if (timeGps > 1700000000 && timeGps < 2347462800)
+//           {
+//             setTime(timeGps);
+//             time_t rtc = timeGps;
+//             timeval tv = {rtc, 0};
+//             timezone tz = {TZ_SEC + DST_MN, 0};
+//             settimeofday(&tv, &tz);
+// #ifdef DEBUG
+//             log_d("\nSET GPS Timestamp = %u Year=%d\n", timeGps, year());
+// #endif
+//             // firstGpsTime = false;
+//             firstGpsTime = false;
+//             if (startTime == 0)
+//               startTime = now();
+//           }
+//           else
+//           {
+//             startTime = 0;
+//           }
+//         }
+//       }
+
     }
   }
 }
