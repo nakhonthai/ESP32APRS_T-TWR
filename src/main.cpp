@@ -1332,7 +1332,7 @@ void defaultConfig()
 
   //--RF Module
   config.rf_en = true;
-  config.rf_type = RF_SA8x8_OpenEdit;
+  config.rf_type = RF_SA868_VHF;
   config.freq_rx = 144.3900;
   config.freq_tx = 144.3900;
   config.offset_rx = 0;
@@ -1359,6 +1359,7 @@ void defaultConfig()
   config.adc_atten = 4;
   config.adc_dc_offset = 600;
   config.rf_baudrate = 9600;
+  config.fx25_mode = 2;
 
   // IGATE
   config.igate_bcn = false;
@@ -1570,8 +1571,8 @@ void defaultConfig()
   memset(config.gnss_at_command, 0, sizeof(config.gnss_at_command));
 
   config.sensor[0].enable = false;
-  config.sensor[0].port = 0;
-  config.sensor[0].address = 2;
+  config.sensor[0].port = 10;
+  config.sensor[0].address = 118;
   config.sensor[0].samplerate = 10;
   config.sensor[0].averagerate = 600;
   config.sensor[0].eqns[0] = 0; // a
@@ -1582,8 +1583,8 @@ void defaultConfig()
   sprintf(config.sensor[0].unit, "°C");
 
   config.sensor[1].enable = false;
-  config.sensor[1].port = 0;
-  config.sensor[1].address = 2;
+  config.sensor[1].port = 10;
+  config.sensor[1].address = 118;
   config.sensor[1].samplerate = 10;
   config.sensor[1].averagerate = 600;
   config.sensor[1].eqns[0] = 0; // a
@@ -1594,16 +1595,16 @@ void defaultConfig()
   sprintf(config.sensor[1].unit, "%%RH");
 
   config.sensor[2].enable = false;
-  config.sensor[2].port = 0;
-  config.sensor[2].address = 2;
+  config.sensor[2].port = 10;
+  config.sensor[2].address = 118;
   config.sensor[2].samplerate = 10;
   config.sensor[2].averagerate = 600;
   config.sensor[2].eqns[0] = 0; // a
   config.sensor[2].eqns[1] = 1; // b
   config.sensor[2].eqns[2] = 0; // c
-  config.sensor[2].type = SENSOR_PM25;
-  sprintf(config.sensor[2].parm, "PM2.5");
-  sprintf(config.sensor[2].unit, "μg/m³");
+  config.sensor[2].type = SENSOR_PRESSURE;
+  sprintf(config.sensor[2].parm, "Pressure");
+  sprintf(config.sensor[2].unit, "hPa(mBar)");
 
   config.sensor[3].enable = false;
   config.sensor[3].port = 0;
@@ -1613,8 +1614,8 @@ void defaultConfig()
   config.sensor[3].eqns[0] = 0; // a
   config.sensor[3].eqns[1] = 1; // b
   config.sensor[3].eqns[2] = 0; // c
-  config.sensor[3].type = SENSOR_PM100;
-  sprintf(config.sensor[3].parm, "PM10.0");
+  config.sensor[3].type = SENSOR_PM25;
+  sprintf(config.sensor[3].parm, "PM2.5");
   sprintf(config.sensor[3].unit, "μg/m³");
 
   config.sensor[4].enable = false;
@@ -1625,9 +1626,9 @@ void defaultConfig()
   config.sensor[4].eqns[0] = 0; // a
   config.sensor[4].eqns[1] = 1; // b
   config.sensor[4].eqns[2] = 0; // c
-  config.sensor[4].type = SENSOR_CO2;
-  sprintf(config.sensor[4].parm, "CO2");
-  sprintf(config.sensor[4].unit, "ppm");
+  config.sensor[4].type = SENSOR_PM100;
+  sprintf(config.sensor[4].parm, "PM10.0");
+  sprintf(config.sensor[4].unit, "μg/m³");
 
   config.sensor[5].enable = false;
   config.sensor[5].port = 0;
@@ -1637,9 +1638,9 @@ void defaultConfig()
   config.sensor[5].eqns[0] = 0; // a
   config.sensor[5].eqns[1] = 1; // b
   config.sensor[5].eqns[2] = 0; // c
-  config.sensor[5].type = SENSOR_CH2O;
-  sprintf(config.sensor[5].parm, "CH2O");
-  sprintf(config.sensor[5].unit, "μg/m³");
+  config.sensor[5].type = SENSOR_CO2;
+  sprintf(config.sensor[5].parm, "CO2");
+  sprintf(config.sensor[5].unit, "ppm");
 
   config.sensor[6].enable = false;
   config.sensor[6].port = 0;
@@ -1649,8 +1650,8 @@ void defaultConfig()
   config.sensor[6].eqns[0] = 0; // a
   config.sensor[6].eqns[1] = 1; // b
   config.sensor[6].eqns[2] = 0; // c
-  config.sensor[6].type = SENSOR_TVOC;
-  sprintf(config.sensor[6].parm, "TVOC");
+  config.sensor[6].type = SENSOR_CH2O;
+  sprintf(config.sensor[6].parm, "CH2O");
   sprintf(config.sensor[6].unit, "μg/m³");
 
   config.sensor[7].enable = false;
@@ -1661,9 +1662,9 @@ void defaultConfig()
   config.sensor[7].eqns[0] = 0; // a
   config.sensor[7].eqns[1] = 1; // b
   config.sensor[7].eqns[2] = 0; // c
-  config.sensor[7].type = SENSOR_PRESSURE;
-  sprintf(config.sensor[7].parm, "Pressure");
-  sprintf(config.sensor[7].unit, "hPa(mBar)");
+  config.sensor[7].type = SENSOR_TVOC;
+  sprintf(config.sensor[7].parm, "TVOC");
+  sprintf(config.sensor[7].unit, "μg/m³");
 
   config.sensor[8].enable = false;
   config.sensor[8].port = 0;
@@ -1678,16 +1679,16 @@ void defaultConfig()
   sprintf(config.sensor[8].unit, "mm.");
 
   config.sensor[9].enable = false;
-  config.sensor[9].port = 0;
+  config.sensor[9].port = 22;
   config.sensor[9].address = 2;
   config.sensor[9].samplerate = 10;
   config.sensor[9].averagerate = 600;
   config.sensor[9].eqns[0] = 0; // a
-  config.sensor[9].eqns[1] = 1; // b
+  config.sensor[9].eqns[1] = 0.001; // b
   config.sensor[9].eqns[2] = 0; // c
-  config.sensor[9].type = SENSOR_WIND_SPD;
-  sprintf(config.sensor[9].parm, "Wind Speed");
-  sprintf(config.sensor[9].unit, "kPh");
+  config.sensor[9].type = SENSOR_BAT_VOLTAGE;
+  sprintf(config.sensor[9].parm, "SYS Battery");
+  sprintf(config.sensor[9].unit, "V");
 
 #ifdef CORE_DEBUG_LEVEL
   config.uart0_enable = false;
@@ -1810,6 +1811,8 @@ void defaultConfig()
   sprintf(config.path[3], "RFONLY");
 
   config.log = 0;
+
+  saveEEPROM();
 }
 
 unsigned long NTP_Timeout;
@@ -3343,6 +3346,11 @@ void setup()
   pinMode(BUTTON_PTT_PIN, INPUT_PULLUP); // PTT BUTTON
   LED_init(-1,-1,42);
 
+  if (!EEPROM.begin(EEPROM_SIZE))
+  {
+    log_d("failed to initialise EEPROM"); // delay(100000);
+  }
+
   // setCpuFrequencyMhz(160);
   Serial.begin(115200);
   
@@ -3366,7 +3374,18 @@ void setup()
   else
   {
     if (!loadConfiguration("/default.cfg", config))
-      defaultConfig();
+    {
+      ptr = (byte *)&config;
+      EEPROM.readBytes(1, ptr, sizeof(Configuration));
+      uint8_t chkSum = checkSum(ptr, sizeof(Configuration));
+      log_d("EEPROM Check %0Xh=%0Xh(%dByte)\n", EEPROM.read(0), chkSum, sizeof(Configuration));
+      if (EEPROM.read(0) != chkSum)
+      {
+        log_d("Config EEPROM Error!");
+        defaultConfig();
+        delay(1000);
+      }     
+    }
   }
 
   log_d("Start ESP32APRS_T-TWR V%s", String(VERSION).c_str());
@@ -6499,11 +6518,15 @@ void taskAPRS(void *pvParameters)
         }
 #endif
         uint8_t SendMode = 0;
-        if (config.trk_loc2rf)
-          SendMode |= RF_CHANNEL;
-        if (config.trk_loc2inet)
-          SendMode |= INET_CHANNEL;
-        pkgTxPush(rawData.c_str(), rawData.length(), 0, SendMode);
+        if (config.trk_loc2rf){
+          SendMode = RF_CHANNEL;
+          pkgTxPush(rawData.c_str(), rawData.length(), 0, SendMode);
+        }
+        if (config.trk_loc2inet){
+          SendMode = INET_CHANNEL;
+          pkgTxPush(rawData.c_str(), rawData.length(), 2000, SendMode);
+        }
+        //pkgTxPush(rawData.c_str(), rawData.length(), 0, SendMode);
 
         //                 if (config.trk_loc2rf)
         //                 { // TRACKER SEND TO RF

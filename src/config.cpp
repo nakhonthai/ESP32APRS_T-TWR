@@ -47,6 +47,8 @@ bool saveConfiguration(const char *filename, const Configuration &config)
     
     log_d("Create file %s",filename);
 
+    saveEEPROM();
+
     //vTaskSuspend(taskAPRSPollHandle);
     //vTaskSuspend(taskAPRSHandle);
     // Allocate a temporary JsonDocument

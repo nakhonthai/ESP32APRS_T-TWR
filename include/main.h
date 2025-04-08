@@ -11,8 +11,8 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#define VERSION "0.4"
-#define VERSION_BUILD 'b'
+#define VERSION "0.5"
+#define VERSION_BUILD 'a'
 
 // #define DEBUG
 
